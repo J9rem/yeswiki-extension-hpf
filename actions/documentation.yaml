@@ -1,0 +1,36 @@
+# This file is part of the YesWiki Extension Hpf.
+#
+# Authors : see README.md file that was distributed with this source code.
+#
+# For the full copyright and license information, please view the LICENSE
+# file that was distributed with this source code.
+#
+ label: _t(AB_HPF_group_label)
+position: 500
+previewHeight: 200px
+actions:
+  hpfpaymentstatus:
+    label: _t(AB_hpf_hpfpaymentstatus_label)
+    properties:
+      view:
+        label: _t(AB_hpf_hpfpaymentstatus_view_label)
+        type: list
+        default: 'buttonHelloAsso'
+        options:
+          buttonHelloAsso: _t(AB_hpf_hpfpaymentstatus_view_buttonHelloAsso_label)
+          buttonYW: _t(AB_hpf_hpfpaymentstatus_view_button_label)
+          iframe: _t(AB_hpf_hpfpaymentstatus_view_iframe_label)
+      pay_button_title: 
+        label: _t(AB_hpf_hpfpaymentstatus_pay_button_title_label)
+        type: text
+        default: _t(HPF_PAY)
+        showif: 
+          view: 'buttonYW'
+      empty_message: 
+        label: _t(AB_hpf_hpfpaymentstatus_empty_message_label)
+        type: text
+        hint: _t(AB_hpf_hpfpaymentstatus_empty_message_hint)
+      nothing_to_pay_message: 
+        label: _t(AB_hpf_hpfpaymentstatus_nothing_to_pay_message_label)
+        type: text
+        hint: _t(AB_hpf_hpfpaymentstatus_nothing_to_pay_message_hint)

@@ -1,0 +1,24 @@
+# This file is part of the YesWiki Extension Hpf.
+#
+# Authors : see README.md file that was distributed with this source code.
+#
+# For the full copyright and license information, please view the LICENSE
+# file that was distributed with this source code.
+#
+parameters:
+  hpf_editable_config_params:
+    - hpf:
+      - contribFormId
+      - paymentFormUrl
+
+services:
+  _defaults:
+    autowire: true
+    public: true
+
+  # YesWiki\Hpf\Service\:
+  #   resource: 'services/*'
+
+  # Allows to use controllers as services
+  YesWiki\Hpf\Controller\:
+    resource: 'controllers/*'
