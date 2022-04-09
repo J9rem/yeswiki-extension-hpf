@@ -12,6 +12,7 @@
 namespace YesWiki\Hpf\Controller;
 
 use Configuration;
+use DateTime;
 use Exception;
 use Throwable;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -32,16 +33,30 @@ use YesWiki\Shop\Service\HelloAssoService;
 class HelloAssoController extends YesWikiController
 {
     public const PAYMENTS_FIELDNAME = "bf_payments";
-    public const TYPE_CONTRIB_FIELDNAME = "bf_type_contributeur";
-    public const TYPE_CONTRIB_MEMBERSHIP_KEY = "adhesion";
-    public const TYPE_CONTRIB_GROUP_MEMBERSHIP_KEY = "adhesion_groupe";
-    public const TYPE_CONTRIB_DONATION_KEY = "don";
-    public const PAYED_MEMBERSHIP_FIELDNAME = "bf_adhesion_payee_{year}";
-    public const PAYED_GROUP_MEMBERSHIP_FIELDNAME = "bf_adhesion_groupe_payee_{year}";
-    public const PAYED_DONATION_FIELDNAME = "bf_don_paye_{year}";
-    public const PAYED_MEMBERSHIP_YEAR_FIELDNAME = "bf_annee_adhesions_payees";
-    public const PAYED_GROUP_MEMBERSHIP_YEAR_FIELDNAME = "bf_annee_adhesions_groupe_payees";
-    public const PAYED_DONATION_YEAR_FIELDNAME = "bf_annee_dons_payes";
+    public const TYPE_CONTRIB = [
+        'fieldName' => "bf_type_contributeur",
+        'keys' => [
+            "membership" => "adhesion",
+            "group_membership" => "adhesion_groupe",
+            "donation" => "don",
+        ],
+    ];
+    public const PAYED_FIELDNAMES = [
+        "membership" => "bf_adhesion_payee_{year}",
+        "group_membership" => "bf_adhesion_groupe_payee_{year}",
+        "donation" => "bf_dons_payes_{year}",
+        "years" => [
+            "membership" => "bf_annees_adhesions_payees",
+            "group_membership" => "bf_annees_adhesions_groupe_payees",
+            "donation" => "bf_annees_dons_payes",
+        ]
+    ];
+    public const CALC_FIELDNAMES = [
+        "membership" => "bf_adhesion_a_payer",
+        "group_membership" => "bf_adhesion_groupe_a_payer",
+        "donation" => "bf_don_a_payer",
+        "total" => "bf_calc"
+    ];
 
     protected $aclService;
     protected $assetsManager;
@@ -101,7 +116,12 @@ class HelloAssoController extends YesWikiController
                         'bf_mail' => $email
                     ]
                 ]);
-                return empty($entries) ? [] : $entries[array_keys($entries)[0]];
+                if (empty($entries)) {
+                    return [];
+                } else {
+                    $idFiche = $entries[array_key_first($entries)]['id_fiche'];
+                    return $this->entryManager->getOne($idFiche, false, null, false, true);
+                }
             }
         } catch (Throwable $th) {
             if ($this->isDebug() && $this->wiki->UserIsAdmin()) {
@@ -127,17 +147,54 @@ class HelloAssoController extends YesWikiController
         return strval($this->hpfParams['contribFormId']);
     }
 
-    public function getFirstCalcField(array $form): CalcField
+    /**
+     * search CalcFields in $contribForm (filtered on $anmes optionnally)
+     * @param array $names
+     * @return CalcField[] $fields
+     */
+    public function getContribCalcFields(array $names = []): array
     {
+        $contribFormId = $this->getCurrentContribFormId();
+        $form = $this->formManager->getOne($contribFormId);
         if (empty($form['prepared'])) {
-            throw new Exception("\$form['prepared'] should not be empty in getFirstCalcField!");
+            throw new Exception("\$form['prepared'] should not be empty in getContribCalcFields!");
         }
-        foreach ($form['prepared'] as $field) {
-            if ($field instanceof CalcField) {
-                return $field;
+        $fields = [];
+        if (empty($names)) {
+            $fields = [];
+            foreach ($form['prepared'] as $field) {
+                if ($field instanceof CalcField) {
+                    $fields[] = $field;
+                }
+            }
+        } else {
+            foreach ($names as $name) {
+                $field = $this->formManager->findFieldFromNameOrPropertyName($name, $contribFormId);
+                if (!empty($field) && $field instanceof CalcField) {
+                    $fields[] = $field;
+                }
             }
         }
-        throw new Exception("No CalcField found in \$form['prepared'] (form {$form['bn_label_nature']} - {$form['bn_id_nature']})!");
+        if (empty($fields)) {
+            throw new Exception("No CalcField found in \$form['prepared'] (form {$form['bn_label_nature']} - {$form['bn_id_nature']})!");
+        }
+        return $fields;
+    }
+
+    /**
+     * update CalcFields in $entry
+     * @param array $entry
+     * @param array $names
+     * @return array $entry
+     */
+    public function updateCalcFields(array $entry, array $names = []): array
+    {
+        $fields = $this->getContribCalcFields($names);
+        foreach ($fields as $field) {
+            $newCalcValue = $field->formatValuesBeforeSave($entry);
+            $entry[$field->getPropertyName()] = $newCalcValue[$field->getPropertyName()] ?? "";
+        }
+        return $entry;
     }
 
     public function getHpfParams(): array
@@ -204,15 +261,27 @@ class HelloAssoController extends YesWikiController
             // open entry based on email from payment
             $paymentEmail = $payment->payer->email;
             if (!isset($cacheEntries[$paymentEmail])) {
-                $cacheEntries[$paymentEmail] = $this->getCurrentContribEntry($paymentEmail);
+                $cacheEntries[$paymentEmail] = [];
             }
-            if (!empty($cacheEntries[$paymentEmail])) {
+            if (!isset($cacheEntries[$paymentEmail]['entry'])) {
+                $cacheEntries[$paymentEmail]['entry'] = $this->getCurrentContribEntry($paymentEmail);
+                $cacheEntries[$paymentEmail]['previousTotal'] = $cacheEntries[$paymentEmail]['entry'][self::CALC_FIELDNAMES['total']] ?? "";
+                $cacheEntries[$paymentEmail]['previousPayments'] = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
+            }
+            if (!empty($cacheEntries[$paymentEmail]['entry'])) {
                 // check if payments are saved
-                $bfPayments = $cacheEntries[$paymentEmail][self::PAYMENTS_FIELDNAME ] ?? "";
+                $bfPayments = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
                 $paymentsRegistered = explode(',', $bfPayments);
                 if (!in_array($payment->id, $paymentsRegistered)) {
-                    $cacheEntries[$paymentEmail] = $this->updateEntryWithPayment($cacheEntries[$paymentEmail], $payment);
+                    $cacheEntries[$paymentEmail]['entry'] = $this->updateEntryWithPayment($cacheEntries[$paymentEmail]['entry'], $payment);
                 }
+            }
+        }
+
+        foreach ($cacheEntries as $data) {
+            if ($data['previousTotal'] != $data['entry'][self::CALC_FIELDNAMES['total']] ||
+                $data['previousPayments'] != $data['entry'][self::PAYMENTS_FIELDNAME]) {
+                $this->updateEntry($data['entry']);
             }
         }
     }
@@ -300,17 +369,101 @@ class HelloAssoController extends YesWikiController
     private function updateEntryWithPayment(array $entry, Payment $payment):array
     {
         $contribFormId = $this->getCurrentContribFormId();
-        $typeContribField = $this->formManager->findFieldFromNameOrPropertyName(self::TYPE_CONTRIB_FIELDNAME, $contribFormId);
+        $typeContribField = $this->formManager->findFieldFromNameOrPropertyName(self::TYPE_CONTRIB['fieldName'], $contribFormId);
         if (empty($typeContribField)) {
-            throw new Exception(self::TYPE_CONTRIB_FIELDNAME." is not defined in form {$contribFormId}");
+            throw new Exception(self::TYPE_CONTRIB['fieldName']." is not defined in form {$contribFormId}");
         }
         if (!($typeContribField instanceof CheckboxField)) {
-            throw new Exception(self::TYPE_CONTRIB_FIELDNAME." is not an instance of CheckboxField in form {$contribFormId}");
+            throw new Exception(self::TYPE_CONTRIB['fieldName']." is not an instance of CheckboxField in form {$contribFormId}");
         }
         $contribTypes = $typeContribField->getValues($entry);
-        $isMember = in_array(self::TYPE_CONTRIB_MEMBERSHIP_KEY, $contribTypes);
-        $isGroupMember = in_array(self::TYPE_CONTRIB_GROUP_MEMBERSHIP_KEY, $contribTypes);
-        $isDonating = in_array(self::TYPE_CONTRIB_DONATION_KEY, $contribTypes);
+        $isMember = in_array(self::TYPE_CONTRIB['keys']['membership'], $contribTypes);
+        $isGroupMember = in_array(self::TYPE_CONTRIB['keys']['group_membership'], $contribTypes);
+
+        // get Year
+        $paymentDate = new DateTime($payment->date);
+        $year = $paymentDate->format("Y");
+
+        // membership
+        $memberShipToPay = $entry[self::CALC_FIELDNAMES["membership"]] ?? 0;
+        $sameYearPropertyName = str_replace("{year}", $year, self::PAYED_FIELDNAMES["membership"]);
+        $sameYearField = $this->formManager->findFieldFromNameOrPropertyName($sameYearPropertyName, $contribFormId);
+        $nextYearPropertyName = str_replace("{year}", $year +1, self::PAYED_FIELDNAMES["membership"]);
+        $nextYearField = $this->formManager->findFieldFromNameOrPropertyName($nextYearPropertyName, $contribFormId);
+
+        if (!empty($nextYearField)) {
+            $field = $nextYearField;
+            $memberShipYear = $year +1;
+        } else {
+            $field = $sameYearField;
+            $memberShipYear = $year ;
+        }
+        $payedMemberShip = !empty($field) && isset($entry[$field->getPropertyName()])
+            ? $entry[$field->getPropertyName()]
+            : 0;
+
+        $diff = floatval($memberShipToPay) - floatval($payedMemberShip);
+        if (!empty($field) && $diff >= 0) {
+            if (floatval($payment->amount) <= $diff) {
+                // only affect $memberShip
+                $entry[$field->getPropertyName()] = strval(floatval($payedMemberShip) + floatval($payment->amount));
+                $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"]["membership"], $memberShipYear);
+                $restToAffect = 0;
+            } else {
+                $entry[$field->getPropertyName()] = strval(floatval($payedMemberShip) + $diff);
+                $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"]["membership"], $memberShipYear);
+                $restToAffect = floatval($payment->amount) - $diff;
+            }
+        } else {
+            $restToAffect = floatval($payment->amount);
+        }
+
+        if ($restToAffect > 0) {
+            // group membership
+            $groupMemberShipToPay = $entry[self::CALC_FIELDNAMES["group_membership"]] ?? 0;
+            $sameYearPropertyName = str_replace("{year}", $year, self::PAYED_FIELDNAMES["group_membership"]);
+            $sameYearField = $this->formManager->findFieldFromNameOrPropertyName($sameYearPropertyName, $contribFormId);
+            $nextYearPropertyName = str_replace("{year}", $year +1, self::PAYED_FIELDNAMES["group_membership"]);
+            $nextYearField = $this->formManager->findFieldFromNameOrPropertyName($nextYearPropertyName, $contribFormId);
+    
+            if (!empty($nextYearField)) {
+                $field = $nextYearField;
+                $groupMemberShipYear = $year +1;
+            } else {
+                $field = $sameYearField;
+                $groupMemberShipYear = $year ;
+            }
+            $payedGroupMemberShip = !empty($field) && isset($entry[$field->getPropertyName()])
+                ? $entry[$field->getPropertyName()]
+                : 0;
+    
+            $diff = floatval($groupMemberShipToPay) - floatval($payedGroupMemberShip);
+            if (!empty($field) && $diff >= 0) {
+                if ($restToAffect <= $diff) {
+                    // only affect $groupMemberShip
+                    $entry[$field->getPropertyName()] = straval(floatval($payedGroupMemberShip) + $restToAffect);
+                    $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"]["group_membership"], $groupMemberShipYear);
+                    $restToAffect = 0;
+                } else {
+                    $entry[$field->getPropertyName()] = strval(floatval($payedGroupMemberShip) + $diff);
+                    $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"]["group_membership"], $groupMemberShipYear);
+                    $restToAffect = $restToAffect - $diff;
+                }
+            }
+            if ($restToAffect > 0) {
+                // donation
+                $sameYearPropertyName = str_replace("{year}", $year, self::PAYED_FIELDNAMES["donation"]);
+                $sameYearField = $this->formManager->findFieldFromNameOrPropertyName($sameYearPropertyName, $contribFormId);
+                
+                $payedDonation = !empty($sameYearField) && isset($entry[$sameYearField->getPropertyName()])
+                    ? $entry[$sameYearField->getPropertyName()]
+                    : 0;
+                if (!empty($sameYearField)) {
+                    $entry[$sameYearField->getPropertyName()] = strval(floatval($payedDonation) + $restToAffect);
+                    $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"]["donation"], $year);
+                }
+            }
+        }
 
         // update payment list
         $bfPayments = $entry[self::PAYMENTS_FIELDNAME] ?? "";
@@ -319,17 +472,36 @@ class HelloAssoController extends YesWikiController
 
         // save entry
         $entry[self::PAYMENTS_FIELDNAME] = implode(",", array_filter($paymentsRegistered));
+        
+        $entry = $this->updateCalcFields($entry, HelloAssoController::CALC_FIELDNAMES);
 
-        $form = $this->formManager->getOne($contribFormId);
-        $calcField = $this->getFirstCalcField($form);
-        $newCalcValue = $calcField->formatValuesBeforeSave($entry);
-        $entry[$calcField->getPropertyName()] = $newCalcValue[$calcField->getPropertyName()] ?? "";
+        return $entry;
+    }
 
+    private function updateYear(array $entry, string $name, string $year): array
+    {
+        $values = explode(",", $entry[$name] ?? "");
+        if (in_array($year, $values)) {
+            $values[] = $year;
+        }
+        $entry[$name] = implode(",", array_filter($values));
+        return $entry;
+    }
+
+    private function extractCurrentValue(CalcField $calcField, string $fieldName, string $value)
+    {
+        $formula = $calcField->getCalcFormula();
+        if (preg_match("/test\($fieldName,$value\)\*(\d*(?:\.\d*)?)/", $formula, $matches)) {
+            return floatval($matches[1]);
+        }
+        return 0;
+    }
+
+    public function updateEntry($data): array
+    {
         if ($this->securityController->isWikiHibernated()) {
             throw new \Exception(_t('WIKI_IN_HIBERNATION'));
         }
-
-        $data = $entry;
 
         $this->entryManager->validate(array_merge($data, ['antispam' => 1]));
         
@@ -349,6 +521,10 @@ class HelloAssoController extends YesWikiController
             unset($data['owner']);
         }
 
+        if (isset($data['sendmail'])) {
+            unset($data['sendmail']);
+        }
+
         // on encode en utf-8 pour reussir a encoder en json
         if (YW_CHARSET != 'UTF-8') {
             $data = array_map('utf8_encode', $data);
@@ -356,7 +532,7 @@ class HelloAssoController extends YesWikiController
 
         $this->pageManager->save($data['id_fiche'], json_encode($data), '');
 
-        $updatedEntry = $this->entryManager->getOne($entry['id_fiche'], false, null, false, true);
+        $updatedEntry = $this->entryManager->getOne($data['id_fiche'], false, null, false, true);
 
         return $updatedEntry;
     }

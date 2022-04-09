@@ -52,19 +52,34 @@ class HPFPaymentStatusAction extends YesWikiAction
 
         $contribFormId = $this->helloAssoController->getCurrentContribFormId();
         $form = $this->formManager->getOne($contribFormId);
-        $calcField = $this->helloAssoController->getFirstCalcField($form);
 
-        $calcValue = $contribEntry[$calcField->getPropertyName()] ?? 0;
+        // update CalcField before check
+        $newEntry = $this->helloAssoController->updateCalcFields($contribEntry, HelloAssoController::CALC_FIELDNAMES);
+        $previousValue = $contribEntry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
+        $newValue = $newEntry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
+        if ($previousValue != $newValue) {
+            $contribEntry = $this->helloAssoController->updateEntry($newEntry);
+        }
 
-        if (empty($calcValue)) {
+        $calcValue = $contribEntry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
+
+        if (!empty($calcValue) && intval($calcValue) != 0) {
+            // refresh payments from HelloASso
+            $this->helloAssoController->refreshPaymentsInfo($user['email']);
+
+            // reload entry
+            $contribEntry = $this->helloAssoController->getCurrentContribEntry($user['email']);
+
+            $calcValue = $contribEntry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
+        }
+
+        if (empty($calcValue) || intval($calcValue) == 0) {
             return empty($this->arguments['nothing_to_pay_message']) ? "" :
                 $this->render("@templates/alert-message.twig", [
                     'type' => 'success',
                     'message' => $this->arguments['nothing_to_pay_message']
                 ]);
         }
-
-        $this->helloAssoController->refreshPaymentsInfo($user['email']);
 
         try {
             switch ($this->arguments['view']) {
