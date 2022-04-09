@@ -13,6 +13,7 @@ namespace YesWiki\Hpf\Controller;
 
 use Configuration;
 use DateTime;
+use DateInterval;
 use Exception;
 use Throwable;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -22,6 +23,7 @@ use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\Service\AclService;
 use YesWiki\Core\Service\AssetsManager;
+use YesWiki\Core\Service\DbService;
 use YesWiki\Core\Service\PageManager;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Core\YesWikiController;
@@ -60,6 +62,7 @@ class HelloAssoController extends YesWikiController
 
     protected $aclService;
     protected $assetsManager;
+    protected $dbService;
     protected $debug;
     protected $entryManager;
     protected $formManager;
@@ -74,6 +77,7 @@ class HelloAssoController extends YesWikiController
     public function __construct(
         AclService $aclService,
         AssetsManager $assetsManager,
+        DbService $dbService,
         EntryManager $entryManager,
         FormManager $formManager,
         HelloAssoService $helloAssoService,
@@ -84,6 +88,7 @@ class HelloAssoController extends YesWikiController
     ) {
         $this->aclService = $aclService;
         $this->assetsManager = $assetsManager;
+        $this->dbService = $dbService;
         $this->debug = null;
         $this->entryManager = $entryManager;
         $this->formManager = $formManager;
@@ -505,7 +510,9 @@ class HelloAssoController extends YesWikiController
 
         $this->entryManager->validate(array_merge($data, ['antispam' => 1]));
         
-        $data['date_maj_fiche'] = date('Y-m-d H:i:s', time());
+        $data['date_maj_fiche'] = empty($data['date_maj_fiche'])
+            ? date('Y-m-d H:i:s', time())
+            : (new DateTime($data['date_maj_fiche']))->add(new DateInterval("PT1S"))->format('Y-m-d H:i:s');
 
         // on enleve les champs hidden pas necessaires a la fiche
         unset($data['valider']);
@@ -530,7 +537,22 @@ class HelloAssoController extends YesWikiController
             $data = array_map('utf8_encode', $data);
         }
 
-        $this->pageManager->save($data['id_fiche'], json_encode($data), '');
+        $oldPage = $this->pageManager->getOne($data['id_fiche']);
+        $owner = $oldPage['owner'] ?? '';
+        $user = $oldPage['user'] ?? '';
+
+        // set all other revisions to old
+        $this->dbService->query("UPDATE {$this->dbService->prefixTable('pages')} SET `latest` = 'N' WHERE `tag` = '{$this->dbService->escape($data['id_fiche'])}'");
+
+        // add new revision
+        $this->dbService->query("INSERT INTO {$this->dbService->prefixTable('pages')} SET ".
+            "`tag` = '{$this->dbService->escape($data['id_fiche'])}', ".
+            "`time` = '{$this->dbService->escape($data['date_maj_fiche'])}', ".
+            "`owner` = '{$this->dbService->escape($owner)}', ".
+            "`user` = '{$this->dbService->escape($user)}', ".
+            "`latest` = 'Y', ".
+            "`body` = '" . $this->dbService->escape(json_encode($data)) . "', ".
+            "`body_r` = ''");
 
         $updatedEntry = $this->entryManager->getOne($data['id_fiche'], false, null, false, true);
 
