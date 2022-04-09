@@ -6,6 +6,8 @@
 # file that was distributed with this source code.
 #
 parameters:
+  hpf_shopHelloAssoTrigger:
+    'YesWiki\Hpf\Controller\HelloAssoController': 'processTrigger'
   hpf_editable_config_params:
     - hpf:
       - contribFormId

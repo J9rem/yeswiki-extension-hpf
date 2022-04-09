@@ -558,4 +558,14 @@ class HelloAssoController extends YesWikiController
 
         return $updatedEntry;
     }
+
+    public function processTrigger(array $postNotSanitized, int $index)
+    {
+        $this->wiki->AppendContentToPage(json_encode([
+             date("Y-m-d H:i:s.v") => $postNotSanitized
+            ]), 'HelloAssoLog', true);
+        return [
+            $index => "saved"
+        ];
+    }
 }
