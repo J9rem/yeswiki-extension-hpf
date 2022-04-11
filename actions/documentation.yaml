@@ -5,7 +5,7 @@
 # For the full copyright and license information, please view the LICENSE
 # file that was distributed with this source code.
 #
- label: _t(AB_HPF_group_label)
+label: _t(AB_HPF_group_label)
 position: 500
 previewHeight: 200px
 actions:
