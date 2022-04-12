@@ -561,9 +561,19 @@ class HelloAssoController extends YesWikiController
 
     public function processTrigger(array $postNotSanitized, int $index)
     {
-        $this->wiki->AppendContentToPage(json_encode([
-             date("Y-m-d H:i:s.v") => $postNotSanitized
-            ]), 'HelloAssoLog', true);
+        $pageTag = 'HelloAssoLog';
+        $page = $this->pageManager->getOne($pageTag);
+        $content = empty($page) ? [] : json_decode($page['body'], true);
+        if (!is_array($content)) {
+            $content = [
+                ($page['time'] ?? 'previous') => $page['body']
+            ];
+        }
+        $content[(new DateTime())->format("Y-m-d H:i:s.v")] = $postNotSanitized;
+        $this->aclService->save($pageTag, 'write', '@admins');
+        $this->aclService->save($pageTag, 'read', '@admins');
+        $this->aclService->save($pageTag, 'comment', 'comments-closed');
+        $this->pageManager->save($pageTag, json_encode($content), '', true);
         return [
             $index => "saved"
         ];

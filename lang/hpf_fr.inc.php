@@ -34,6 +34,6 @@ return [
 
     // config.yaml
     'EDIT_CONFIG_HINT_HPF[CONTRIBFORMID]' => 'Identifiant du formulaire contributeur (avec \'bf_mail\' et un champ \'CalcField\')',
-    'EDIT_CONFIG_HINT_HPF[PAYEMENTFORMURL]' => 'Lien vers le formulaire HelloAsso de paiement',
+    'EDIT_CONFIG_HINT_HPF[PAYMENTFORMURL]' => 'Lien vers le formulaire HelloAsso de paiement',
     'EDIT_CONFIG_GROUP_HPF' => 'Paramètres spécifiques HPF',
 ];
