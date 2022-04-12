@@ -17,6 +17,7 @@ use DateInterval;
 use Exception;
 use Throwable;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use YesWiki\Bazar\Field\BazarField;
 use YesWiki\Bazar\Field\CalcField;
 use YesWiki\Bazar\Field\CheckboxField;
 use YesWiki\Bazar\Service\EntryManager;
@@ -374,100 +375,55 @@ class HelloAssoController extends YesWikiController
     private function updateEntryWithPayment(array $entry, Payment $payment):array
     {
         $contribFormId = $this->getCurrentContribFormId();
-        $typeContribField = $this->formManager->findFieldFromNameOrPropertyName(self::TYPE_CONTRIB['fieldName'], $contribFormId);
-        if (empty($typeContribField)) {
-            throw new Exception(self::TYPE_CONTRIB['fieldName']." is not defined in form {$contribFormId}");
-        }
-        if (!($typeContribField instanceof CheckboxField)) {
-            throw new Exception(self::TYPE_CONTRIB['fieldName']." is not an instance of CheckboxField in form {$contribFormId}");
-        }
-        $contribTypes = $typeContribField->getValues($entry);
-        $isMember = in_array(self::TYPE_CONTRIB['keys']['membership'], $contribTypes);
-        $isGroupMember = in_array(self::TYPE_CONTRIB['keys']['group_membership'], $contribTypes);
+        // $typeContribField = $this->formManager->findFieldFromNameOrPropertyName(self::TYPE_CONTRIB['fieldName'], $contribFormId);
+        // if (empty($typeContribField)) {
+        //     throw new Exception(self::TYPE_CONTRIB['fieldName']." is not defined in form {$contribFormId}");
+        // }
+        // if (!($typeContribField instanceof CheckboxField)) {
+        //     throw new Exception(self::TYPE_CONTRIB['fieldName']." is not an instance of CheckboxField in form {$contribFormId}");
+        // }
+        // $contribTypes = $typeContribField->getValues($entry);
+        // $isMember = in_array(self::TYPE_CONTRIB['keys']['membership'], $contribTypes);
+        // $isGroupMember = in_array(self::TYPE_CONTRIB['keys']['group_membership'], $contribTypes);
 
         // get Year
         $paymentDate = new DateTime($payment->date);
-        $year = $paymentDate->format("Y");
+        $paymentYear = $paymentDate->format("Y");
+        $currentYear = (new DateTime())->format("Y");
 
-        // membership
-        $memberShipToPay = $entry[self::CALC_FIELDNAMES["membership"]] ?? 0;
-        $sameYearPropertyName = str_replace("{year}", $year, self::PAYED_FIELDNAMES["membership"]);
-        $sameYearField = $this->formManager->findFieldFromNameOrPropertyName($sameYearPropertyName, $contribFormId);
-        $nextYearPropertyName = str_replace("{year}", $year +1, self::PAYED_FIELDNAMES["membership"]);
-        $nextYearField = $this->formManager->findFieldFromNameOrPropertyName($nextYearPropertyName, $contribFormId);
-
-        if (!empty($nextYearField)) {
-            $field = $nextYearField;
-            $memberShipYear = $year +1;
-        } else {
-            $field = $sameYearField;
-            $memberShipYear = $year ;
-        }
-        $payedMemberShip = !empty($field) && isset($entry[$field->getPropertyName()])
-            ? $entry[$field->getPropertyName()]
-            : 0;
-
-        $diff = floatval($memberShipToPay) - floatval($payedMemberShip);
-        if (!empty($field) && $diff >= 0) {
-            if (floatval($payment->amount) <= $diff) {
-                // only affect $memberShip
-                $entry[$field->getPropertyName()] = strval(floatval($payedMemberShip) + floatval($payment->amount));
-                $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"]["membership"], $memberShipYear);
-                $restToAffect = 0;
+        $restToAffect =  floatval($payment->amount);
+        if (intval($paymentYear) > intval($currentYear)) {
+            // error
+            return $entry;
+        } elseif (intval($paymentYear) == intval($currentYear)) {
+            list('isOpenedNextYear' => $isOpenedNextYear, 'field' => $field) = $this->getPayedField($contribFormId, $currentYear, "membership");
+            if ($isOpenedNextYear) {
+                // membership for next year
+                list('entry' => $entry, 'restToAffect' => $restToAffect) =
+                    $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, strval(intval($paymentYear)+1), "membership");
             } else {
-                $entry[$field->getPropertyName()] = strval(floatval($payedMemberShip) + $diff);
-                $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"]["membership"], $memberShipYear);
-                $restToAffect = floatval($payment->amount) - $diff;
+                // membership for current year
+                list('entry' => $entry, 'restToAffect' => $restToAffect) =
+                    $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $paymentYear, "membership");
             }
-        } else {
-            $restToAffect = floatval($payment->amount);
+            if ($restToAffect > 0) {
+                list('isOpenedNextYear' => $isOpenedNextYear, 'field' => $field) = $this->getPayedField($contribFormId, $currentYear, "group_membership");
+                if ($isOpenedNextYear) {
+                    // membership for next year
+                    list('entry' => $entry, 'restToAffect' => $restToAffect) =
+                        $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, strval(intval($paymentYear)+1), "group_membership");
+                } else {
+                    // membership for current year
+                    list('entry' => $entry, 'restToAffect' => $restToAffect) =
+                        $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $paymentYear, "group_membership");
+                }
+            }
         }
 
         if ($restToAffect > 0) {
-            // group membership
-            $groupMemberShipToPay = $entry[self::CALC_FIELDNAMES["group_membership"]] ?? 0;
-            $sameYearPropertyName = str_replace("{year}", $year, self::PAYED_FIELDNAMES["group_membership"]);
-            $sameYearField = $this->formManager->findFieldFromNameOrPropertyName($sameYearPropertyName, $contribFormId);
-            $nextYearPropertyName = str_replace("{year}", $year +1, self::PAYED_FIELDNAMES["group_membership"]);
-            $nextYearField = $this->formManager->findFieldFromNameOrPropertyName($nextYearPropertyName, $contribFormId);
-    
-            if (!empty($nextYearField)) {
-                $field = $nextYearField;
-                $groupMemberShipYear = $year +1;
-            } else {
-                $field = $sameYearField;
-                $groupMemberShipYear = $year ;
-            }
-            $payedGroupMemberShip = !empty($field) && isset($entry[$field->getPropertyName()])
-                ? $entry[$field->getPropertyName()]
-                : 0;
-    
-            $diff = floatval($groupMemberShipToPay) - floatval($payedGroupMemberShip);
-            if (!empty($field) && $diff >= 0) {
-                if ($restToAffect <= $diff) {
-                    // only affect $groupMemberShip
-                    $entry[$field->getPropertyName()] = straval(floatval($payedGroupMemberShip) + $restToAffect);
-                    $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"]["group_membership"], $groupMemberShipYear);
-                    $restToAffect = 0;
-                } else {
-                    $entry[$field->getPropertyName()] = strval(floatval($payedGroupMemberShip) + $diff);
-                    $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"]["group_membership"], $groupMemberShipYear);
-                    $restToAffect = $restToAffect - $diff;
-                }
-            }
-            if ($restToAffect > 0) {
-                // donation
-                $sameYearPropertyName = str_replace("{year}", $year, self::PAYED_FIELDNAMES["donation"]);
-                $sameYearField = $this->formManager->findFieldFromNameOrPropertyName($sameYearPropertyName, $contribFormId);
-                
-                $payedDonation = !empty($sameYearField) && isset($entry[$sameYearField->getPropertyName()])
-                    ? $entry[$sameYearField->getPropertyName()]
-                    : 0;
-                if (!empty($sameYearField)) {
-                    $entry[$sameYearField->getPropertyName()] = strval(floatval($payedDonation) + $restToAffect);
-                    $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"]["donation"], $year);
-                }
-            }
+            // donation
+            list('isOpenedNextYear' => $isOpenedNextYear, 'field' => $field) = $this->getPayedField($contribFormId, $paymentYear, "donation");
+            list('entry' => $entry, 'restToAffect' => $restToAffect) = $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $paymentYear, "donation");
         }
 
         // update payment list
@@ -483,13 +439,94 @@ class HelloAssoController extends YesWikiController
         return $entry;
     }
 
+    private function getPayedField(string $contribFormId, string $currentYear, string $name):array
+    {
+        if ($name != "donation") {
+            $nextYearName = str_replace(
+                "{year}",
+                strval(intval($currentYear) +1),
+                self::PAYED_FIELDNAMES[$name]
+            );
+            $nextYearField = $this->formManager->findFieldFromNameOrPropertyName($nextYearName, $contribFormId);
+            if (!empty($nextYearField)) {
+                return [
+                    'isOpenedNextYear' => true,
+                    'field' => $nextYearField,
+                ];
+            }
+        }
+        $currentYearName = str_replace(
+            "{year}",
+            $currentYear,
+            self::PAYED_FIELDNAMES[$name]
+        );
+        $currentYearField = $this->formManager->findFieldFromNameOrPropertyName($currentYearName, $contribFormId);
+        if (!empty($currentYearField)) {
+            return [
+                'isOpenedNextYear' => false,
+                'field' => $currentYearField,
+            ];
+        }
+        return [
+            'isOpenedNextYear' => false,
+            'field' => null,
+        ];
+    }
+
+    private function registerPaymentForYear(
+        array $entry,
+        string $contribFormId,
+        ?BazarField $field,
+        float $restToAffect,
+        string $paymentYear,
+        string $name
+    ):array {
+        if (!empty($field)) {
+            $isDonation = ($name == "donation");
+            $payedValue = floatval($entry[$field->getPropertyName()] ?? 0);
+            if (!$isDonation) {
+                $toPayFieldName = self::CALC_FIELDNAMES[$name];
+                $toPayField = $this->formManager->findFieldFromNameOrPropertyName($toPayFieldName, $contribFormId);
+                $valueToPay = floatval((
+                    empty($toPayField) ||
+                        !isset($entry[$toPayField->getPropertyName()])
+                ) ? 0 : $entry[$toPayField->getPropertyName()]);
+            }
+
+            if ($isDonation || $valueToPay >= $payedValue) {
+                if ($isDonation || $restToAffect <= ($valueToPay - $payedValue)) {
+                    // only affect $memberShip
+                    $entry[$field->getPropertyName()] = strval($payedValue + $restToAffect);
+                    $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"][$name], $paymentYear);
+                    $restToAffect = 0;
+                } else {
+                    $entry[$field->getPropertyName()] = strval($valueToPay);
+                    $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"][$name], $paymentYear);
+                    $restToAffect = $restToAffect - ($valueToPay - $payedValue);
+                }
+            }
+        }
+        return [
+            'entry' => $entry,
+            'restToAffect' => $restToAffect
+        ];
+    }
+
     private function updateYear(array $entry, string $name, string $year): array
     {
-        $values = explode(",", $entry[$name] ?? "");
-        if (in_array($year, $values)) {
+        $field = $this->formManager->findFieldFromNameOrPropertyName($name, $entry['id_typeannonce']);
+        if (empty($field)) {
+            return $entry;
+        } else {
+            $propertyName = $field->getPropertyName();
+        }
+        $values = explode(",", $entry[$propertyName] ?? "");
+        if (!in_array($year, $values)) {
             $values[] = $year;
         }
-        $entry[$name] = implode(",", array_filter($values));
+        $entry[$propertyName] = implode(",", array_filter($values, function ($value) {
+            return !empty($value);
+        }));
         return $entry;
     }
 
