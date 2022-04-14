@@ -493,9 +493,9 @@ class HelloAssoController extends YesWikiController
                 ) ? 0 : $entry[$toPayField->getPropertyName()]);
             }
 
-            if ($isDonation || $valueToPay >= $payedValue) {
+            if ($isDonation || ($valueToPay >= $payedValue && $valueToPay > 0)) {
                 if ($isDonation || $restToAffect <= ($valueToPay - $payedValue)) {
-                    // only affect $memberShip
+                    // only affect current field
                     $entry[$field->getPropertyName()] = strval($payedValue + $restToAffect);
                     $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"][$name], $paymentYear);
                     $restToAffect = 0;
