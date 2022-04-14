@@ -31,6 +31,8 @@ return [
     'HPF_PAY' => "Payer sur Hello Asso",
     'HPF_PAYMENT_MESSAGE' => "Vous devez payer une somme de {sum} €. Vous pouver le faire en {instruction}.\n".
         "Pensez bien à recopier correctement votre e-mail ({email})\net la bonne somme à payer ({sum} €).",
+    'HPF_UPDATED_ENTRY' => "Les données de la fiche '{titre}' affichée ici pourraient ne pas être à jour.\n".
+        "Veuillez recharger la fiche.",
 
     // config.yaml
     'EDIT_CONFIG_HINT_HPF[CONTRIBFORMID]' => 'Identifiant du formulaire contributeur (avec \'bf_mail\' et un champ \'CalcField\')',

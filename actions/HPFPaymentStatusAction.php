@@ -49,21 +49,17 @@ class HPFPaymentStatusAction extends YesWikiAction
         $contribFormId = $this->helloAssoController->getCurrentContribFormId();
         $contribEntry = $this->helloAssoController->getCurrentContribEntry($user['email']);
         if (empty($contribEntry)) {
-            if ($this->wiki->UserIsAdmin() && !empty($this->arguments['entry_id'])) {
-                $entry = $this->entryManager->getOne($this->arguments['entry_id']);
-                if (!empty($entry) && !empty($entry['id_typeannonce']) && !empty($entry['bf_mail']) && $entry['id_typeannonce'] == $contribFormId) {
-                    $this->updatePaymentsForEntry($entry, $entry['bf_mail']);
-                }
+            $output = "";
+            if (!empty($this->arguments['entry_id'])) {
+                $output .= $this->updateOtherEntry($contribFormId);
             }
-            return $this->arguments['empty_message'];
+            $output .= empty($this->arguments['empty_message']) ? "" : $this->render("@templates/alert-message.twig", [
+                'type' => 'warning',
+                'message' => $this->arguments['empty_message']
+            ]);
+            return $output;
         } elseif (!empty($this->arguments['entry_id']) && $this->arguments['entry_id'] != $contribEntry['id_fiche']) {
-            if ($this->wiki->UserIsAdmin()) {
-                $entry = $this->entryManager->getOne($this->arguments['entry_id']);
-                if (!empty($entry) && !empty($entry['id_typeannonce']) && !empty($entry['bf_mail']) && $entry['id_typeannonce'] == $contribFormId) {
-                    $this->updatePaymentsForEntry($entry, $entry['bf_mail']);
-                }
-            }
-            return "";
+            return $this->updateOtherEntry($contribFormId);
         }
         
         $calcValue = $this->updatePaymentsForEntry($contribEntry, $user['email']);
@@ -155,5 +151,31 @@ class HPFPaymentStatusAction extends YesWikiAction
         }
 
         return $calcValue;
+    }
+
+    private function updateOtherEntry(string $contribFormId): string
+    {
+        $output = "";
+        if ($this->wiki->UserIsAdmin()) {
+            $entry = $this->entryManager->getOne($this->arguments['entry_id']);
+            if (!empty($entry) && !empty($entry['id_typeannonce']) && !empty($entry['bf_mail']) && $entry['id_typeannonce'] == $contribFormId) {
+                $previousCalcValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
+                $newCalcValue = $this->updatePaymentsForEntry($entry, $entry['bf_mail']);
+                if ($previousCalcValue != $newCalcValue) {
+                    $output .= $this->render(
+                        '@templates/alert-message.twig',
+                        [
+                            'type' => 'info',
+                            'message' => nl2br(str_replace(
+                                '{titre}',
+                                $entry['bf_titre'] ?? $entry['id_fiche'],
+                                _t('HPF_UPDATED_ENTRY')
+                            )),
+                        ]
+                    );
+                }
+            }
+        }
+        return $output;
     }
 }
