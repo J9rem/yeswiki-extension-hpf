@@ -62,14 +62,27 @@ class HPFPaymentStatusAction extends YesWikiAction
             return $this->updateOtherEntry($contribFormId);
         }
         
+        $previousCalcValue = $contribEntry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
         $calcValue = $this->updatePaymentsForEntry($contribEntry, $user['email']);
+
+        $changedValueMsg = ($previousCalcValue == $calcValue) ? "" : $this->render(
+            '@templates/alert-message.twig',
+            [
+                'type' => 'info',
+                'message' => nl2br(str_replace(
+                    '{titre}',
+                    $contribEntry['bf_titre'] ?? $contribEntry['id_fiche'],
+                    _t('HPF_UPDATED_ENTRY')
+                )),
+            ]
+        );
 
         if (empty($calcValue) || intval($calcValue) == 0) {
             return empty($this->arguments['nothing_to_pay_message']) ? "" :
                 $this->render("@templates/alert-message.twig", [
                     'type' => 'success',
                     'message' => $this->arguments['nothing_to_pay_message']
-                ]);
+                ]).$changedValueMsg;
         }
 
         try {
@@ -104,11 +117,11 @@ class HPFPaymentStatusAction extends YesWikiAction
                         'link' => $url,
                         'text' => $this->arguments['pay_button_title'],
                         'title' => $this->arguments['pay_button_title'],
-                    ]);
+                    ]).$changedValueMsg;
                 case 'iframe':
                 case 'buttonHelloASso':
                 default:
-                    return $paymentMessage.$html;
+                    return $paymentMessage.$html.$changedValueMsg;
             }
         } catch (\Throwable $th) {
             return empty($this->arguments['nothing_to_pay_message']) ? "" :
