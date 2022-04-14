@@ -21,7 +21,7 @@ return [
     'AB_hpf_hpfpaymentstatus_view_label' => 'Type de vue',
     'AB_hpf_hpfpaymentstatus_view_buttonHelloAsso_label' => 'Bouton HelloASso',
     'AB_hpf_hpfpaymentstatus_view_button_label' => 'Bouton YesWiki',
-    'AB_hpf_hpfpaymentstatus_view_iframe_label' => 'Bouton iframe',
+    'AB_hpf_hpfpaymentstatus_view_iframe_label' => 'Iframe Hello ASso',
     'AB_hpf_hpfpaymentstatus_pay_button_title_label' => 'Texte pour le bouton YesWiki',
 
     // actions/HpfPaymentStatusAction.php
