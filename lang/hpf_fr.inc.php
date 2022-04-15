@@ -29,7 +29,7 @@ return [
     'HPF_IFRAME_INSTRUCTION' => "complétant le formulaire ci-dessous",
     'HPF_GET_URL_ERROR' => 'Une erreur est survenue dans le fichier {file} (ligne {line}) : {message}',
     'HPF_PAY' => "Payer sur Hello Asso",
-    'HPF_PAYMENT_MESSAGE' => "Vous devez payer une somme de {sum} €. Vous pouver le faire en {instruction}.\n".
+    'HPF_PAYMENT_MESSAGE' => "Vous devez payer une somme de {sum} €. Vous pouvez le faire en {instruction}.\n".
         "Pensez bien à recopier correctement votre e-mail ({email})\net la bonne somme à payer ({sum} €).",
     'HPF_UPDATED_ENTRY' => "Les données de la fiche '{titre}' affichée ici pourraient ne pas être à jour.\n".
         "Veuillez recharger la fiche.",
