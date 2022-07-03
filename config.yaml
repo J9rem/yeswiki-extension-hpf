@@ -18,9 +18,17 @@ services:
     autowire: true
     public: true
 
-  # YesWiki\Hpf\Service\:
-  #   resource: 'services/*'
+  YesWiki\Hpf\Service\:
+     resource: 'services/*'
 
   # Allows to use controllers as services
   YesWiki\Hpf\Controller\:
     resource: 'controllers/*'
+
+  # replace usage of HelloAssoService by hpf one to prevent errors if shop not installed
+  # ignore if core CommentService is not existing
+  YesWiki\Hpf\Service\HelloAssoService:
+    decorates: YesWiki\Shop\Service\HelloAssoService
+    decoration_on_invalid: null
+    arguments: ['@.inner']
+    factory: ['@YesWiki\Hpf\Service\HelloAssoServiceFactory','create']
