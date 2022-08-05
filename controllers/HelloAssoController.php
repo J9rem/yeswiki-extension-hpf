@@ -31,6 +31,8 @@ use YesWiki\Core\YesWikiController;
 use YesWiki\Hpf\Field\PaymentsField;
 use YesWiki\Security\Controller\SecurityController;
 use YesWiki\Shop\Entity\Payment;
+use YesWiki\Shop\Entity\Event;
+use YesWiki\Shop\Service\EventDispatcher;
 use YesWiki\Shop\Service\HelloAssoService;
 
 class HelloAssoController extends YesWikiController
@@ -100,6 +102,16 @@ class HelloAssoController extends YesWikiController
         $this->paymentForm = null;
         $this->securityController = $securityController;
         $this->userManager = $userManager;
+        if ($this->wiki->services->has(EventDispatcher::class)) {
+            $eventDispatcher = $this->wiki->services->get(EventDispatcher::class);
+            $eventDispatcher->addListener('shop.helloasso.api.called', [$this,'processTrigger']);
+        }
+    }
+
+    public function bindObject($object)
+    {
+        // do nothing because listeners registered at construct
+        return $object;
     }
 
     /**
@@ -596,8 +608,9 @@ class HelloAssoController extends YesWikiController
         return $updatedEntry;
     }
 
-    public function processTrigger(array $postNotSanitized, int $index)
+    public function processTrigger(Event $event)
     {
+        $postNotSanitized = $event->getData();
         $pageTag = 'HelloAssoLog';
         $page = $this->pageManager->getOne($pageTag);
         $content = empty($page) ? [] : json_decode($page['body'], true);
@@ -610,9 +623,6 @@ class HelloAssoController extends YesWikiController
         $this->aclService->save($pageTag, 'write', '@admins');
         $this->aclService->save($pageTag, 'read', '@admins');
         $this->aclService->save($pageTag, 'comment', 'comments-closed');
-        $this->pageManager->save($pageTag, json_encode($content), '', true);
-        return [
-            $index => "saved"
-        ];
+        $this->pageManager->save($pageTag, json_encode($content), '', true);;
     }
 }

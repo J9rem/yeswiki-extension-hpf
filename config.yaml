@@ -6,8 +6,6 @@
 # file that was distributed with this source code.
 #
 parameters:
-  hpf_shopHelloAssoTrigger:
-    'YesWiki\Hpf\Controller\HelloAssoController': 'processTrigger'
   hpf_editable_config_params:
     - hpf:
       - contribFormId
@@ -31,3 +29,11 @@ services:
     decoration_on_invalid: null
     arguments: ['@.inner']
     factory: ['@YesWiki\Hpf\Service\HelloAssoServiceFactory','create']
+
+  # replace usage of Core Comment Service by webhooks one to force registration of event listeners
+  # ignore if core CommentService is not existing
+  YesWiki\Hpf\Controller\ApiController:
+    decorates: YesWiki\Shop\Controller\ApiController
+    decoration_on_invalid: ignore
+    arguments: ['@.inner']
+    factory: ['@YesWiki\Hpf\Controller\HelloAssoController','bindObject']
