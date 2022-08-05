@@ -34,6 +34,7 @@ use YesWiki\Shop\Entity\Payment;
 use YesWiki\Shop\Entity\Event;
 use YesWiki\Shop\Service\EventDispatcher;
 use YesWiki\Shop\Service\HelloAssoService;
+use YesWiki\Wiki;
 
 class HelloAssoController extends YesWikiController
 {
@@ -76,6 +77,7 @@ class HelloAssoController extends YesWikiController
     protected $paymentForm;
     protected $securityController;
     protected $userManager;
+    protected $wiki;
 
     public function __construct(
         AclService $aclService,
@@ -87,7 +89,8 @@ class HelloAssoController extends YesWikiController
         PageManager $pageManager,
         ParameterBagInterface $params,
         SecurityController $securityController,
-        UserManager $userManager
+        UserManager $userManager,
+        Wiki $wiki
     ) {
         $this->aclService = $aclService;
         $this->assetsManager = $assetsManager;
@@ -102,16 +105,11 @@ class HelloAssoController extends YesWikiController
         $this->paymentForm = null;
         $this->securityController = $securityController;
         $this->userManager = $userManager;
+        $this->wiki = $wiki;
         if ($this->wiki->services->has(EventDispatcher::class)) {
             $eventDispatcher = $this->wiki->services->get(EventDispatcher::class);
             $eventDispatcher->addListener('shop.helloasso.api.called', [$this,'processTrigger']);
         }
-    }
-
-    public function bindObject($object)
-    {
-        // do nothing because listeners registered at construct
-        return $object;
     }
 
     /**
@@ -611,18 +609,34 @@ class HelloAssoController extends YesWikiController
     public function processTrigger(Event $event)
     {
         $postNotSanitized = $event->getData();
-        $pageTag = 'HelloAssoLog';
-        $page = $this->pageManager->getOne($pageTag);
-        $content = empty($page) ? [] : json_decode($page['body'], true);
-        if (!is_array($content)) {
-            $content = [
-                ($page['time'] ?? 'previous') => $page['body']
-            ];
+        if (empty($postNotSanitized) ||
+            !is_array($postNotSanitized) ||
+            empty($postNotSanitized['post']) ||
+            !is_array($postNotSanitized['post']) ||
+            empty($postNotSanitized['post']['data']) ||
+            empty($postNotSanitized['post']['eventType']) ||
+            ($postNotSanitized['post']['eventType'] != "Payment") ||
+            !is_array($postNotSanitized['post']['data']) ||
+            empty($postNotSanitized['post']['data']['state']) ||
+            empty($postNotSanitized['post']['data']['payer']) ||
+            empty($postNotSanitized['post']['data']['order'])
+            ) {
+            // only save not payments data
+            $pageTag = 'HelloAssoLog';
+            $page = $this->pageManager->getOne($pageTag);
+            $content = empty($page) ? [] : json_decode($page['body'], true);
+            if (!is_array($content)) {
+                $content = [
+                    ($page['time'] ?? 'previous') => $page['body']
+                ];
+            }
+            $content[(new DateTime())->format("Y-m-d H:i:s.v")] = $postNotSanitized;
+            $this->aclService->save($pageTag, 'write', '@admins');
+            $this->aclService->save($pageTag, 'read', '@admins');
+            $this->aclService->save($pageTag, 'comment', 'comments-closed');
+            $this->pageManager->save($pageTag, json_encode($content), '', true);
+        } else {
+            // TODO update payments info
         }
-        $content[(new DateTime())->format("Y-m-d H:i:s.v")] = $postNotSanitized;
-        $this->aclService->save($pageTag, 'write', '@admins');
-        $this->aclService->save($pageTag, 'read', '@admins');
-        $this->aclService->save($pageTag, 'comment', 'comments-closed');
-        $this->pageManager->save($pageTag, json_encode($content), '', true);;
     }
 }
