@@ -48,15 +48,15 @@ class HPFPaymentStatusAction extends YesWikiAction
         }
 
         $contribFormIds = $this->helloAssoController->getCurrentPaymentsFormIds();
-        $contribFormId = (in_array($this->arguments['formid'],$contribFormIds))
+        $contribFormId = (in_array($this->arguments['formid'], $contribFormIds))
             ? $this->arguments['formid']
             : $contribFormIds[0]
             ;
-        $contribEntry = $this->helloAssoController->getCurrentContribEntry($contribFormId,$user['email']);
+        $contribEntry = $this->helloAssoController->getCurrentContribEntry($contribFormId, $user['email']);
         if (empty($contribEntry)) {
             $output = "";
             if (!empty($this->arguments['entry_id'])) {
-                $output .= $this->updateOtherEntry($contribEntry['id_typeannonce']);
+                $output .= $this->updateOtherEntry($contribFormId);
             }
             $output .= empty($this->arguments['empty_message']) ? "" : $this->render("@templates/alert-message.twig", [
                 'type' => 'warning',
@@ -160,10 +160,10 @@ class HPFPaymentStatusAction extends YesWikiAction
 
         if (!empty($calcValue) && intval($calcValue) != 0) {
             // refresh payments from HelloASso
-            $this->helloAssoController->refreshPaymentsInfo($entry['id_typeannonce'],$email);
+            $this->helloAssoController->refreshPaymentsInfo($entry['id_typeannonce'], $email);
 
             // reload entry
-            $entry = $this->helloAssoController->getCurrentContribEntry($entry['id_typeannonce'],$email);
+            $entry = $this->helloAssoController->getCurrentContribEntry($entry['id_typeannonce'], $email);
 
             $calcValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
         }
