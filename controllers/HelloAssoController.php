@@ -265,47 +265,57 @@ class HelloAssoController extends YesWikiController
     public function refreshPaymentsInfo(string $email = "",?HelloAssoPayments $payments = null)
     {
         $form = $this->getPaymentForm();
-        $payments = !empty($payments)
-            ? $payments
-            :$this->helloAssoService->getPayments([
-                'email' => $email,
-                'formType' => $form['formType'],
-                'formSlug' => $form['formSlug']
-            ]);
-        $this->checkContribFormHasPaymentsField();
-
-        $cacheEntries = [];
-
-        foreach ($payments as $payment) {
-            // open entry based on email from payment
-            $paymentEmail = $payment->payer->email;
-            if (!isset($cacheEntries[$paymentEmail])) {
-                $cacheEntries[$paymentEmail] = [];
+        try {
+            $payments = !empty($payments)
+                ? $payments
+                :$this->helloAssoService->getPayments([
+                    'email' => $email,
+                    'formType' => $form['formType'],
+                    'formSlug' => $form['formSlug']
+                ]);
+        } catch (Throwable $th) {
+            // do nothing (remove warnings)
+            if ($this->isDebug() && $this->wiki->UserIsAdmin()) {
+                throw $th;
             }
-            if (!isset($cacheEntries[$paymentEmail]['entry'])) {
-                $entry = $this->getCurrentContribEntry($paymentEmail);
-                if (!empty($entry)){
-                    var_dump($entry);
-                    $cacheEntries[$paymentEmail]['entry'] = $entry;
-                    $cacheEntries[$paymentEmail]['previousTotal'] = $cacheEntries[$paymentEmail]['entry'][self::CALC_FIELDNAMES['total']] ?? "";
-                    $cacheEntries[$paymentEmail]['previousPayments'] = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
-                }
-            }
-            if (!empty($cacheEntries[$paymentEmail]['entry'])) {
-                // check if payments are saved
-                $bfPayments = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
-                $paymentsRegistered = explode(',', $bfPayments);
-                if (!in_array($payment->id, $paymentsRegistered)) {
-                    $cacheEntries[$paymentEmail]['entry'] = $this->updateEntryWithPayment($cacheEntries[$paymentEmail]['entry'], $payment);
-                }
-            }
+            $payments = null;
         }
+        if (!empty($payments)){
+            $this->checkContribFormHasPaymentsField();
 
-        foreach ($cacheEntries as $data) {
-            if (!empty($data) && ($data['previousTotal'] != $data['entry'][self::CALC_FIELDNAMES['total']] ||
-                $data['previousPayments'] != $data['entry'][self::PAYMENTS_FIELDNAME])) {
-                $this->updateEntry($data['entry']);
+            $cacheEntries = [];
+
+            foreach ($payments as $payment) {
+                // open entry based on email from payment
+                $paymentEmail = $payment->payer->email;
+                if (!isset($cacheEntries[$paymentEmail])) {
+                    $cacheEntries[$paymentEmail] = [];
+                }
+                if (!isset($cacheEntries[$paymentEmail]['entry'])) {
+                    $entry = $this->getCurrentContribEntry($paymentEmail);
+                    if (!empty($entry)){
+                        var_dump($entry);
+                        $cacheEntries[$paymentEmail]['entry'] = $entry;
+                        $cacheEntries[$paymentEmail]['previousTotal'] = $cacheEntries[$paymentEmail]['entry'][self::CALC_FIELDNAMES['total']] ?? "";
+                        $cacheEntries[$paymentEmail]['previousPayments'] = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
+                    }
+                }
+                if (!empty($cacheEntries[$paymentEmail]['entry'])) {
+                    // check if payments are saved
+                    $bfPayments = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
+                    $paymentsRegistered = explode(',', $bfPayments);
+                    if (!in_array($payment->id, $paymentsRegistered)) {
+                        $cacheEntries[$paymentEmail]['entry'] = $this->updateEntryWithPayment($cacheEntries[$paymentEmail]['entry'], $payment);
+                    }
+                }
             }
+
+            foreach ($cacheEntries as $data) {
+                if (!empty($data) && ($data['previousTotal'] != $data['entry'][self::CALC_FIELDNAMES['total']] ||
+                    $data['previousPayments'] != $data['entry'][self::PAYMENTS_FIELDNAME])) {
+                    $this->updateEntry($data['entry']);
+                }
+            }   
         }
     }
 
