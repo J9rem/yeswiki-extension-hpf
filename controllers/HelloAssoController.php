@@ -32,6 +32,7 @@ use YesWiki\Hpf\Field\PaymentsField;
 use YesWiki\Security\Controller\SecurityController;
 use YesWiki\Shop\Entity\Payment;
 use YesWiki\Shop\Entity\Event;
+use YesWiki\Shop\HelloAssoPayments;
 use YesWiki\Shop\Service\EventDispatcher;
 use YesWiki\Shop\Service\HelloAssoService;
 use YesWiki\Wiki;
@@ -261,14 +262,16 @@ class HelloAssoController extends YesWikiController
         return "<iframe id=\"haWidget\" src=\"{$url}widget\" style=\"width: 100%; height: 800px; border: none;\" scrolling=\"auto\"></iframe>";
     }
 
-    public function refreshPaymentsInfo(string $email = "")
+    public function refreshPaymentsInfo(string $email = "",?HelloAssoPayments $payments = null)
     {
         $form = $this->getPaymentForm();
-        $payments = $this->helloAssoService->getPayments([
-            'email' => $email,
-            'formType' => $form['formType'],
-            'formSlug' => $form['formSlug']
-        ]);
+        $payments = !empty($payments)
+            ? $payments
+            :$this->helloAssoService->getPayments([
+                'email' => $email,
+                'formType' => $form['formType'],
+                'formSlug' => $form['formSlug']
+            ]);
         $this->checkContribFormHasPaymentsField();
 
         $cacheEntries = [];
@@ -280,9 +283,13 @@ class HelloAssoController extends YesWikiController
                 $cacheEntries[$paymentEmail] = [];
             }
             if (!isset($cacheEntries[$paymentEmail]['entry'])) {
-                $cacheEntries[$paymentEmail]['entry'] = $this->getCurrentContribEntry($paymentEmail);
-                $cacheEntries[$paymentEmail]['previousTotal'] = $cacheEntries[$paymentEmail]['entry'][self::CALC_FIELDNAMES['total']] ?? "";
-                $cacheEntries[$paymentEmail]['previousPayments'] = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
+                $entry = $this->getCurrentContribEntry($paymentEmail);
+                if (!empty($entry)){
+                    var_dump($entry);
+                    $cacheEntries[$paymentEmail]['entry'] = $entry;
+                    $cacheEntries[$paymentEmail]['previousTotal'] = $cacheEntries[$paymentEmail]['entry'][self::CALC_FIELDNAMES['total']] ?? "";
+                    $cacheEntries[$paymentEmail]['previousPayments'] = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
+                }
             }
             if (!empty($cacheEntries[$paymentEmail]['entry'])) {
                 // check if payments are saved
@@ -295,8 +302,8 @@ class HelloAssoController extends YesWikiController
         }
 
         foreach ($cacheEntries as $data) {
-            if ($data['previousTotal'] != $data['entry'][self::CALC_FIELDNAMES['total']] ||
-                $data['previousPayments'] != $data['entry'][self::PAYMENTS_FIELDNAME]) {
+            if (!empty($data) && ($data['previousTotal'] != $data['entry'][self::CALC_FIELDNAMES['total']] ||
+                $data['previousPayments'] != $data['entry'][self::PAYMENTS_FIELDNAME])) {
                 $this->updateEntry($data['entry']);
             }
         }
@@ -619,6 +626,7 @@ class HelloAssoController extends YesWikiController
             !is_array($postNotSanitized['post']['data']) ||
             empty($postNotSanitized['post']['data']['state']) ||
             empty($postNotSanitized['post']['data']['payer']) ||
+            empty($postNotSanitized['post']['data']['payer']['email']) ||
             empty($postNotSanitized['post']['data']['order'])
             ) {
             // only save not payments data
@@ -636,7 +644,22 @@ class HelloAssoController extends YesWikiController
             $this->aclService->save($pageTag, 'comment', 'comments-closed');
             $this->pageManager->save($pageTag, json_encode($content), '', true);
         } else {
-            // TODO update payments info
+            // update payments info
+            $email = $postNotSanitized['post']['data']['payer']['email'];
+            
+            $form = $this->getPaymentForm();
+            $formType = $postNotSanitized['post']['data']['order']['formType'];
+            $formSlug = $postNotSanitized['post']['data']['order']['formSlug'];
+            if ($form['formType'] == $formType && $form['formSlug'] == $formSlug){
+                $payments = new HelloAssoPayments(
+                    $this->helloAssoService->convertToPayments(['data'=>[$postNotSanitized['post']['data']]]),
+                    []
+                );
+                $this->refreshPaymentsInfo(
+                    $email,
+                    $payments
+                );
+            }
         }
     }
 }
