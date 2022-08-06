@@ -106,27 +106,25 @@ class HPFPaymentStatusAction extends YesWikiAction
                     $instruction = _t('HPF_CLICK_BUTTON_BOTTOM');
                     break;
             }
-            $paymentMessage = $this->render("@templates/alert-message.twig", [
-                'type' => 'secondary-2',
-                'message' => str_replace(
-                    ['{sum}','{email}',"{instruction}","\n"],
-                    [$calcValue,$user['email'],$instruction,"<br/>"],
-                    _t('HPF_PAYMENT_MESSAGE')
-                ),
-            ]);
-            switch ($this->arguments['view']) {
-                case 'buttonYW':
-                    return $paymentMessage.$this->callAction('button', [
-                        'class' => 'btn-primary new-window',
-                        'icon' => 'far fa-credit-card',
-                        'link' => $url,
-                        'text' => $this->arguments['pay_button_title'],
-                        'title' => $this->arguments['pay_button_title'],
-                    ]).$changedValueMsg;
-                case 'iframe':
-                case 'buttonHelloASso':
-                default:
-                    return $paymentMessage.$html.$changedValueMsg;
+            list('paymentMessage' => $paymentMessage, 'linkToHelloAsso' => $linkToHelloAsso) =
+                $this->getPaymentMessage($contribEntry, $calcValue, $user['email'], $instruction);
+            if ($linkToHelloAsso) {
+                switch ($this->arguments['view']) {
+                    case 'buttonYW':
+                        return $paymentMessage.$this->callAction('button', [
+                            'class' => 'btn-primary new-window',
+                            'icon' => 'far fa-credit-card',
+                            'link' => $url,
+                            'text' => $this->arguments['pay_button_title'],
+                            'title' => $this->arguments['pay_button_title'],
+                        ]).$changedValueMsg;
+                    case 'iframe':
+                    case 'buttonHelloASso':
+                    default:
+                        return $paymentMessage.$html.$changedValueMsg;
+                }
+            } else {
+                return $paymentMessage.$changedValueMsg;
             }
         } catch (\Throwable $th) {
             return empty($this->arguments['nothing_to_pay_message']) ? "" :
@@ -195,5 +193,38 @@ class HPFPaymentStatusAction extends YesWikiAction
             }
         }
         return $output;
+    }
+
+    protected function getPaymentMessage(array $entry, string $calcValue, string $email, string $instruction): array
+    {
+        $messageEntry = $this->helloAssoController->getPaymentMessageEntry();
+        $paymentMode = !empty($entry['bf_moyen_paiement']) ? strval($entry['bf_moyen_paiement']) : '';
+        switch ($paymentMode) {
+            case 'virement':
+                $paymentMessage = empty($messageEntry['bf_message_virement']) ? _t('HPF_PAYMENT_MESSAGE_VIREMENT') : $messageEntry['bf_message_virement'];
+                $linkToHelloAsso = false;
+                break;
+            case 'cheque':
+                $paymentMessage = empty($messageEntry['bf_message_cheque']) ? _t('HPF_PAYMENT_MESSAGE_CHEQUE') : $messageEntry['bf_message_cheque'];
+                $linkToHelloAsso = false;
+                break;
+            case 'cb':
+                $paymentMessage = empty($messageEntry['bf_message_cb']) ? _t('HPF_PAYMENT_MESSAGE_CB') : $messageEntry['bf_message_cb'];
+                $linkToHelloAsso = true;
+                break;
+            default:
+                $paymentMessage = empty($messageEntry['bf_message_default']) ? _t('HPF_PAYMENT_MESSAGE') : $messageEntry['bf_message_default'];
+                $linkToHelloAsso = true;
+                break;
+        }
+        $paymentMessage = $this->render("@templates/alert-message.twig", [
+            'type' => 'secondary-2',
+            'message' => str_replace(
+                ['{sum}','{email}',"{instruction}","\n"],
+                [$calcValue,$email,$instruction,"<br/>"],
+                $paymentMessage
+            )
+        ]);
+        return compact(['paymentMessage','linkToHelloAsso']);
     }
 }

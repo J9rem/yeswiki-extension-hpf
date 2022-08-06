@@ -32,11 +32,24 @@ return [
     'HPF_PAY' => "Payer sur Hello Asso",
     'HPF_PAYMENT_MESSAGE' => "Vous devez payer une somme de {sum} €. Vous pouvez le faire en {instruction}.\n".
         "Pensez bien à recopier correctement votre e-mail ({email})\net la bonne somme à payer ({sum} €).",
+    'HPF_PAYMENT_MESSAGE_CB' => "Vous vous êtes engagé à payer {sum} €. Vous pouvez le faire en {instruction}.\n".
+        "Le paiement se fera par carte bancaire via le site de HelloAsso.\n".
+        "Utilisez la même adresse e-mail ({email}) et reportez le bon montant à payer ({sum} €).",
+    'HPF_PAYMENT_MESSAGE_VIREMENT' => "Vous vous êtes engagé à payer {sum} €. Vous pouvez le faire en faisant un virement\n".
+        "sur le compte suivant :\n".
+        "IBAN : FR76 XXXX XXXX XXXX XXXX XXXX - BIC : XXXXXXXX.\n".
+        "Indiquez comme référence votre nom et prénom comme dans la fiche (éventuellement votre code postal)",
+    'HPF_PAYMENT_MESSAGE_CHEQUE' => "Vous vous êtes engagé à payer {sum} €. Vous pouvez le faire en faisant un chèque\n".
+        "A l'ordre de XXXX\n".
+        "IBAN : FR76 XXXX XXXX XXXX XXXX XXXX - BIC : XXXXXXXX.\n".
+        "et à envoyer à xxxx\n".
+        "en indiquant vos nom, prénom, adresse e-mail et code postal.",
     'HPF_UPDATED_ENTRY' => "Les données de la fiche '{titre}' affichée ici pourraient ne pas être à jour.\n".
         "Veuillez recharger la fiche.",
 
     // config.yaml
     'EDIT_CONFIG_HINT_HPF[CONTRIBFORMIDS]' => 'Identifiant des formulaires liés au paiement (avec \'bf_mail\' et un champ \'CalcField\'), séparés par des virgules',
     'EDIT_CONFIG_HINT_HPF[PAYMENTSFORMURLS]' => 'Lien vers le formulaire HelloAsso de paiement associé (séparé par des virgules)',
+    'EDIT_CONFIG_HINT_HPF[PAYMENTMESSAGEENTRY]' => 'Fiche avec les messages pour le paiement',
     'EDIT_CONFIG_GROUP_HPF' => 'Paramètres spécifiques HPF',
 ];

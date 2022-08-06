@@ -10,6 +10,7 @@ parameters:
     - hpf:
       - contribFormIds
       - paymentsFormUrls
+      - paymentMessageEntry
 
 services:
   _defaults:

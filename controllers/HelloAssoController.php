@@ -120,12 +120,12 @@ class HelloAssoController extends YesWikiController
      * @return array $entry or []
      * @throws Exception
      */
-    public function getCurrentContribEntry(string $formId,string $email = ""): array
+    public function getCurrentContribEntry(string $formId, string $email = ""): array
     {
         try {
             if (!empty($email)) {
                 $contribFormIds = $this->getCurrentPaymentsFormIds();
-                if (!in_array($formId,$contribFormIds)){
+                if (!in_array($formId, $contribFormIds)) {
                     throw new Exception("formId should be in \$contribFormIds!");
                 }
                 $form = $this->formManager->getOne($formId);
@@ -162,8 +162,8 @@ class HelloAssoController extends YesWikiController
         if (!is_scalar($this->hpfParams['contribFormIds'])) {
             throw new Exception("hpf['contribFormIds'] param should be string");
         }
-        $formIds = explode(',',strval($this->hpfParams['contribFormIds']));
-        foreach($formIds as $id){
+        $formIds = explode(',', strval($this->hpfParams['contribFormIds']));
+        foreach ($formIds as $id) {
             if (strval($id) != strval(intval($id))) {
                 throw new Exception("hpf['contribFormIds'] param should be numbers separated by coma");
             }
@@ -181,7 +181,7 @@ class HelloAssoController extends YesWikiController
     public function getContribCalcFields(string $formId, array $names = []): array
     {
         $contribFormIds = $this->getCurrentPaymentsFormIds();
-        if (!in_array($formId,$contribFormIds)){
+        if (!in_array($formId, $contribFormIds)) {
             return [];
         }
         $form = $this->formManager->getOne($formId);
@@ -218,7 +218,7 @@ class HelloAssoController extends YesWikiController
      */
     public function updateCalcFields(array $entry, array $names = []): array
     {
-        $fields = $this->getContribCalcFields($entry['id_typeannonce'],$names);
+        $fields = $this->getContribCalcFields($entry['id_typeannonce'], $names);
         foreach ($fields as $field) {
             $newCalcValue = $field->formatValuesBeforeSave($entry);
             $entry[$field->getPropertyName()] = $newCalcValue[$field->getPropertyName()] ?? "";
@@ -253,7 +253,7 @@ class HelloAssoController extends YesWikiController
             throw new Exception("hpf['paymentsFormUrls'] param not defined");
         }
         $urls = [];
-        foreach(explode(',',$this->hpfParams['paymentsFormUrls']) as $idx => $url){
+        foreach (explode(',', $this->hpfParams['paymentsFormUrls']) as $idx => $url) {
             if (substr($url, 0, strlen('https://www.helloasso.com')) != 'https://www.helloasso.com') {
                 throw new Exception("hpf['paymentsFormUrls'] should begin by 'https://www.helloasso.com'");
             }
@@ -264,9 +264,9 @@ class HelloAssoController extends YesWikiController
             $urls[] = $url;
         }
         $formsIds = $this->getCurrentPaymentsFormIds();
-        if (!empty($formId)){
+        if (!empty($formId)) {
             foreach ($formsIds as $idx => $formIdToCompare) {
-                if ($formIdToCompare == $formId && isset($urls[$idx])){
+                if ($formIdToCompare == $formId && isset($urls[$idx])) {
                     return $urls[$idx];
                 }
             }
@@ -286,7 +286,7 @@ class HelloAssoController extends YesWikiController
         return "<iframe id=\"haWidget\" src=\"{$url}widget\" style=\"width: 100%; height: 800px; border: none;\" scrolling=\"auto\"></iframe>";
     }
 
-    public function refreshPaymentsInfo(string $formId,string $email = "",?HelloAssoPayments $payments = null)
+    public function refreshPaymentsInfo(string $formId, string $email = "", ?HelloAssoPayments $payments = null)
     {
         $form = $this->getPaymentForm($formId);
         try {
@@ -304,7 +304,7 @@ class HelloAssoController extends YesWikiController
             }
             $payments = null;
         }
-        if (!empty($payments)){
+        if (!empty($payments)) {
             $this->checkContribFormsHavePaymentsField();
 
             $cacheEntries = [];
@@ -316,8 +316,8 @@ class HelloAssoController extends YesWikiController
                     $cacheEntries[$paymentEmail] = [];
                 }
                 if (!isset($cacheEntries[$paymentEmail]['entry'])) {
-                    $entry = $this->getCurrentContribEntry($formId,$paymentEmail);
-                    if (!empty($entry)){
+                    $entry = $this->getCurrentContribEntry($formId, $paymentEmail);
+                    if (!empty($entry)) {
                         $cacheEntries[$paymentEmail]['entry'] = $entry;
                         $cacheEntries[$paymentEmail]['previousTotal'] = $cacheEntries[$paymentEmail]['entry'][self::CALC_FIELDNAMES['total']] ?? "";
                         $cacheEntries[$paymentEmail]['previousPayments'] = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
@@ -338,7 +338,7 @@ class HelloAssoController extends YesWikiController
                     $data['previousPayments'] != $data['entry'][self::PAYMENTS_FIELDNAME])) {
                     $this->updateEntry($data['entry']);
                 }
-            }   
+            }
         }
     }
 
@@ -398,7 +398,7 @@ class HelloAssoController extends YesWikiController
     private function checkContribFormsHavePaymentsField()
     {
         $contribFormIds = $this->getCurrentPaymentsFormIds();
-        foreach($contribFormIds as $contribFormId){
+        foreach ($contribFormIds as $contribFormId) {
             $paymentField = $this->formManager->findFieldFromNameOrPropertyName(self::PAYMENTS_FIELDNAME, $contribFormId);
             if (is_null($paymentField)) {
                 $form = $this->formManager->getOne($contribFormId);
@@ -434,7 +434,7 @@ class HelloAssoController extends YesWikiController
     private function updateEntryWithPayment(array $entry, Payment $payment):array
     {
         $contribFormIds = $this->getCurrentPaymentsFormIds();
-        if (!in_array($entry['id_typeannonce'],$contribFormIds)){
+        if (!in_array($entry['id_typeannonce'], $contribFormIds)) {
             return $entry;
         }
         $contribFormId = $entry['id_typeannonce'];
@@ -683,17 +683,17 @@ class HelloAssoController extends YesWikiController
             
             $contribFormIds = $this->getCurrentPaymentsFormIds();
             $done = false;
-            foreach($contribFormIds as $formId){
+            foreach ($contribFormIds as $formId) {
                 $form = $this->getPaymentForm($formId);
                 $formType = $postNotSanitized['post']['data']['order']['formType'];
                 $formSlug = $postNotSanitized['post']['data']['order']['formSlug'];
-                if ($form['formType'] == $formType && $form['formSlug'] == $formSlug){
+                if ($form['formType'] == $formType && $form['formSlug'] == $formSlug) {
                     $payments = new HelloAssoPayments(
                         $this->helloAssoService->convertToPayments(['data'=>[$postNotSanitized['post']['data']]]),
                         []
                     );
                     $this->refreshPaymentsInfo(
-                        $formId ,
+                        $formId,
                         $email,
                         $payments
                     );
@@ -701,7 +701,7 @@ class HelloAssoController extends YesWikiController
                     break;
                 }
             }
-            if (!$done){
+            if (!$done) {
                 $this->appendToHelloAssoLog($postNotSanitized);
             }
         }
@@ -722,5 +722,17 @@ class HelloAssoController extends YesWikiController
         $this->aclService->save($pageTag, 'read', '@admins');
         $this->aclService->save($pageTag, 'comment', 'comments-closed');
         $this->pageManager->save($pageTag, json_encode($content), '', true);
+    }
+
+    public function getPaymentMessageEntry(): array
+    {
+        $this->getHpfParams();
+        if (!empty($this->hpfParams['paymentMessageEntry']) && is_string($this->hpfParams['paymentMessageEntry'])) {
+            $entry = $this->entryManager->getOne($this->hpfParams['paymentMessageEntry']);
+            if (!empty($entry)) {
+                return $entry;
+            }
+        }
+        return [];
     }
 }
