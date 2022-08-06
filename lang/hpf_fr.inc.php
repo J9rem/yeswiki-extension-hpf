@@ -35,7 +35,7 @@ return [
         "Veuillez recharger la fiche.",
 
     // config.yaml
-    'EDIT_CONFIG_HINT_HPF[CONTRIBFORMID]' => 'Identifiant du formulaire contributeur (avec \'bf_mail\' et un champ \'CalcField\')',
-    'EDIT_CONFIG_HINT_HPF[PAYMENTFORMURL]' => 'Lien vers le formulaire HelloAsso de paiement',
+    'EDIT_CONFIG_HINT_HPF[CONTRIBFORMIDS]' => 'Identifiant des formulaires liés au paiement (avec \'bf_mail\' et un champ \'CalcField\'), séparés par des virgules',
+    'EDIT_CONFIG_HINT_HPF[PAYMENTSFORMURLS]' => 'Lien vers le formulaire HelloAsso de paiement associé (séparé par des virgules)',
     'EDIT_CONFIG_GROUP_HPF' => 'Paramètres spécifiques HPF',
 ];

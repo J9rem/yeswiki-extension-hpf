@@ -115,17 +115,22 @@ class HelloAssoController extends YesWikiController
 
     /**
      * get the contribution entry for selected user
+     * @param string $formId
      * @param string $email
      * @return array $entry or []
+     * @throws Exception
      */
-    public function getCurrentContribEntry(string $email = ""): array
+    public function getCurrentContribEntry(string $formId,string $email = ""): array
     {
         try {
             if (!empty($email)) {
-                $contribFormId = $this->getCurrentContribFormId();
-                $form = $this->formManager->getOne($contribFormId);
+                $contribFormIds = $this->getCurrentPaymentsFormIds();
+                if (!in_array($formId,$contribFormIds)){
+                    throw new Exception("formId should be in \$contribFormIds!");
+                }
+                $form = $this->formManager->getOne($formId);
                 if (empty($form)) {
-                    throw new Exception("hpf['contribFormId'] do not correspond to an existing form!");
+                    throw new Exception("hpf['formId'] do not correspond to an existing form!");
                 }
                 $entries = $this->entryManager->search([
                     'formsIds' => [$form['bn_id_nature']],
@@ -148,31 +153,38 @@ class HelloAssoController extends YesWikiController
         return [];
     }
 
-    public function getCurrentContribFormId(): string
+    public function getCurrentPaymentsFormIds(): array
     {
         $this->getHpfParams();
-        if (empty($this->hpfParams['contribFormId'])) {
-            throw new Exception("hpf['contribFormId'] param not defined");
+        if (empty($this->hpfParams['contribFormIds'])) {
+            throw new Exception("hpf['contribFormIds'] param not defined");
         }
-        if (!is_scalar($this->hpfParams['contribFormId'])) {
-            throw new Exception("hpf['contribFormId'] param should be string");
+        if (!is_scalar($this->hpfParams['contribFormIds'])) {
+            throw new Exception("hpf['contribFormIds'] param should be string");
         }
-        if (strval($this->hpfParams['contribFormId']) != strval(intval($this->hpfParams['contribFormId']))) {
-            throw new Exception("hpf['contribFormId'] param should be a number");
+        $formIds = explode(',',strval($this->hpfParams['contribFormIds']));
+        foreach($formIds as $id){
+            if (strval($id) != strval(intval($id))) {
+                throw new Exception("hpf['contribFormIds'] param should be numbers separated by coma");
+            }
         }
 
-        return strval($this->hpfParams['contribFormId']);
+        return $formIds;
     }
 
     /**
-     * search CalcFields in $contribForm (filtered on $anmes optionnally)
+     * search CalcFields in $contribForm (filtered on $names optionnally)
+     * @param string $formId
      * @param array $names
      * @return CalcField[] $fields
      */
-    public function getContribCalcFields(array $names = []): array
+    public function getContribCalcFields(string $formId, array $names = []): array
     {
-        $contribFormId = $this->getCurrentContribFormId();
-        $form = $this->formManager->getOne($contribFormId);
+        $contribFormIds = $this->getCurrentPaymentsFormIds();
+        if (!in_array($formId,$contribFormIds)){
+            return [];
+        }
+        $form = $this->formManager->getOne($formId);
         if (empty($form['prepared'])) {
             throw new Exception("\$form['prepared'] should not be empty in getContribCalcFields!");
         }
@@ -186,7 +198,7 @@ class HelloAssoController extends YesWikiController
             }
         } else {
             foreach ($names as $name) {
-                $field = $this->formManager->findFieldFromNameOrPropertyName($name, $contribFormId);
+                $field = $this->formManager->findFieldFromNameOrPropertyName($name, $formId);
                 if (!empty($field) && $field instanceof CalcField) {
                     $fields[] = $field;
                 }
@@ -206,7 +218,7 @@ class HelloAssoController extends YesWikiController
      */
     public function updateCalcFields(array $entry, array $names = []): array
     {
-        $fields = $this->getContribCalcFields($names);
+        $fields = $this->getContribCalcFields($entry['id_typeannonce'],$names);
         foreach ($fields as $field) {
             $newCalcValue = $field->formatValuesBeforeSave($entry);
             $entry[$field->getPropertyName()] = $newCalcValue[$field->getPropertyName()] ?? "";
@@ -234,37 +246,48 @@ class HelloAssoController extends YesWikiController
         return $this->debug;
     }
 
-    public function getPaymentFormUrl(): string
+    public function getPaymentFormUrl(string $formId = ""): string
     {
         $this->getHpfParams();
-        if (empty($this->hpfParams['paymentFormUrl'])) {
-            throw new Exception("hpf['paymentFormUrl'] param not defined");
+        if (empty($this->hpfParams['paymentsFormUrls'])) {
+            throw new Exception("hpf['paymentsFormUrls'] param not defined");
         }
-        if (substr($this->hpfParams['paymentFormUrl'], 0, strlen('https://www.helloasso.com')) != 'https://www.helloasso.com') {
-            throw new Exception("hpf['paymentFormUrl'] should begin by 'https://www.helloasso.com'");
+        $urls = [];
+        foreach(explode(',',$this->hpfParams['paymentsFormUrls']) as $idx => $url){
+            if (substr($url, 0, strlen('https://www.helloasso.com')) != 'https://www.helloasso.com') {
+                throw new Exception("hpf['paymentsFormUrls'] should begin by 'https://www.helloasso.com'");
+            }
+            $url = preg_replace("/\/(widget|widget-button)$/", "", $url);
+            if (substr($url, -1) != '/') {
+                $url .= "/";
+            }
+            $urls[] = $url;
         }
-        $url = preg_replace("/\/(widget|widget-button)$/", "", $this->hpfParams['paymentFormUrl']);
-        if (substr($url, -1) != '/') {
-            $url .= "/";
+        $formsIds = $this->getCurrentPaymentsFormIds();
+        if (!empty($formId)){
+            $foundId = array_search($formId,$formsIds);
+            if ($foundId !== false && isset($urls[$foundId])){
+                return $urls[$foundId];
+            }
         }
-        return $url;
+        return $urls[0];
     }
 
-    public function getPaymentFormButtonHtml(): string
+    public function getPaymentFormButtonHtml(string $formId = ""): string
     {
-        $url = $this->getPaymentFormUrl();
+        $url = $this->getPaymentFormUrl($formId);
         return "<iframe id=\"haWidgetButton\" src=\"{$url}widget-bouton\" style=\"border: none;\"></iframe>";
     }
 
-    public function getPaymentFormIframeHtml(): string
+    public function getPaymentFormIframeHtml(string $formId = ""): string
     {
-        $url = $this->getPaymentFormUrl();
+        $url = $this->getPaymentFormUrl($formId);
         return "<iframe id=\"haWidget\" src=\"{$url}widget\" style=\"width: 100%; height: 800px; border: none;\" scrolling=\"auto\"></iframe>";
     }
 
-    public function refreshPaymentsInfo(string $email = "",?HelloAssoPayments $payments = null)
+    public function refreshPaymentsInfo(string $formId,string $email = "",?HelloAssoPayments $payments = null)
     {
-        $form = $this->getPaymentForm();
+        $form = $this->getPaymentForm($formId);
         try {
             $payments = !empty($payments)
                 ? $payments
@@ -281,7 +304,7 @@ class HelloAssoController extends YesWikiController
             $payments = null;
         }
         if (!empty($payments)){
-            $this->checkContribFormHasPaymentsField();
+            $this->checkContribFormsHavePaymentsField();
 
             $cacheEntries = [];
 
@@ -292,7 +315,7 @@ class HelloAssoController extends YesWikiController
                     $cacheEntries[$paymentEmail] = [];
                 }
                 if (!isset($cacheEntries[$paymentEmail]['entry'])) {
-                    $entry = $this->getCurrentContribEntry($paymentEmail);
+                    $entry = $this->getCurrentContribEntry($formId,$paymentEmail);
                     if (!empty($entry)){
                         var_dump($entry);
                         $cacheEntries[$paymentEmail]['entry'] = $entry;
@@ -319,11 +342,11 @@ class HelloAssoController extends YesWikiController
         }
     }
 
-    public function getPaymentForm(): array
+    public function getPaymentForm(string $formId): array
     {
         if (is_null($this->paymentForm)) {
             $this->getHpfParams();
-            $formUrl = $this->getPaymentFormUrl();
+            $formUrl = $this->getPaymentFormUrl($formId);
             if (!empty($this->hpfParams['paymentForm'])
                 && isset($this->hpfParams['paymentForm'][$formUrl])
                 && is_array($this->hpfParams['paymentForm'][$formUrl])) {
@@ -368,27 +391,32 @@ class HelloAssoController extends YesWikiController
         unset($config);
     }
 
-    private function checkContribFormHasPaymentsField()
+    private function checkContribFormsHavePaymentsField()
     {
-        $contribFormId = $this->getCurrentContribFormId();
-        $paymentField = $this->formManager->findFieldFromNameOrPropertyName(self::PAYMENTS_FIELDNAME, $contribFormId);
-        if (is_null($paymentField)) {
-            $form = $this->formManager->getOne($contribFormId);
-            if (!$this->wiki->UserIsAdmin()) {
-                throw new Exception(self::PAYMENTS_FIELDNAME." is not defined in form {$form['bn_label_nature']} ({$form['bn_id_nature']})");
+        $contribFormIds = $this->getCurrentPaymentsFormIds();
+        foreach($contribFormIds as $contribFormId){
+            $paymentField = $this->formManager->findFieldFromNameOrPropertyName(self::PAYMENTS_FIELDNAME, $contribFormId);
+            if (is_null($paymentField)) {
+                $form = $this->formManager->getOne($contribFormId);
+                if (!$this->wiki->UserIsAdmin()) {
+                    throw new Exception(self::PAYMENTS_FIELDNAME." is not defined in form {$form['bn_label_nature']} ({$form['bn_id_nature']})");
+                }
+                if (empty($form['bn_template'])) {
+                    throw new Exception("\$form['bn_template'] is not defined in form {$form['bn_label_nature']} ({$form['bn_id_nature']})");
+                }
+                // add field
+                $formTemplate = $form['bn_template'];
+                if (substr($formTemplate, -strlen("\n")) != "\n") {
+                    $formTemplate .= "\n";
+                }
+                $formTemplate .= "payments***".self::PAYMENTS_FIELDNAME."***Liste des paiements*** *** *** *** *** *** *** *** ***@admins***@admins*** *** *** ***\n";
+    
+                $newForm = $form;
+                $newForm['bn_template'] = $formTemplate;
+                $this->formManager->update($newForm);
+            } elseif (!($paymentField instanceof PaymentsField)) {
+                throw new Exception(self::PAYMENTS_FIELDNAME." is not a PaymentField in form {$form['bn_label_nature']} ({$form['bn_id_nature']})");
             }
-            // add field
-            $formTemplate = $form['bn_template'];
-            if (substr($formTemplate, -strlen("\n")) != "\n") {
-                $formTemplate .= "\n";
-            }
-            $formTemplate .= "payments***".self::PAYMENTS_FIELDNAME."***Liste des paiements*** *** *** *** *** *** *** *** ***@admins***@admins*** *** *** ***\n";
-
-            $newForm = $form;
-            $newForm['bn_template'] = $formTemplate;
-            $this->formManager->update($newForm);
-        } elseif (!($paymentField instanceof PaymentsField)) {
-            throw new Exception(self::PAYMENTS_FIELDNAME." is not a PaymentField in form {$form['bn_label_nature']} ({$form['bn_id_nature']})");
         }
     }
 
@@ -401,7 +429,11 @@ class HelloAssoController extends YesWikiController
      */
     private function updateEntryWithPayment(array $entry, Payment $payment):array
     {
-        $contribFormId = $this->getCurrentContribFormId();
+        $contribFormIds = $this->getCurrentPaymentsFormIds();
+        if (!in_array($entry['id_typeannonce'],$contribFormIds)){
+            return $entry;
+        }
+        $contribFormId = $entry['id_typeannonce'];
         // $typeContribField = $this->formManager->findFieldFromNameOrPropertyName(self::TYPE_CONTRIB['fieldName'], $contribFormId);
         // if (empty($typeContribField)) {
         //     throw new Exception(self::TYPE_CONTRIB['fieldName']." is not defined in form {$contribFormId}");
@@ -657,18 +689,23 @@ class HelloAssoController extends YesWikiController
             // update payments info
             $email = $postNotSanitized['post']['data']['payer']['email'];
             
-            $form = $this->getPaymentForm();
-            $formType = $postNotSanitized['post']['data']['order']['formType'];
-            $formSlug = $postNotSanitized['post']['data']['order']['formSlug'];
-            if ($form['formType'] == $formType && $form['formSlug'] == $formSlug){
-                $payments = new HelloAssoPayments(
-                    $this->helloAssoService->convertToPayments(['data'=>[$postNotSanitized['post']['data']]]),
-                    []
-                );
-                $this->refreshPaymentsInfo(
-                    $email,
-                    $payments
-                );
+            $contribFormIds = $this->getCurrentPaymentsFormIds();
+            foreach($contribFormIds as $formId){
+                $form = $this->getPaymentForm($formId);
+                $formType = $postNotSanitized['post']['data']['order']['formType'];
+                $formSlug = $postNotSanitized['post']['data']['order']['formSlug'];
+                if ($form['formType'] == $formType && $form['formSlug'] == $formSlug){
+                    $payments = new HelloAssoPayments(
+                        $this->helloAssoService->convertToPayments(['data'=>[$postNotSanitized['post']['data']]]),
+                        []
+                    );
+                    $this->refreshPaymentsInfo(
+                        $formId ,
+                        $email,
+                        $payments
+                    );
+                    break;
+                }
             }
         }
     }

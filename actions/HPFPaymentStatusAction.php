@@ -30,6 +30,7 @@ class HPFPaymentStatusAction extends YesWikiAction
             'nothing_to_pay_message' => $arg['nothing_to_pay_message'] ?? "",
             'view' => (empty($arg['view']) || !in_array($arg['view'], ['buttonHelloAsso','buttonYW','iframe'], true)) ? "buttonHelloAsso" : $arg['view'],
             'entry_id' => isset($arg['entry_id']) && is_string($arg['entry_id']) ? $arg['entry_id'] : "",
+            'formid' => isset($arg['formid']) && is_string($arg['formid']) && (strval($arg['formid']) == strval(intval($arg['formid']))) ? strval($arg['formid']) : "",
         ]);
     }
 
@@ -46,12 +47,16 @@ class HPFPaymentStatusAction extends YesWikiAction
             return "";
         }
 
-        $contribFormId = $this->helloAssoController->getCurrentContribFormId();
-        $contribEntry = $this->helloAssoController->getCurrentContribEntry($user['email']);
+        $contribFormIds = $this->helloAssoController->getCurrentPaymentsFormIds();
+        $contribFormId = (in_array($this->arguments['formid'],$contribFormIds))
+            ? $this->arguments['formid']
+            : $contribFormIds[0]
+            ;
+        $contribEntry = $this->helloAssoController->getCurrentContribEntry($contribFormId,$user['email']);
         if (empty($contribEntry)) {
             $output = "";
             if (!empty($this->arguments['entry_id'])) {
-                $output .= $this->updateOtherEntry($contribFormId);
+                $output .= $this->updateOtherEntry($contribEntry['id_typeannonce']);
             }
             $output .= empty($this->arguments['empty_message']) ? "" : $this->render("@templates/alert-message.twig", [
                 'type' => 'warning',
@@ -59,7 +64,7 @@ class HPFPaymentStatusAction extends YesWikiAction
             ]);
             return $output;
         } elseif (!empty($this->arguments['entry_id']) && $this->arguments['entry_id'] != $contribEntry['id_fiche']) {
-            return $this->updateOtherEntry($contribFormId);
+            return $this->updateOtherEntry($contribEntry['id_typeannonce']);
         }
         
         $previousCalcValue = $contribEntry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
@@ -88,7 +93,7 @@ class HPFPaymentStatusAction extends YesWikiAction
         try {
             switch ($this->arguments['view']) {
                 case 'buttonYW':
-                    $url = $this->helloAssoController->getPaymentFormUrl();
+                    $url = $this->helloAssoController->getPaymentFormUrl($contribFormId);
                     $instruction = _t('HPF_CLICK_BUTTON_BOTTOM');
                     break;
                 case 'iframe':
@@ -155,10 +160,10 @@ class HPFPaymentStatusAction extends YesWikiAction
 
         if (!empty($calcValue) && intval($calcValue) != 0) {
             // refresh payments from HelloASso
-            $this->helloAssoController->refreshPaymentsInfo($email);
+            $this->helloAssoController->refreshPaymentsInfo($entry['id_typeannonce'],$email);
 
             // reload entry
-            $entry = $this->helloAssoController->getCurrentContribEntry($email);
+            $entry = $this->helloAssoController->getCurrentContribEntry($entry['id_typeannonce'],$email);
 
             $calcValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
         }

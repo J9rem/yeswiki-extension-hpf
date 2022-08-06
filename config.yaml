@@ -8,8 +8,8 @@
 parameters:
   hpf_editable_config_params:
     - hpf:
-      - contribFormId
-      - paymentFormUrl
+      - contribFormIds
+      - paymentsFormUrls
 
 services:
   _defaults:
