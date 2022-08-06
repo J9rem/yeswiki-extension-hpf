@@ -12,6 +12,12 @@ actions:
   hpfpaymentstatus:
     label: _t(AB_hpf_hpfpaymentstatus_label)
     properties:
+      formid:
+        label: _t(AB_hpf_hpfpaymentstatus_formid_label)
+        type: number
+        min: 1
+        required: true
+        value: 1
       view:
         label: _t(AB_hpf_hpfpaymentstatus_view_label)
         type: list
