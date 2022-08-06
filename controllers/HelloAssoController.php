@@ -265,9 +265,10 @@ class HelloAssoController extends YesWikiController
         }
         $formsIds = $this->getCurrentPaymentsFormIds();
         if (!empty($formId)){
-            $foundId = array_search($formId,$formsIds);
-            if ($foundId !== false && isset($urls[$foundId])){
-                return $urls[$foundId];
+            foreach ($formsIds as $idx => $formIdToCompare) {
+                if ($formIdToCompare == $formId && isset($urls[$idx])){
+                    return $urls[$idx];
+                }
             }
         }
         return $urls[0];
@@ -317,7 +318,6 @@ class HelloAssoController extends YesWikiController
                 if (!isset($cacheEntries[$paymentEmail]['entry'])) {
                     $entry = $this->getCurrentContribEntry($formId,$paymentEmail);
                     if (!empty($entry)){
-                        var_dump($entry);
                         $cacheEntries[$paymentEmail]['entry'] = $entry;
                         $cacheEntries[$paymentEmail]['previousTotal'] = $cacheEntries[$paymentEmail]['entry'][self::CALC_FIELDNAMES['total']] ?? "";
                         $cacheEntries[$paymentEmail]['previousPayments'] = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
@@ -345,12 +345,16 @@ class HelloAssoController extends YesWikiController
     public function getPaymentForm(string $formId): array
     {
         if (is_null($this->paymentForm)) {
+            $this->paymentForm = [];
+        }
+
+        if (!isset($this->paymentForm[$formId])) {
             $this->getHpfParams();
             $formUrl = $this->getPaymentFormUrl($formId);
             if (!empty($this->hpfParams['paymentForm'])
                 && isset($this->hpfParams['paymentForm'][$formUrl])
                 && is_array($this->hpfParams['paymentForm'][$formUrl])) {
-                $this->paymentForm = array_merge($this->hpfParams['paymentForm'][$formUrl], ['url' => substr($formUrl, 0, -1)]);
+                $this->paymentForm[$formId] = array_merge($this->hpfParams['paymentForm'][$formUrl], ['url' => substr($formUrl, 0, -1)]);
             } else {
                 $forms = $this->helloAssoService->getForms();
                 $form = array_filter($forms, function ($formData) use ($formUrl) {
@@ -359,18 +363,18 @@ class HelloAssoController extends YesWikiController
                 if (empty($form)) {
                     throw new Exception("PaymentForm not found with its urls on api !");
                 }
-                $this->paymentForm = $form[array_key_first($form)];
+                $this->paymentForm[$formId] = $form[array_key_first($form)];
                 $this->saveFormDaraInParams([
                     $formUrl => [
-                        'title' => $this->paymentForm['title'],
-                        'formType' => $this->paymentForm['formType'],
-                        'formSlug' => $this->paymentForm['formSlug'],
+                        'title' => $this->paymentForm[$formId]['title'],
+                        'formType' => $this->paymentForm[$formId]['formType'],
+                        'formSlug' => $this->paymentForm[$formId]['formSlug'],
                     ]
                 ]);
             }
         }
 
-        return $this->paymentForm;
+        return $this->paymentForm[$formId];
     }
 
     private function saveFormDaraInParams(array $data)
@@ -672,24 +676,13 @@ class HelloAssoController extends YesWikiController
             empty($postNotSanitized['post']['data']['order'])
             ) {
             // only save not payments data
-            $pageTag = 'HelloAssoLog';
-            $page = $this->pageManager->getOne($pageTag);
-            $content = empty($page) ? [] : json_decode($page['body'], true);
-            if (!is_array($content)) {
-                $content = [
-                    ($page['time'] ?? 'previous') => $page['body']
-                ];
-            }
-            $content[(new DateTime())->format("Y-m-d H:i:s.v")] = $postNotSanitized;
-            $this->aclService->save($pageTag, 'write', '@admins');
-            $this->aclService->save($pageTag, 'read', '@admins');
-            $this->aclService->save($pageTag, 'comment', 'comments-closed');
-            $this->pageManager->save($pageTag, json_encode($content), '', true);
+            $this->appendToHelloAssoLog($postNotSanitized);
         } else {
             // update payments info
             $email = $postNotSanitized['post']['data']['payer']['email'];
             
             $contribFormIds = $this->getCurrentPaymentsFormIds();
+            $done = false;
             foreach($contribFormIds as $formId){
                 $form = $this->getPaymentForm($formId);
                 $formType = $postNotSanitized['post']['data']['order']['formType'];
@@ -704,9 +697,30 @@ class HelloAssoController extends YesWikiController
                         $email,
                         $payments
                     );
+                    $done = true;
                     break;
                 }
             }
+            if (!$done){
+                $this->appendToHelloAssoLog($postNotSanitized);
+            }
         }
+    }
+
+    private function appendToHelloAssoLog($postNotSanitized)
+    {
+        $pageTag = 'HelloAssoLog';
+        $page = $this->pageManager->getOne($pageTag);
+        $content = empty($page) ? [] : json_decode($page['body'], true);
+        if (!is_array($content)) {
+            $content = [
+                ($page['time'] ?? 'previous') => $page['body']
+            ];
+        }
+        $content[(new DateTime())->format("Y-m-d H:i:s.v")] = $postNotSanitized;
+        $this->aclService->save($pageTag, 'write', '@admins');
+        $this->aclService->save($pageTag, 'read', '@admins');
+        $this->aclService->save($pageTag, 'comment', 'comments-closed');
+        $this->pageManager->save($pageTag, json_encode($content), '', true);
     }
 }
