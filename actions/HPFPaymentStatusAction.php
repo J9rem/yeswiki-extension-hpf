@@ -12,6 +12,7 @@
 namespace YesWiki\Hpf;
 
 use YesWiki\Bazar\Service\EntryManager;
+use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\YesWikiAction;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Hpf\Controller\HelloAssoController;
@@ -20,6 +21,7 @@ class HPFPaymentStatusAction extends YesWikiAction
 {
     protected $debug;
     protected $entryManager;
+    protected $formManager;
     protected $helloAssoController;
 
     public function formatArguments($arg)
@@ -39,6 +41,7 @@ class HPFPaymentStatusAction extends YesWikiAction
         $this->debug = ($this->wiki->GetConfigValue('debug') =='yes');
         // get Services
         $this->entryManager = $this->getService(EntryManager::class);
+        $this->formManager = $this->getService(FormManager::class);
         $this->helloAssoController = $this->getService(HelloAssoController::class);
         $this->userManager = $this->getService(UserManager::class);
 
@@ -198,7 +201,9 @@ class HPFPaymentStatusAction extends YesWikiAction
     protected function getPaymentMessage(array $entry, string $calcValue, string $email, string $instruction): array
     {
         $messageEntry = $this->helloAssoController->getPaymentMessageEntry();
-        $paymentMode = !empty($entry['bf_moyen_paiement']) ? strval($entry['bf_moyen_paiement']) : '';
+        $field = $this->formManager->findFieldFromNameOrPropertyName('bf_moyen_paiement', $entry['id_typeannonce'] ??"");
+        $propertyName = (empty($field) || empty($field->getPropertyName())) ? 'bf_moyen_paiement' : $field->getPropertyName();
+        $paymentMode = !empty($entry[$propertyName]) ? strval($entry[$propertyName]) : '';
         switch ($paymentMode) {
             case 'virement':
                 $paymentMessage = empty($messageEntry['bf_message_virement']) ? _t('HPF_PAYMENT_MESSAGE_VIREMENT') : $messageEntry['bf_message_virement'];
