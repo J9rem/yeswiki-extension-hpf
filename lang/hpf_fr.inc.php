@@ -41,7 +41,6 @@ return [
         "Indiquez comme référence votre nom et prénom comme dans la fiche (éventuellement votre code postal)",
     'HPF_PAYMENT_MESSAGE_CHEQUE' => "Vous vous êtes engagé à payer {sum} €. Vous pouvez le faire en faisant un chèque\n".
         "A l'ordre de XXXX\n".
-        "IBAN : FR76 XXXX XXXX XXXX XXXX XXXX - BIC : XXXXXXXX.\n".
         "et à envoyer à xxxx\n".
         "en indiquant vos nom, prénom, adresse e-mail et code postal.",
     'HPF_UPDATED_ENTRY' => "Les données de la fiche '{titre}' affichée ici pourraient ne pas être à jour.\n".
