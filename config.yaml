@@ -31,3 +31,9 @@ services:
     arguments: ['@.inner']
     factory: ['@YesWiki\Hpf\Service\HelloAssoServiceFactory','create']
 
+  YesWiki\Hpf\Service\ActionsBuilderService:
+    decorates: YesWiki\Aceditor\Service\ActionsBuilderService
+    decoration_on_invalid: null
+    arguments:
+      $parentActionsBuilderService: '@.inner'
+
