@@ -97,7 +97,7 @@ pour différencier les différents tableaux table_1 table_2 #}
                 <div class="tableau-thumbnail" style="width:{{ width }}px;height:{{ size }}px">
                   <img loading="lazy" src="{{ urlImage({fileName:"files/#{val}",width:width,height:size,mode:"fit"})}}"/>
                 </div>
-              {% elseif info.propertyName matches "/^.*bf_groupe_habitants(_adherent_adherent)?$/" %}
+              {% elseif info.propertyName matches "/^.*bf_groupe_habitants(_adherent)?$/" %}
                 {% if displayvaluesinsteadofkeys %}
                     {% set toExport = '' %}
                     {% set vals = val|split(",\n") %}
