@@ -131,6 +131,13 @@ trait ActionsBuilderServiceCommon
                 if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['iconmapping']['showOnlyFor'])){
                     $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['iconmapping']['showOnlyFor'][] = 'bazarlistnoempty';
                 }
+                if (isset($this->data['action_groups']['bazarliste']['actions']['bazartableau']) &&
+                    !isset($this->data['action_groups']['bazarliste']['actions']['bazartableaulink'])) {
+                    $this->data['action_groups']['bazarliste']['actions']['bazartableaulink'] = $this->data['action_groups']['bazarliste']['actions']['bazartableau'];
+                    $this->data['action_groups']['bazarliste']['actions']['bazartableaulink']['label'] =
+                        _t('HPF_BAZARTABLEAU_LINK_TO_GROUP_LABEL');
+                    $this->data['action_groups']['bazarliste']['actions']['bazartableaulink']['properties']['template']['value'] = 'tableau-link-to-group.tpl.html';
+                }
             }
         }
         return $this->data;

@@ -25,6 +25,7 @@ return [
     'AB_hpf_hpfpaymentstatus_pay_button_title_label' => 'Texte pour le bouton YesWiki',
     'AB_hpf_hpfpaymentstatus_formid_label' => 'Formulaire associé',
     'HPF_bazarlistnoempty_label' => 'Liste (sauf vide)',
+    'HPF_BAZARTABLEAU_LINK_TO_GROUP_LABEL' => 'Tableau (avec lien groupe vers BDD)',
 
     // actions/HpfPaymentStatusAction.php
     'HPF_CLICK_BUTTON_BOTTOM' => "cliquant sur le bouton ci-dessous",
