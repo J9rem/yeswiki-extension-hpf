@@ -26,6 +26,7 @@ use YesWiki\Core\Service\AclService;
 use YesWiki\Core\Service\AssetsManager;
 use YesWiki\Core\Service\DbService;
 use YesWiki\Core\Service\PageManager;
+use YesWiki\Core\Service\TripleStore;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Core\YesWikiController;
 use YesWiki\Hpf\Field\PaymentsField;
@@ -65,6 +66,8 @@ class HelloAssoController extends YesWikiController
         "total" => "bf_calc"
     ];
 
+    public const HELLOASSO_HPF_PROPERTY = 'https://www.habitatparticipatif-france.fr/HelloAssoLog';
+
     protected $aclService;
     protected $assetsManager;
     protected $dbService;
@@ -77,6 +80,7 @@ class HelloAssoController extends YesWikiController
     protected $params;
     protected $paymentForm;
     protected $securityController;
+    protected $tripleStore;
     protected $userManager;
     protected $wiki;
 
@@ -89,6 +93,7 @@ class HelloAssoController extends YesWikiController
         HelloAssoService $helloAssoService,
         PageManager $pageManager,
         ParameterBagInterface $params,
+        TripleStore $tripleStore,
         SecurityController $securityController,
         UserManager $userManager,
         Wiki $wiki
@@ -105,6 +110,7 @@ class HelloAssoController extends YesWikiController
         $this->params = $params;
         $this->paymentForm = null;
         $this->securityController = $securityController;
+        $this->tripleStore = $tripleStore;
         $this->userManager = $userManager;
         $this->wiki = $wiki;
         if ($this->wiki->services->has(EventDispatcher::class)) {
@@ -710,18 +716,16 @@ class HelloAssoController extends YesWikiController
     private function appendToHelloAssoLog($postNotSanitized)
     {
         $pageTag = 'HelloAssoLog';
-        $page = $this->pageManager->getOne($pageTag);
-        $content = empty($page) ? [] : json_decode($page['body'], true);
-        if (!is_array($content)) {
-            $content = [
-                ($page['time'] ?? 'previous') => $page['body']
-            ];
+        try {
+            $data = json_decode(json_encode($postNotSanitized),true);
+        } catch (Throwable $th) {
+            $data = '';
         }
-        $content[(new DateTime())->format("Y-m-d H:i:s.v")] = $postNotSanitized;
-        $this->aclService->save($pageTag, 'write', '@admins');
-        $this->aclService->save($pageTag, 'read', '@admins');
-        $this->aclService->save($pageTag, 'comment', 'comments-closed');
-        $this->pageManager->save($pageTag, json_encode($content), '', true);
+        $this->tripleStore->create($pageTag,self::HELLOASSO_HPF_PROPERTY,json_encode([
+            'date' => (new DateTime())->format("Y-m-d H:i:s.v"),
+            'account' => (empty($_SESSION['user']['name']) || !is_string($_SESSION['user']['name'])) ? '' : $_SESSION['user']['name'],
+            'data' => $data
+        ]),'','');
     }
 
     public function getPaymentMessageEntry(): array
