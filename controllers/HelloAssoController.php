@@ -727,17 +727,21 @@ class HelloAssoController extends YesWikiController
 
     private function appendToHelloAssoLog($postNotSanitized)
     {
-        $pageTag = 'HelloAssoLog';
-        try {
-            $data = json_decode(json_encode($postNotSanitized),true);
-        } catch (Throwable $th) {
-            $data = '';
+        if (empty($postNotSanitized['post']['eventType']) ||
+            $postNotSanitized['post']['eventType'] != "Order" ||
+            $postNotSanitized['post']['eventType'] != "Form" ){
+            $pageTag = 'HelloAssoLog';
+            try {
+                $data = json_decode(json_encode($postNotSanitized),true);
+            } catch (Throwable $th) {
+                $data = '';
+            }
+            $this->tripleStore->create($pageTag,self::HELLOASSO_HPF_PROPERTY,json_encode([
+                'date' => (new DateTime())->format("Y-m-d H:i:s.v"),
+                'account' => (empty($_SESSION['user']['name']) || !is_string($_SESSION['user']['name'])) ? '' : $_SESSION['user']['name'],
+                'data' => $data
+            ]),'','');
         }
-        $this->tripleStore->create($pageTag,self::HELLOASSO_HPF_PROPERTY,json_encode([
-            'date' => (new DateTime())->format("Y-m-d H:i:s.v"),
-            'account' => (empty($_SESSION['user']['name']) || !is_string($_SESSION['user']['name'])) ? '' : $_SESSION['user']['name'],
-            'data' => $data
-        ]),'','');
     }
 
     public function getPaymentMessageEntry(): array
