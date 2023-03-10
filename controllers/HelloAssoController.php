@@ -314,7 +314,7 @@ class HelloAssoController extends YesWikiController
                     $this->tripleStore->create($pageTag,self::HELLOASSO_API_PROPERTY,json_encode([
                         'date' => (new DateTime())->format("Y-m-d H:i:s.v"),
                         'account' => (empty($_SESSION['user']['name']) || !is_string($_SESSION['user']['name'])) ? '' : $_SESSION['user']['name'],
-                        'throwableToString' => $th->__toString()
+                        'throwableToString' => "Exception (code {$th->getCode()}): {$th->getMessage()} in ".basename($th->getFile()).":{$th->getLine()}"
                     ]),'','');
                 } catch (Throwable $th) {
                 }
