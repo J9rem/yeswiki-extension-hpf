@@ -728,8 +728,8 @@ class HelloAssoController extends YesWikiController
     private function appendToHelloAssoLog($postNotSanitized)
     {
         if (empty($postNotSanitized['post']['eventType']) ||
-            $postNotSanitized['post']['eventType'] != "Order" ||
-            $postNotSanitized['post']['eventType'] != "Form" ){
+            !is_string($postNotSanitized['post']['eventType']) ||
+            !in_array($postNotSanitized['post']['eventType'],['Order','Form'])){
             $pageTag = 'HelloAssoLog';
             try {
                 $data = json_decode(json_encode($postNotSanitized),true);
