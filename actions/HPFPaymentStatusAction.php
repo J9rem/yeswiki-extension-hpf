@@ -86,11 +86,11 @@ class HPFPaymentStatusAction extends YesWikiAction
         );
 
         if (empty($calcValue) || intval($calcValue) == 0) {
-            return empty($this->arguments['nothing_to_pay_message']) ? "" :
+            return (empty($this->arguments['nothing_to_pay_message']) ? "" :
                 $this->render("@templates/alert-message.twig", [
                     'type' => 'success',
                     'message' => $this->arguments['nothing_to_pay_message']
-                ]).$changedValueMsg;
+                ])).$changedValueMsg;
         }
 
         try {

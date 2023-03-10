@@ -67,6 +67,7 @@ class HelloAssoController extends YesWikiController
     ];
 
     public const HELLOASSO_HPF_PROPERTY = 'https://www.habitatparticipatif-france.fr/HelloAssoLog';
+    public const HELLOASSO_API_PROPERTY = 'https://www.habitatparticipatif-france.fr/HelloAssoApiLog';
 
     protected $aclService;
     protected $assetsManager;
@@ -307,7 +308,18 @@ class HelloAssoController extends YesWikiController
             // do nothing (remove warnings)
             if ($this->isDebug() && $this->wiki->UserIsAdmin()) {
                 throw $th;
+            } else {
+                try {
+                    $pageTag = 'HelloAssoApiLog';
+                    $this->tripleStore->create($pageTag,self::HELLOASSO_API_PROPERTY,json_encode([
+                        'date' => (new DateTime())->format("Y-m-d H:i:s.v"),
+                        'account' => (empty($_SESSION['user']['name']) || !is_string($_SESSION['user']['name'])) ? '' : $_SESSION['user']['name'],
+                        'throwableToString' => $th->__toString()
+                    ]),'','');
+                } catch (Throwable $th) {
+                }
             }
+
             $payments = null;
         }
         if (!empty($payments)) {
