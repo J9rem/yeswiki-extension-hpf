@@ -12,6 +12,7 @@
 namespace YesWiki\Hpf\Controller;
 
 use Symfony\Component\Routing\Annotation\Route;
+use YesWiki\Core\ApiResponse;
 use YesWiki\Core\YesWikiController;
 use YesWiki\Hpf\Controller\HelloAssoController;
 use YesWiki\Shop\Controller\ApiController as ShopApiController;
@@ -26,5 +27,18 @@ class ApiController extends YesWikiController
         // force construct of helloAssoController to register event
         $helloAssoController = $this->getService(HelloAssoController::class);
         return $this->getService(ShopApiController::class)->postHelloAsso($token);
+    }
+
+    /**
+     * @Route("/api/hpf/refresh-payment/{tag}", methods={"GET"},options={"acl":{"public","+"}})
+     */
+    public function refreshHelloAsso($tag)
+    {
+        return new ApiResponse([
+            'action' => 'refreshing',
+            'tag' => $tag,
+            'result' => 'TODO',
+            'needRefresh' => false
+        ],200);
     }
 }
