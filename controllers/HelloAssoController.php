@@ -584,20 +584,20 @@ class HelloAssoController extends YesWikiController
         if (!empty($field)) {
             $isDonation = ($name == "donation");
             $payedValue = floatval($entry[$field->getPropertyName()] ?? 0);
-            if (!$isDonation) {
-                $toPayFieldName = self::CALC_FIELDNAMES[$name];
-                $toPayField = $this->formManager->findFieldFromNameOrPropertyName($toPayFieldName, $contribFormId);
-                $valueToPay = floatval((
-                    empty($toPayField) ||
-                        !isset($entry[$toPayField->getPropertyName()])
-                ) ? 0 : $entry[$toPayField->getPropertyName()]);
-            }
+            $toPayFieldName = self::CALC_FIELDNAMES[$name];
+            $valueToPay = floatval((
+                empty($toPayField) ||
+                    !isset($entry[$toPayField->getPropertyName()])
+            ) ? 0 : $entry[$toPayField->getPropertyName()]);
 
             if ($isDonation || ($valueToPay >= $payedValue && $valueToPay > 0)) {
                 if ($isDonation || $restToAffect <= ($valueToPay - $payedValue)) {
                     // only affect current field
                     $entry[$field->getPropertyName()] = strval($payedValue + $restToAffect);
                     $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"][$name], $paymentYear);
+                    if ($isDonation && $valueToPay > 0){
+                        $this->updateWantedDonation($entry,$valueToPay,$restToAffect);
+                    }
                     $restToAffect = 0;
                 } else {
                     $entry[$field->getPropertyName()] = strval($valueToPay);
@@ -610,6 +610,12 @@ class HelloAssoController extends YesWikiController
             'entry' => $entry,
             'restToAffect' => $restToAffect
         ];
+    }
+
+    private function updateWantedDonation(array &$entry,$valueToPay,$restToAffect)
+    {
+        $entry['bf_montant_don_ponctuel'] = 'libre';
+        $entry['bf_montant_don_ponctuel_libre'] = strval(max(0,$valueToPay-$restToAffect));
     }
 
     private function updateYear(array $entry, string $name, string $year): array
