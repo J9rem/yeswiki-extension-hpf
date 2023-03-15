@@ -12,9 +12,12 @@
 namespace YesWiki\Hpf\Controller;
 
 use Symfony\Component\Routing\Annotation\Route;
+use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Core\ApiResponse;
+use YesWiki\Core\Service\UserManager;
 use YesWiki\Core\YesWikiController;
 use YesWiki\Hpf\Controller\HelloAssoController;
+use YesWiki\Hpf\Exception\ApiException;
 use YesWiki\Shop\Controller\ApiController as ShopApiController;
 
 class ApiController extends YesWikiController
@@ -34,11 +37,37 @@ class ApiController extends YesWikiController
      */
     public function refreshHelloAsso($tag)
     {
-        return new ApiResponse([
-            'action' => 'refreshing',
-            'tag' => $tag,
-            'result' => 'TODO',
-            'needRefresh' => false
-        ],200);
+        $entryManager = $this->getService(EntryManager::class);
+        $helloAssoController = $this->getService(HelloAssoController::class);
+        $userManager = $this->getService(UserManager::class);
+        try {
+            if (empty($tag)){
+                throw new ApiException(_t('HPF_NOT_FOR_EMPTY_TAG'));
+            }
+            $entry = $entryManager->getOne($tag);
+            if (empty($entry)){
+                throw new ApiException('not existing entry');
+            }
+            $user = $userManager->getLoggedUser();
+            if (empty($entry['bf_mail']) || (!$this->wiki->UserIsAdmin() && $user['email'] !== $entry['bf_mail'])){
+                throw new ApiException(_t('HPF_FORBIDEN_FOR_THIS_ENTRY'));
+            }
+            $previousValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
+            $newCalcValue = $helloAssoController->refreshEntryFromHelloAsso($entry,$user['email']);
+
+            return new ApiResponse([
+                'action' => 'refreshing',
+                'tag' => $tag,
+                'result' => 'refresh',
+                'needRefresh' => ($previousValue != $newCalcValue)
+            ],200);
+        } catch (ApiException $th) {
+            return new ApiResponse([
+                'action' => 'refreshing',
+                'tag' => $tag,
+                'error' => $th->getMessage(),
+                'needRefresh' => false
+            ],404);
+        }
     }
 }

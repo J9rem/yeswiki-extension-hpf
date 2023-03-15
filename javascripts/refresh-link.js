@@ -8,12 +8,25 @@
  */
 
 (() => {
+    class MyError extends Error {
+        constructor(message) {
+          super(message);
+        }
+    }
     const paymentHelper = {
         async callApi(url){
             return await fetch(url)
                 .then((response)=>{
                     if (!response.ok){
-                        throw new Error(`bad response (${response.status} ${response.statusText})`)
+                        return this.getErrorMessage(response)
+                            .then(
+                                (errorMsg)=>{
+                                    throw new MyError(errorMsg)
+                                },
+                                (error) => {
+                                    throw new Error(`bad response (${response.status} ${response.statusText})`)
+                                }
+                            )
                     }
                     return response.json()
                 })
@@ -21,6 +34,14 @@
         data: {
             isIframe: null,
             running: false
+        },
+        async getErrorMessage(response){
+            return await response.json().then((json)=>{
+                if (typeof json == 'object' && 'error' in json){
+                    return json.error
+                }
+                throw new Error('no error message')
+            })
         },
         isIframe(){
             if (this.data.isIframe === null){
@@ -30,7 +51,8 @@
             return this.data.isIframe
         },
         manageError(error,button){
-            this.temporaryTooltip(button,"<b>Une erreur est survenue</b>:<br/>Veuillez vous rapprocher d'un administrateur du site pour réaliser l'opération manuellement")
+            const msg = (error instanceof MyError) ? error.message+'<br/>' : ''
+            this.temporaryTooltip(button,`<b>Une erreur est survenue</b>:<br/>${msg}Veuillez vous rapprocher d'un administrateur du site pour réaliser l'opération manuellement`)
             if (wiki.isDebugEnabled){
                 console.log(error)
             }

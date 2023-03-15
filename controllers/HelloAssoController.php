@@ -437,7 +437,7 @@ class HelloAssoController extends YesWikiController
                 $newForm['bn_template'] = $formTemplate;
                 $this->formManager->update($newForm);
             } elseif (!($paymentField instanceof PaymentsField)) {
-                throw new Exception(self::PAYMENTS_FIELDNAME." is not a PaymentField in form {$form['bn_label_nature']} ({$form['bn_id_nature']})");
+                throw new Exception(self::PAYMENTS_FIELDNAME." is not a PaymentField in form ({$contribFormId})");
             }
         }
     }

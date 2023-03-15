@@ -49,6 +49,8 @@ return [
         "en indiquant vos nom, prénom, adresse e-mail et code postal.",
     'HPF_UPDATED_ENTRY' => "Les données de la fiche '{titre}' affichée ici pourraient ne pas être à jour.\n".
         "Veuillez recharger la fiche.",
+    'HPF_NOT_FOR_EMPTY_TAG' => 'rafraichissement impossible pour un tag vide',
+    'HPF_FORBIDEN_FOR_THIS_ENTRY' => 'vous n\'avez ps le droit de modifier cette fiche',
 
     // config.yaml
     'EDIT_CONFIG_HINT_HPF[CONTRIBFORMIDS]' => 'Identifiant des formulaires liés au paiement (avec \'bf_mail\' et un champ \'CalcField\'), séparés par des virgules',
