@@ -15,4 +15,10 @@ return [
     'HPF_CONDITIONVIEW_FIELD' => 'HTML condition en lecture',
     'HPF_CONDITIONVIEW_FIELDNAME' => 'Nom du champ conditionnel',
     'HPF_CONDITIONVIEW_WAITEDVALUE' => 'Valeur attendue',
+
+    // tools/jpf/javascripts/refresh-link.js
+    'HPF_ALREADY_REFRESHING' => 'Rafraichissement déjà en cours',
+    'HPF_REFRESHING' => 'Rafraichissement des données en cours',
+    'HPF_ALREADY_REFRESHED' => 'Données mises à jour : veuillez recharger la page',
+    'HPF_ALREADY_NOT_REFRESHED' => 'Données mises à jour sans changement',
 ];

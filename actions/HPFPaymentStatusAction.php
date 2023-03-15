@@ -14,15 +14,18 @@ namespace YesWiki\Hpf;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\YesWikiAction;
+use YesWiki\Core\Service\AssetsManager;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Hpf\Controller\HelloAssoController;
 
 class HPFPaymentStatusAction extends YesWikiAction
 {
+    protected $assetsManager;
     protected $debug;
     protected $entryManager;
     protected $formManager;
     protected $helloAssoController;
+    protected $userManager;
 
     public function formatArguments($arg)
     {
@@ -40,6 +43,7 @@ class HPFPaymentStatusAction extends YesWikiAction
     {
         $this->debug = ($this->wiki->GetConfigValue('debug') =='yes');
         // get Services
+        $this->assetsManager = $this->getService(AssetsManager::class);
         $this->entryManager = $this->getService(EntryManager::class);
         $this->formManager = $this->getService(FormManager::class);
         $this->helloAssoController = $this->getService(HelloAssoController::class);
@@ -159,16 +163,6 @@ class HPFPaymentStatusAction extends YesWikiAction
 
         $calcValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
 
-        if (!empty($calcValue) && intval($calcValue) != 0) {
-            // refresh payments from HelloASso
-            $this->helloAssoController->refreshPaymentsInfo($entry['id_typeannonce'], $email);
-
-            // reload entry
-            $entry = $this->helloAssoController->getCurrentContribEntry($entry['id_typeannonce'], $email);
-
-            $calcValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
-        }
-
         return $calcValue;
     }
 
@@ -222,14 +216,19 @@ class HPFPaymentStatusAction extends YesWikiAction
                 $linkToHelloAsso = true;
                 break;
         }
+        $hereLinkStart = <<<HTML
+        <a href="{$this->wiki->Href('',"api/hpf/refresh-payment/{$entry['id_fiche']}")}" class="hpf-here-link">
+        HTML;
+        $hereLinkEnd = '</a>';
         $paymentMessage = $this->render("@templates/alert-message.twig", [
             'type' => 'secondary-2',
             'message' => str_replace(
-                ['{sum}','{email}',"{instruction}","\n"],
-                [$calcValue,$email,$instruction,"<br/>"],
+                ['{sum}','{email}',"{instruction}","{hereLinkStart}","{hereLinkEnd}","\n"],
+                [$calcValue,$email,$instruction,$hereLinkStart,$hereLinkEnd,"<br/>"],
                 $paymentMessage
             )
         ]);
+        $this->assetsManager->AddJavascriptFile('tools/hpf/javascripts/refresh-link.js');
         return compact(['paymentMessage','linkToHelloAsso']);
     }
 }

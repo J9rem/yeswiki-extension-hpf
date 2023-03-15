@@ -437,9 +437,28 @@ class HelloAssoController extends YesWikiController
                 $newForm['bn_template'] = $formTemplate;
                 $this->formManager->update($newForm);
             } elseif (!($paymentField instanceof PaymentsField)) {
-                throw new Exception(self::PAYMENTS_FIELDNAME." is not a PaymentField in form {$form['bn_label_nature']} ({$form['bn_id_nature']})");
+                throw new Exception(self::PAYMENTS_FIELDNAME." is not a PaymentField in form ({$contribFormId})");
             }
         }
+    }
+
+    /**
+     * refresh entry from HelloAsso then reload entry and gives calcValue
+     * @param array $entry
+     * @param string $email
+     * @return string|floatval $calcValue
+     */
+    public function refreshEntryFromHelloAsso(array $entry, string $email)
+    {
+        // refresh payments from HelloASso
+        $this->refreshPaymentsInfo($entry['id_typeannonce'], $email);
+
+        // reload entry
+        $entry = $this->getCurrentContribEntry($entry['id_typeannonce'], $email);
+
+        $calcValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
+
+        return $calcValue;
     }
 
     /* === THE MOST IMPORTANT FUNCTION === */

@@ -33,10 +33,12 @@ return [
     'HPF_GET_URL_ERROR' => 'Une erreur est survenue dans le fichier {file} (ligne {line}) : {message}',
     'HPF_PAY' => "Payer sur Hello Asso",
     'HPF_PAYMENT_MESSAGE' => "Vous devez payer une somme de {sum} €. Vous pouvez le faire en {instruction}.\n".
-        "Pensez bien à recopier correctement votre e-mail ({email})\net la bonne somme à payer ({sum} €).",
+        "Pensez bien à recopier correctement votre e-mail ({email})\net la bonne somme à payer ({sum} €).\n".
+        "Si vous avez déjà payé, veuillez cliquer {hereLinkStart}ici{hereLinkEnd} pour forcer une synchronization des données de paiement.",
     'HPF_PAYMENT_MESSAGE_CB' => "Vous vous êtes engagé à payer {sum} €. Vous pouvez le faire en {instruction}.\n".
         "Le paiement se fera par carte bancaire via le site de HelloAsso.\n".
-        "Utilisez la même adresse e-mail ({email}) et reportez le bon montant à payer ({sum} €).",
+        "Utilisez la même adresse e-mail ({email}) et reportez le bon montant à payer ({sum} €).\n".
+        "Si vous avez déjà payé, veuillez cliquer {hereLinkStart}ici{hereLinkEnd} pour forcer une synchronization des données de paiement.",
     'HPF_PAYMENT_MESSAGE_VIREMENT' => "Vous vous êtes engagé à payer {sum} €. Vous pouvez le faire en faisant un virement\n".
         "sur le compte suivant :\n".
         "IBAN : FR76 XXXX XXXX XXXX XXXX XXXX - BIC : XXXXXXXX.\n".
@@ -47,6 +49,8 @@ return [
         "en indiquant vos nom, prénom, adresse e-mail et code postal.",
     'HPF_UPDATED_ENTRY' => "Les données de la fiche '{titre}' affichée ici pourraient ne pas être à jour.\n".
         "Veuillez recharger la fiche.",
+    'HPF_NOT_FOR_EMPTY_TAG' => 'rafraichissement impossible pour un tag vide',
+    'HPF_FORBIDEN_FOR_THIS_ENTRY' => 'vous n\'avez ps le droit de modifier cette fiche',
 
     // config.yaml
     'EDIT_CONFIG_HINT_HPF[CONTRIBFORMIDS]' => 'Identifiant des formulaires liés au paiement (avec \'bf_mail\' et un champ \'CalcField\'), séparés par des virgules',
