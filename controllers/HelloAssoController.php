@@ -124,10 +124,12 @@ class HelloAssoController extends YesWikiController
      * get the contribution entry for selected user
      * @param string $formId
      * @param string $email
+     * @param string $preferedEntryId
+     * @param string $preferedUserName
      * @return array $entry or []
      * @throws Exception
      */
-    public function getCurrentContribEntry(string $formId, string $email = ""): array
+    public function getCurrentContribEntry(string $formId, string $email = "", string $preferedEntryId = "", string $preferedUserName = ''): array
     {
         try {
             if (!empty($email)) {
@@ -148,7 +150,23 @@ class HelloAssoController extends YesWikiController
                 if (empty($entries)) {
                     return [];
                 } else {
-                    $idFiche = $entries[array_key_first($entries)]['id_fiche'];
+                    $sameIds = empty($preferedEntryId)
+                        ? []
+                        : array_filter($entries,function($entry) use ($preferedEntryId){
+                        return !empty($entry['id_fiche']) && $entry['id_fiche'] == $preferedEntryId;
+                    });
+                    $sameOwner = (empty($sameIds) && !empty($preferedUserName))
+                        ? array_filter($entries,function($entry) use ($preferedUserName){
+                            return !empty($entry['owner']) && $entry['owner'] == $preferedUserName;
+                        })
+                        : [];
+                    $idFiche = !empty($sameIds)
+                        ? $sameIds[array_key_first($sameIds)]['id_fiche']
+                        : (
+                            !empty($sameOwner)
+                            ? $sameOwner[array_key_first($sameOwner)]['id_fiche']
+                            : $entries[array_key_first($entries)]['id_fiche']
+                        );
                     return $this->entryManager->getOne($idFiche, false, null, false, true);
                 }
             }
@@ -293,7 +311,7 @@ class HelloAssoController extends YesWikiController
         return "<iframe id=\"haWidget\" src=\"{$url}widget\" style=\"width: 100%; height: 800px; border: none;\" scrolling=\"auto\"></iframe>";
     }
 
-    public function refreshPaymentsInfo(string $formId, string $email = "", ?HelloAssoPayments $payments = null)
+    public function refreshPaymentsInfo(string $formId, string $email = "", string $preferedEntryId = '', ?HelloAssoPayments $payments = null)
     {
         $form = $this->getPaymentForm($formId);
         try {
@@ -334,7 +352,7 @@ class HelloAssoController extends YesWikiController
                     $cacheEntries[$paymentEmail] = [];
                 }
                 if (!isset($cacheEntries[$paymentEmail]['entry'])) {
-                    $entry = $this->getCurrentContribEntry($formId, $paymentEmail);
+                    $entry = $this->getCurrentContribEntry($formId, $paymentEmail,$preferedEntryId);
                     if (!empty($entry)) {
                         $cacheEntries[$paymentEmail]['entry'] = $entry;
                         $cacheEntries[$paymentEmail]['previousTotal'] = $cacheEntries[$paymentEmail]['entry'][self::CALC_FIELDNAMES['total']] ?? "";
@@ -451,10 +469,10 @@ class HelloAssoController extends YesWikiController
     public function refreshEntryFromHelloAsso(array $entry, string $email)
     {
         // refresh payments from HelloASso
-        $this->refreshPaymentsInfo($entry['id_typeannonce'], $email);
+        $this->refreshPaymentsInfo($entry['id_typeannonce'], $email, $entry['id_fiche'] ?? '');
 
         // reload entry
-        $entry = $this->getCurrentContribEntry($entry['id_typeannonce'], $email);
+        $entry = $this->getCurrentContribEntry($entry['id_typeannonce'], $email, $entry['id_fiche'] ?? '');
 
         $calcValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
 
@@ -738,6 +756,7 @@ class HelloAssoController extends YesWikiController
                     $this->refreshPaymentsInfo(
                         $formId,
                         $email,
+                        '',
                         $payments
                     );
                     $done = true;
