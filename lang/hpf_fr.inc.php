@@ -25,6 +25,8 @@ return [
     'AB_hpf_hpfpaymentstatus_pay_button_title_label' => 'Texte pour le bouton YesWiki',
     'AB_hpf_hpfpaymentstatus_formid_label' => 'Formulaire associé',
     'HPF_bazarlistnoempty_label' => 'Liste (sauf vide)',
+    'AB_bazarliste_initialheight_label' => 'Hauteur initiale pendant le chargement',
+    'AB_bazarliste_initialheight_hint' => 'Nombre de pixels sans unité (500 = défaut) ; ex. : 100',
     'HPF_BAZARTABLEAU_LINK_TO_GROUP_LABEL' => 'Tableau (avec lien groupe vers BDD)',
 
     // actions/HpfPaymentStatusAction.php

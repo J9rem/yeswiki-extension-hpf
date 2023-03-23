@@ -112,6 +112,13 @@ trait ActionsBuilderServiceCommon
                                     'label' => _t('AB_bazarliste_displayfields_visual_label'),
                                     'default' => ""
                                 ]
+                            ],
+                            'initialheight' => [
+                                'type' => 'number',
+                                'label' => _t('AB_bazarliste_initialheight_label'),
+                                'hint' => _t('AB_bazarliste_initialheight_hint'),
+                                'default' => 500,
+                                'min' => 0
                             ]
                         ],
                     ];

@@ -46,5 +46,5 @@
     </Panel>
     <spinner-loader v-if="isLoading" class="overlay"></spinner-loader>
   </div>
-  <spinner-loader v-else height="500"></spinner-loader>
+  <spinner-loader v-else height="{% if params.initialheight > 0 %}params.initialheight{% else %}500{% endif %}"></spinner-loader>
 {% endblock %}
