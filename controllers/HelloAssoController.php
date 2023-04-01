@@ -604,12 +604,12 @@ class HelloAssoController extends YesWikiController
             $payedValue = floatval($entry[$field->getPropertyName()] ?? 0);
             $toPayFieldName = self::CALC_FIELDNAMES[$name];
             $valueToPay = floatval((
-                empty($toPayField) ||
-                    !isset($entry[$toPayField->getPropertyName()])
-            ) ? 0 : $entry[$toPayField->getPropertyName()]);
+                empty($toPayFieldName) ||
+                    !isset($entry[$toPayFieldName])
+            ) ? 0 : $entry[$toPayFieldName]);
 
-            if ($isDonation || ($valueToPay >= $payedValue && $valueToPay > 0)) {
-                if ($isDonation || $restToAffect <= ($valueToPay - $payedValue)) {
+            if ($isDonation || ($valueToPay > 0)) {
+                if ($isDonation || $restToAffect <= $valueToPay) {
                     // only affect current field
                     $entry[$field->getPropertyName()] = strval($payedValue + $restToAffect);
                     $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"][$name], $paymentYear);
@@ -618,9 +618,9 @@ class HelloAssoController extends YesWikiController
                     }
                     $restToAffect = 0;
                 } else {
-                    $entry[$field->getPropertyName()] = strval($valueToPay);
+                    $entry[$field->getPropertyName()] = strval($valueToPay+$payedValue);
                     $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"][$name], $paymentYear);
-                    $restToAffect = $restToAffect - ($valueToPay - $payedValue);
+                    $restToAffect = $restToAffect - $valueToPay;
                 }
             }
         }
