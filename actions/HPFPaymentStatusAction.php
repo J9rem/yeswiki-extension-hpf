@@ -16,7 +16,7 @@ use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\YesWikiAction;
 use YesWiki\Core\Service\AssetsManager;
 use YesWiki\Core\Service\UserManager;
-use YesWiki\Hpf\Controller\HelloAssoController;
+use YesWiki\Hpf\Service\HpfService;
 
 class HPFPaymentStatusAction extends YesWikiAction
 {
@@ -24,7 +24,7 @@ class HPFPaymentStatusAction extends YesWikiAction
     protected $debug;
     protected $entryManager;
     protected $formManager;
-    protected $helloAssoController;
+    protected $hpfService;
     protected $userManager;
 
     public function formatArguments($arg)
@@ -46,7 +46,7 @@ class HPFPaymentStatusAction extends YesWikiAction
         $this->assetsManager = $this->getService(AssetsManager::class);
         $this->entryManager = $this->getService(EntryManager::class);
         $this->formManager = $this->getService(FormManager::class);
-        $this->helloAssoController = $this->getService(HelloAssoController::class);
+        $this->hpfService = $this->getService(HpfService::class);
         $this->userManager = $this->getService(UserManager::class);
 
         $user = $this->userManager->getLoggedUser();
@@ -54,12 +54,12 @@ class HPFPaymentStatusAction extends YesWikiAction
             return "";
         }
 
-        $contribFormIds = $this->helloAssoController->getCurrentPaymentsFormIds();
+        $contribFormIds = $this->hpfService->getCurrentPaymentsFormIds();
         $contribFormId = (in_array($this->arguments['formid'], $contribFormIds))
             ? $this->arguments['formid']
             : $contribFormIds[0]
             ;
-        $contribEntry = $this->helloAssoController->getCurrentContribEntry($contribFormId, $user['email'],$this->arguments['entry_id'],$user['name']);
+        $contribEntry = $this->hpfService->getCurrentContribEntry($contribFormId, $user['email'],$this->arguments['entry_id'],$user['name']);
         if (empty($contribEntry)) {
             $output = "";
             if (!empty($this->arguments['entry_id'])) {
@@ -74,7 +74,7 @@ class HPFPaymentStatusAction extends YesWikiAction
             return $this->updateOtherEntry($contribEntry['id_typeannonce']);
         }
         
-        $previousCalcValue = $contribEntry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
+        $previousCalcValue = $contribEntry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
         $calcValue = $this->updatePaymentsForEntry($contribEntry, $user['email']);
 
         $changedValueMsg = ($previousCalcValue == $calcValue) ? "" : $this->render(
@@ -100,16 +100,16 @@ class HPFPaymentStatusAction extends YesWikiAction
         try {
             switch ($this->arguments['view']) {
                 case 'buttonYW':
-                    $url = $this->helloAssoController->getPaymentFormUrl($contribFormId);
+                    $url = $this->hpfService->getPaymentFormUrl($contribFormId);
                     $instruction = _t('HPF_CLICK_BUTTON_BOTTOM');
                     break;
                 case 'iframe':
-                    $html = $this->helloAssoController->getPaymentFormIframeHtml();
+                    $html = $this->hpfService->getPaymentFormIframeHtml();
                     $instruction = _t('HPF_IFRAME_INSTRUCTION');
                     break;
                 case 'buttonHelloASso':
                 default:
-                    $html = $this->helloAssoController->getPaymentFormButtonHtml();
+                    $html = $this->hpfService->getPaymentFormButtonHtml();
                     $instruction = _t('HPF_CLICK_BUTTON_BOTTOM');
                     break;
             }
@@ -154,14 +154,14 @@ class HPFPaymentStatusAction extends YesWikiAction
     private function updatePaymentsForEntry(array $entry, string $email)
     {
         // update CalcField before check
-        $newEntry = $this->helloAssoController->updateCalcFields($entry, HelloAssoController::CALC_FIELDNAMES);
-        $previousValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
-        $newValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
+        $newEntry = $this->hpfService->updateCalcFields($entry, HpfService::CALC_FIELDNAMES);
+        $previousValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
+        $newValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
         if ($previousValue != $newValue) {
-            $entry = $this->helloAssoController->updateEntry($newEntry);
+            $entry = $this->hpfService->updateEntry($newEntry);
         }
 
-        $calcValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
+        $calcValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
 
         return $calcValue;
     }
@@ -172,7 +172,7 @@ class HPFPaymentStatusAction extends YesWikiAction
         if ($this->wiki->UserIsAdmin()) {
             $entry = $this->entryManager->getOne($this->arguments['entry_id']);
             if (!empty($entry) && !empty($entry['id_typeannonce']) && !empty($entry['bf_mail']) && $entry['id_typeannonce'] == $contribFormId) {
-                $previousCalcValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
+                $previousCalcValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
                 $newCalcValue = $this->updatePaymentsForEntry($entry, $entry['bf_mail']);
                 if ($previousCalcValue != $newCalcValue) {
                     $output .= $this->render(
@@ -194,7 +194,7 @@ class HPFPaymentStatusAction extends YesWikiAction
 
     protected function getPaymentMessage(array $entry, string $calcValue, string $email, string $instruction): array
     {
-        $messageEntry = $this->helloAssoController->getPaymentMessageEntry();
+        $messageEntry = $this->hpfService->getPaymentMessageEntry();
         $field = $this->formManager->findFieldFromNameOrPropertyName('bf_moyen_paiement', $entry['id_typeannonce'] ??"");
         $propertyName = (empty($field) || empty($field->getPropertyName())) ? 'bf_moyen_paiement' : $field->getPropertyName();
         $paymentMode = !empty($entry[$propertyName]) ? strval($entry[$propertyName]) : '';

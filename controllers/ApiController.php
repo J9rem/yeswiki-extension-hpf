@@ -16,7 +16,7 @@ use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Core\ApiResponse;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Core\YesWikiController;
-use YesWiki\Hpf\Controller\HelloAssoController;
+use YesWiki\Hpf\Service\HpfService;
 use YesWiki\Hpf\Exception\ApiException;
 use YesWiki\Shop\Controller\ApiController as ShopApiController;
 
@@ -27,8 +27,8 @@ class ApiController extends YesWikiController
      */
     public function postHelloAsso($token)
     {
-        // force construct of helloAssoController to register event
-        $helloAssoController = $this->getService(HelloAssoController::class);
+        // force construct of hpfService to register event
+        $hpfService = $this->getService(HpfService::class);
         return $this->getService(ShopApiController::class)->postHelloAsso($token);
     }
 
@@ -38,7 +38,7 @@ class ApiController extends YesWikiController
     public function refreshHelloAsso($tag)
     {
         $entryManager = $this->getService(EntryManager::class);
-        $helloAssoController = $this->getService(HelloAssoController::class);
+        $hpfService = $this->getService(HpfService::class);
         $userManager = $this->getService(UserManager::class);
         try {
             if (empty($tag)){
@@ -52,8 +52,8 @@ class ApiController extends YesWikiController
             if (empty($entry['bf_mail']) || (!$this->wiki->UserIsAdmin() && $user['email'] !== $entry['bf_mail'])){
                 throw new ApiException(_t('HPF_FORBIDEN_FOR_THIS_ENTRY'));
             }
-            $previousValue = $entry[HelloAssoController::CALC_FIELDNAMES["total"]] ?? 0;
-            $newCalcValue = $helloAssoController->refreshEntryFromHelloAsso($entry,$user['email']);
+            $previousValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
+            $newCalcValue = $hpfService->refreshEntryFromHelloAsso($entry,$user['email']);
 
             return new ApiResponse([
                 'action' => 'refreshing',
