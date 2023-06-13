@@ -29,7 +29,6 @@ use YesWiki\Core\Service\PageManager;
 use YesWiki\Core\Service\TripleStore;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Hpf\Field\PaymentsField;
-use YesWiki\Hpf\Service\HpfService;
 use YesWiki\Security\Controller\SecurityController;
 use YesWiki\Shop\Entity\Payment;
 use YesWiki\Shop\Entity\Event;
@@ -77,7 +76,6 @@ class HpfService
     protected $formManager;
     protected $helloAssoService;
     protected $hpfParams;
-    protected $hpfService;
     protected $pageManager;
     protected $params;
     protected $paymentForm;
@@ -93,7 +91,6 @@ class HpfService
         EntryManager $entryManager,
         FormManager $formManager,
         HelloAssoService $helloAssoService,
-        HpfService $hpfService,
         PageManager $pageManager,
         ParameterBagInterface $params,
         TripleStore $tripleStore,
@@ -108,7 +105,6 @@ class HpfService
         $this->entryManager = $entryManager;
         $this->formManager = $formManager;
         $this->helloAssoService = $helloAssoService;
-        $this->hpfService = $hpfService;
         $this->hpfParams = null;
         $this->pageManager = $pageManager;
         $this->params = $params;
