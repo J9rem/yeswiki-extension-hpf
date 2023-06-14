@@ -34,21 +34,34 @@ return [
     'HPF_IFRAME_INSTRUCTION' => "complétant le formulaire ci-dessous",
     'HPF_GET_URL_ERROR' => 'Une erreur est survenue dans le fichier {file} (ligne {line}) : {message}',
     'HPF_PAY' => "Payer sur Hello Asso",
-    'HPF_PAYMENT_MESSAGE' => "Vous devez payer une somme de {sum} €. Vous pouvez le faire en {instruction}.\n".
-        "Pensez bien à recopier correctement votre e-mail ({email})\net la bonne somme à payer ({sum} €).\n".
-        "Si vous avez déjà payé, veuillez cliquer {hereLinkStart}ici{hereLinkEnd} pour forcer une synchronisation des données de paiement.",
-    'HPF_PAYMENT_MESSAGE_CB' => "Vous vous êtes engagé à payer {sum} €. Vous pouvez le faire en {instruction}.\n".
-        "Le paiement se fera par carte bancaire via le site de HelloAsso.\n".
-        "Utilisez la même adresse e-mail ({email}) et reportez le bon montant à payer ({sum} €).\n".
-        "Si vous avez déjà payé, veuillez cliquer {hereLinkStart}ici{hereLinkEnd} pour forcer une synchronisation des données de paiement.",
-    'HPF_PAYMENT_MESSAGE_VIREMENT' => "Vous vous êtes engagé à payer {sum} €. Vous pouvez le faire en faisant un virement\n".
-        "sur le compte suivant :\n".
-        "IBAN : FR76 XXXX XXXX XXXX XXXX XXXX - BIC : XXXXXXXX.\n".
-        "Indiquez comme référence votre nom et prénom comme dans la fiche (éventuellement votre code postal)",
-    'HPF_PAYMENT_MESSAGE_CHEQUE' => "Vous vous êtes engagé à payer {sum} €. Vous pouvez le faire en faisant un chèque\n".
-        "A l'ordre de XXXX\n".
-        "et à envoyer à xxxx\n".
-        "en indiquant vos nom, prénom, adresse e-mail et code postal.",
+    'HPF_PAYMENT_MESSAGE' => <<<TXT
+        Vous devez payer une somme de {sum} €. Vous pouvez le faire en {instruction}.
+        Pensez bien à recopier correctement votre e-mail ({email})
+        et la bonne somme à payer ({sum} €).
+        Si vous avez déjà payé, veuillez cliquer {hereLinkStart}ici{hereLinkEnd} pour forcer une synchronisation des données de paiement.
+        La fiche concernée est {entryLink}.
+        TXT,
+    'HPF_PAYMENT_MESSAGE_CB' => <<<TXT
+        Vous vous êtes engagé à payer {sum} €. Vous pouvez le faire en {instruction}.
+        Le paiement se fera par carte bancaire via le site de HelloAsso.
+        Utilisez la même adresse e-mail ({email}) et reportez le bon montant à payer ({sum} €).
+        Si vous avez déjà payé, veuillez cliquer {hereLinkStart}ici{hereLinkEnd} pour forcer une synchronisation des données de paiement.
+        La fiche concernée est {entryLink}.
+        TXT,
+    'HPF_PAYMENT_MESSAGE_VIREMENT' => <<<TXT
+        Vous vous êtes engagé à payer {sum} €. Vous pouvez le faire en faisant un virement
+        sur le compte suivant :
+        IBAN : FR76 XXXX XXXX XXXX XXXX XXXX - BIC : XXXXXXXX.
+        Indiquez comme référence votre nom et prénom comme dans la fiche (éventuellement votre code postal).
+        La fiche concernée est {entryLink}.
+        TXT,
+    'HPF_PAYMENT_MESSAGE_CHEQUE' => <<<TXT
+        Vous vous êtes engagé à payer {sum} €. Vous pouvez le faire en faisant un chèque
+        A l'ordre de XXXX
+        et à envoyer à xxxx
+        en indiquant vos nom, prénom, adresse e-mail et code postal.
+        La fiche concernée est {entryLink}.
+        TXT,
     'HPF_UPDATED_ENTRY' => "Les données de la fiche '{titre}' affichée ici pourraient ne pas être à jour.\n".
         "Veuillez recharger la fiche.",
     'HPF_NOT_FOR_EMPTY_TAG' => 'rafraichissement impossible pour un tag vide',
