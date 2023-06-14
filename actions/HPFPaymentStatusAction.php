@@ -224,7 +224,7 @@ class HPFPaymentStatusAction extends YesWikiAction
         $paymentMessage = $this->render("@templates/alert-message.twig", [
             'type' => 'secondary-2',
             'message' => str_replace(
-                ['{sum}','{email}',"{instruction}","{hereLinkStart}",'{entryLink}',"{hereLinkEnd}","\n"],
+                ['{sum}','{email}',"{instruction}","{hereLinkStart}","{hereLinkEnd}",'{entryLink}',"\n"],
                 [$calcValue,$email,$instruction,$hereLinkStart,$hereLinkEnd,$entryLink,"<br/>"],
                 $paymentMessage
             )
