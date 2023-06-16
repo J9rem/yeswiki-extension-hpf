@@ -871,7 +871,8 @@ class HpfService
                 foreach(explode(',',$paymentContent) as $paymentRaw){
                     $rawField = $this->formatPaymentForField([
                         'id' => $paymentRaw,
-                        'origin' => 'helloasso'
+                        'origin' => 'helloasso',
+                        'total' => ''
                     ]);
                     foreach($rawField as $k => $v){
                         $formattedPayments[$k] = $v;
@@ -904,6 +905,7 @@ class HpfService
             $params['valeur_don'] ?? '',
             empty($params['payment']) ? ($params['id'] ?? '') : '',
             empty($params['payment']) ? ($params['date'] ?? '') : '',
+            empty($params['payment']) ? ($params['total'] ?? '') : '',
         );
     }
 
@@ -919,6 +921,7 @@ class HpfService
      * @param string $valeur_don
      * @param string $id (if no payment)
      * @param string $date (if no payment)
+     * @param string $total (if no payment)
      * @return array $formattedPayment
      */
     private function formatPaymentForFieldInternal(
@@ -931,17 +934,20 @@ class HpfService
         string $annee_don,
         string $valeur_don,
         string $id,
-        string $date
+        string $date,
+        string $total
     ): array
     {
         if (!empty($payment)){
             $id = $payment->id;
             $date = $payment->date;
+            $total = strval($payment->amount);
         }
         $formattedPayment = [
             $id => [
                 'date' => $date,
                 'origin' => $origin,
+                'total' => $total,
             ]
         ];
         if (!empty($annee_adhesion) && !empty($valeur_adhesion)){
