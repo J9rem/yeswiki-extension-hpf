@@ -17,13 +17,11 @@ let appParams = {
     data: function() {
         return {
           payments: {},
+          paymentsOrder: [],
           paymentsVisibility: {}
         };
     },
     computed: {
-      paymentsOrder(){
-        return this.sortArrayDateThenIdDesc(Object.entries(this.payments).map(([id,data])=>{return{...data,...{id}}})).map((data)=>data.id)
-      },
       value(){
         return Object.keys(this.payments).length === 0 
           ? '' 
@@ -46,6 +44,7 @@ let appParams = {
       createPayment(){
         if (!('' in this.payments)){
           this.$set(this.payments,'',{date:'',origin:''})
+          this.paymentsOrder.push('')
         }
       },
       day(id){
@@ -112,6 +111,9 @@ let appParams = {
         if (paymentId in this.payments) {
           this.$delete(this.payments,paymentId)
         }
+        if (this.paymentsOrder.includes(paymentId)){
+          this.paymentsOrder = this.paymentsOrder.filter((id)=>id!=paymentId)
+        }
       },
       setDatePartial(id,value,type,test){
         const asNumber = Number(value)
@@ -152,6 +154,9 @@ let appParams = {
           if (oldVisibility !== null){
             this.$set(this.paymentsVisibility,newId,oldVisibility)
           }
+          if (this.paymentsOrder.includes(oldId)){
+            this.paymentsOrder = this.paymentsOrder.map((id)=>(id == oldId) ? newId : id).filter((id)=>(id != oldId))
+          }
         }
       },
       year(id){
@@ -161,11 +166,13 @@ let appParams = {
     },
     mounted(){
       const el = $(isVueJS3 ? this.$el.parentNode : this.$el)
+      let importedPayments = {}
       try {
-        this.payments = JSON.parse(el[0].dataset.payments)
+        importedPayments = JSON.parse(el[0].dataset.payments)
       } catch (error) {
-        this.payments = {}
       }
+      this.payments = importedPayments
+      this.paymentsOrder = this.sortArrayDateThenIdDesc(Object.entries(importedPayments).map(([id,data])=>{return{...data,...{id}}})).map((data)=>data.id)
     },
     watch: {
     }
