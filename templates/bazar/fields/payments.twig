@@ -40,7 +40,7 @@
             <i class="fas fa-caret-up hide-collapsed"></i>
         </button><br/>
         <ul class="collapse in" id="{{field.propertyName}}-payment-{{ id }}">
-          <li>Date : {{ data.date }}</li>
+          <li>Date : {{ data.date is empty ? '' : (data.date|slice(6,2) ~ '/' ~ data.date|slice(4,2) ~ '/' ~ data.date|slice(0,4)) }}</li>
           <li>Origine : {{ data.origin }}</li>
           {% if data.adhesion %}
             <ul>

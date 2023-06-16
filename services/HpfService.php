@@ -866,6 +866,12 @@ class HpfService
                 $jsonDecoded = json_decode($paymentContent,true);
                 if (empty($jsonDecoded)){
                     throw new Exception('paymentfied is not json encoded');
+                } else {
+                    foreach($jsonDecoded as $id => $data){
+                        if (is_array($data)){
+                            $formattedPayments[$id] = $data;
+                        }
+                    }
                 }
             } catch (Throwable $th) {
                 foreach(explode(',',$paymentContent) as $paymentRaw){
