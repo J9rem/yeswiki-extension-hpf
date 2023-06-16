@@ -846,7 +846,9 @@ class HpfService
     {
         $newPayment = $this->formatPaymentForField($params);
         $formattedPayments = $this->convertStringToPayments($paymentContent);
-        $formattedPayments = array_merge($formattedPayments,$newPayment);
+        foreach($newPayment as $k => $v){
+            $formattedPayments[$k] = $v;
+        }
         return json_encode($formattedPayments);
     }
 
@@ -871,7 +873,9 @@ class HpfService
                         'id' => $paymentRaw,
                         'origin' => 'helloasso'
                     ]);
-                    $formattedPayments = array_merge($formattedPayments,$rawField);
+                    foreach($rawField as $k => $v){
+                        $formattedPayments[$k] = $v;
+                    }
                 }
             }
         }
@@ -886,20 +890,20 @@ class HpfService
      */
     public function formatPaymentForField(array $params): array
     {
-        if (empty($param['origin'])){
-            throw new Excption('$param[\'origin\'] can be empty');
+        if (empty($params['origin'])){
+            throw new Exception('$params[\'origin\'] can not be empty');
         }
         return $this->formatPaymentForFieldInternal(
-            $param['payment'] ?? null,
-            $param['origin'] ?? '',
-            $param['annee_adhesion'] ?? '',
-            $param['valeur_adhesion'] ?? '',
-            $param['annee_adhesion_groupe'] ?? '',
-            $param['valeur_adhesion_groupe'] ?? '',
-            $param['annee_don'] ?? '',
-            $param['valeur_don'] ?? '',
-            empty($param['payment']) ? ($param['id'] ?? '') : '',
-            empty($param['payment']) ? ($param['date'] ?? '') : '',
+            $params['payment'] ?? null,
+            $params['origin'] ?? '',
+            $params['annee_adhesion'] ?? '',
+            $params['valeur_adhesion'] ?? '',
+            $params['annee_adhesion_groupe'] ?? '',
+            $params['valeur_adhesion_groupe'] ?? '',
+            $params['annee_don'] ?? '',
+            $params['valeur_don'] ?? '',
+            empty($params['payment']) ? ($params['id'] ?? '') : '',
+            empty($params['payment']) ? ($params['date'] ?? '') : '',
         );
     }
 
