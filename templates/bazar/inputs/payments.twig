@@ -9,19 +9,104 @@
 
 {% extends "@bazar/layouts/input.twig" %}
 
+{% block label %}
+  {{ include_css('tools/hpf/styles/fields/payments.css') }}
+  {{ parent() }}
+  <button 
+    class="btn btn-info btn-xs collapsed payment-collapse-button" 
+    type="button" 
+    data-toggle="collapse" 
+    data-target="#{{field.propertyName}}-payments-input" 
+    aria-expanded="false" 
+    aria-controls="{{field.propertyName}}-payments-input">
+      <i class="fas fa-caret-down show-collapsed"></i>
+      <i class="fas fa-caret-up hide-collapsed"></i>
+  </button>
+{% endblock %}
+
 {% block input %}
-    <div class="input-group">
-        <input
-            type="{{ field.subType }}"
-            value="{{ value }}"
-            id="{{ field.name }}"
-            name="{{ field.name }}"
-            class="form-control input-xxlarge"
-            maxlength="{{ field.maxChars }}"
-            size="{{ field.maxChars }}"
-            {% if field.pattern %}pattern="{{ field.pattern }}"{% endif %}
-            placeholder="{{ field.label|raw('html')|striptags }}"
-            {% if field.required %}required{% endif %}
-        />
+    {{ include_javascript('javascripts/vendor/vue/vue.js') }}
+    {{ include_javascript('tools/hpf/javascripts/fields/payments-input.js',false,true) }}
+    <div class="collapse" id="{{field.propertyName}}-payments-input">
+        <div class="payment-input-field" data-payments="{{ payments|json_encode|e('html_attr') }}">
+            <ul>
+                <li v-for="id in paymentsOrder">
+                    <b><input
+                        type="text"
+                        :value="id"
+                        @input="updatePaymentId(id,$event.target.value)"
+                        form="unknown-id"
+                        /></b>:&nbsp;
+                    <button 
+                        class="btn btn-info btn-xs" 
+                        type="button"
+                        @click="toggleVisibility(id)"
+                        >
+                            <i v-if="id in paymentsVisibility && !paymentsVisibility[id]" class="fas fa-caret-down"></i>
+                            <i v-if="!(id in paymentsVisibility) || paymentsVisibility[id]" class="fas fa-caret-up"></i>
+                    </button>
+                    <button 
+                        class="btn btn-danger btn-xs" 
+                        type="button"
+                        @click="removePayment(id)"
+                        >❌</button><br/>
+                    <ul v-show="paymentsVisibility[id] ?? true" :id="`{{field.propertyName}}-payment-input-${id}`">
+                        <li>Date : 
+                            <input
+                                type="text"
+                                size="2"
+                                :value="day(id)"
+                                @change="setDay(id,$event.target.value)"
+                                form="unknown-id"
+                                />/
+                            <input
+                                type="text"
+                                size="2"
+                                :value="month(id)"
+                                @change="setMonth(id,$event.target.value)"
+                                form="unknown-id"
+                                />/
+                            <input
+                                type="text"
+                                size="4"
+                                :value="year(id)"
+                                @change="setYear(id,$event.target.value)"
+                                form="unknown-id"
+                                />
+                        </li>
+                        <li>Origine :  {{"{{ payments[id].origin }}"}}</li>
+                        <ul v-if="payments[id].adhesion">
+                            <li v-for="(value,annee) in payments[id].adhesion">{{"{{ annee }}"}} : {{"{{ value }}"}}</li>
+                        </ul>
+                        <ul v-if="payments[id].adhesion_groupe">
+                            <li v-for="(value,annee) in payments[id].adhesion_groupe">{{"{{ annee }}"}} : {{"{{ value }}"}}</li>
+                        </ul>
+                        <ul v-if="payments[id].don">
+                            <li v-for="(value,annee) in payments[id].don">{{"{{ annee }}"}} : {{"{{ value }}"}}</li>
+                        </ul>
+                    </ul>
+                </li>
+            </ul>
+            
+            <button 
+                class="btn btn-success btn-xs" 
+                type="button"
+                @click="createPayment"
+                v-show="!('' in payments)"
+                >➕</button>
+            <input
+                type="text"
+                :value="value"
+                id="{{ field.name }}"
+                name="{{ field.name }}"
+                class="form-control input-xxlarge"
+                maxlength="{{ field.maxChars }}"
+                size="{{ field.maxChars }}"
+                {% if field.pattern %}pattern="{{ field.pattern }}"{% endif %}
+                placeholder="{{ field.label|raw('html')|striptags }}"
+                {% if field.required %}required{% endif %}
+                {# style="display:none;" #}
+            />
+        </div>
     </div>
 {% endblock %}
