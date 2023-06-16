@@ -31,17 +31,31 @@ class PaymentsField extends TextField
     protected function renderStatic($entry)
     {
         $value = $this->getValue($entry);
-        $payments = $this->getService(HpfService::class)->convertStringToPayments($value);
+        $payments = $this->convertStringToPaymentsSorted($value);
         return $this->render('@bazar/fields/payments.twig',compact(['payments']));
     }
 
     protected function renderInput($entry)
     {
         $value = $this->getValue($entry);
-        $payments = $this->getService(HpfService::class)->convertStringToPayments($value);
+        $payments = $this->convertStringToPaymentsSorted($value);
         return $this->render('@bazar/inputs/payments.twig',[
             'payments' => $payments,
             'value' => json_encode($payments)
         ]);
+    }
+
+    protected function convertStringToPaymentsSorted($value): array
+    {
+        $payments = $this->getService(HpfService::class)->convertStringToPayments($value);
+        uksort($payments,function($keyA,$keyB) use ($payments){
+            $valA = $payments[$keyA];
+            $valB = $payments[$keyB];
+            $result = ($valB['date'] <=> $valA['date']);
+            return ($result === 0)
+                ? ($keyB <=> $keyA)
+                : $result;
+        });
+        return $payments;
     }
 }
