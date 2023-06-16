@@ -365,9 +365,7 @@ class HpfService
                 }
                 if (!empty($cacheEntries[$paymentEmail]['entry'])) {
                     // check if payments are saved
-                    $bfPayments = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
-                    $paymentsRegistered = explode(',', $bfPayments);
-                    if (!in_array($payment->id, $paymentsRegistered)) {
+                    if (!$this->isAlreadyRegisteredPayment($cacheEntries[$paymentEmail]['entry'], $payment)) {
                         $cacheEntries[$paymentEmail]['entry'] = $this->updateEntryWithPayment($cacheEntries[$paymentEmail]['entry'], $payment);
                     }
                 }
@@ -952,5 +950,11 @@ class HpfService
             $formattedPayment[$id]['don'][$annee_don] = $valeur_don;
         }
         return $formattedPayment;
+    }
+
+    protected function isAlreadyRegisteredPayment(array &$entry,Payment $payment): bool
+    {
+        $payments = $this->convertStringToPayments($entry[self::PAYMENTS_FIELDNAME] ?? '');
+        return array_key_exists($payment->$id,$payments);
     }
 }
