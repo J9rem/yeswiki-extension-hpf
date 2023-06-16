@@ -514,6 +514,11 @@ class HpfService
         $currentYear = (new DateTime())->format("Y");
 
         $restToAffect =  floatval($payment->amount);
+        $paymentParams = 
+        [
+            'payment' => $payment,
+            'origin' => "helloasso:$contribFormId"
+        ];
         if (intval($paymentYear) > intval($currentYear)) {
             // error
             return $entry;
@@ -521,23 +526,39 @@ class HpfService
             list('isOpenedNextYear' => $isOpenedNextYear, 'field' => $field) = $this->getPayedField($contribFormId, $currentYear, "membership");
             if ($isOpenedNextYear) {
                 // membership for next year
-                list('entry' => $entry, 'restToAffect' => $restToAffect) =
+                list('entry' => $entry, 'restToAffect' => $restToAffect, 'affected'=>$affected) =
                     $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, strval(intval($paymentYear)+1), "membership");
+                if (!empty($affected)){
+                    $paymentParams['annee_adhesion'] = strval(intval($paymentYear)+1);
+                    $paymentParams['valeur_adhesion'] = strval($affected);
+                }
             } else {
                 // membership for current year
-                list('entry' => $entry, 'restToAffect' => $restToAffect) =
+                list('entry' => $entry, 'restToAffect' => $restToAffect,'affected'=>$affected) =
                     $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $paymentYear, "membership");
-            }
+                if (!empty($affected)){
+                    $paymentParams['annee_adhesion'] = strval($paymentYear);
+                    $paymentParams['valeur_adhesion'] = strval($affected);
+                }
+        }
             if ($restToAffect > 0) {
                 list('isOpenedNextYear' => $isOpenedNextYear, 'field' => $field) = $this->getPayedField($contribFormId, $currentYear, "group_membership");
                 if ($isOpenedNextYear) {
                     // membership for next year
-                    list('entry' => $entry, 'restToAffect' => $restToAffect) =
+                    list('entry' => $entry, 'restToAffect' => $restToAffect,'affected'=>$affected) =
                         $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, strval(intval($paymentYear)+1), "group_membership");
+                    if (!empty($affected)){
+                        $paymentParams['annee_adhesion_groupe'] = strval(intval($paymentYear)+1);
+                        $paymentParams['valeur_adhesion_groupe'] = strval($affected);
+                    }
                 } else {
                     // membership for current year
-                    list('entry' => $entry, 'restToAffect' => $restToAffect) =
+                    list('entry' => $entry, 'restToAffect' => $restToAffect,'affected'=>$affected) =
                         $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $paymentYear, "group_membership");
+                    if (!empty($affected)){
+                        $paymentParams['annee_adhesion_groupe'] = strval($paymentYear);
+                        $paymentParams['valeur_adhesion_groupe'] = strval($affected);
+                    }
                 }
             }
         }
@@ -545,16 +566,19 @@ class HpfService
         if ($restToAffect > 0) {
             // donation
             list('isOpenedNextYear' => $isOpenedNextYear, 'field' => $field) = $this->getPayedField($contribFormId, $paymentYear, "donation");
-            list('entry' => $entry, 'restToAffect' => $restToAffect) = $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $paymentYear, "donation");
+            list('entry' => $entry, 'restToAffect' => $restToAffect,'affected'=>$affected) = 
+                $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $paymentYear, "donation");
+            if (!empty($affected)){
+                $paymentParams['annee_don'] = strval($paymentYear);
+                $paymentParams['valeur_don'] = strval($affected);
+            }
         }
 
-        // update payment list
-        $bfPayments = $entry[self::PAYMENTS_FIELDNAME] ?? "";
-        $paymentsRegistered = explode(',', $bfPayments);
-        $paymentsRegistered[] = $payment->id;
-
-        // save entry
-        $entry[self::PAYMENTS_FIELDNAME] = implode(",", array_filter($paymentsRegistered));
+        // update payment in entry
+        $entry[self::PAYMENTS_FIELDNAME] = $this->appendFormatPaymentForField(
+            $entry[self::PAYMENTS_FIELDNAME] ?? "",
+            $paymentParams
+        );
         
         $entry = $this->updateCalcFields($entry, HpfService::CALC_FIELDNAMES);
 
@@ -603,6 +627,7 @@ class HpfService
         string $paymentYear,
         string $name
     ):array {
+        $affected = 0;
         if (!empty($field)) {
             $isDonation = ($name == "donation");
             $payedValue = floatval($entry[$field->getPropertyName()] ?? 0);
@@ -620,18 +645,17 @@ class HpfService
                     if ($isDonation && $valueToPay > 0){
                         $this->updateWantedDonation($entry,$valueToPay,$restToAffect);
                     }
+                    $affected = $restToAffect;
                     $restToAffect = 0;
                 } else {
                     $entry[$field->getPropertyName()] = strval($valueToPay+$payedValue);
                     $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"][$name], $paymentYear);
                     $restToAffect = $restToAffect - $valueToPay;
+                    $affected = $valueToPay;
                 }
             }
         }
-        return [
-            'entry' => $entry,
-            'restToAffect' => $restToAffect
-        ];
+        return compact(['entry','restToAffect','affected']);
     }
 
     private function updateWantedDonation(array &$entry,$valueToPay,$restToAffect)
@@ -820,7 +844,7 @@ class HpfService
     }
 
     /**
-     * convert a paymetn raw field to payments array
+     * convert a payment raw field to payments array
      * @param string $paymentContent
      * @return array $payments
      * @throws Exception if badly formatted payment
@@ -899,6 +923,10 @@ class HpfService
         string $date
     ): array
     {
+        if (!empty($payment)){
+            $id = $payment->id;
+            $date = $payment->date;
+        }
         $formattedPayment = [
             $id => [
                 'date' => $date,
