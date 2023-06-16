@@ -34,4 +34,14 @@ class PaymentsField extends TextField
         $payments = $this->getService(HpfService::class)->convertStringToPayments($value);
         return $this->render('@bazar/fields/payments.twig',compact(['payments']));
     }
+
+    protected function renderInput($entry)
+    {
+        $value = $this->getValue($entry);
+        $payments = $this->getService(HpfService::class)->convertStringToPayments($value);
+        return $this->render('@bazar/inputs/payments.twig',[
+            'payments' => $payments,
+            'value' => json_encode($payments)
+        ]);
+    }
 }
