@@ -1,0 +1,70 @@
+{#
+ * This file is part of the YesWiki Extension hpf.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *#}
+
+{% extends "@bazar/layouts/field.twig" %}
+
+{% block label %}
+  {{ include_css('tools/hpf/styles/fields/payments.css') }}
+  {{ parent() }}
+  <button 
+    class="btn btn-info btn-xs collapsed payment-collapse-button" 
+    type="button" 
+    data-toggle="collapse" 
+    data-target="#{{field.propertyName}}-payments-list" 
+    aria-expanded="false" 
+    aria-controls="{{field.propertyName}}-payments-list">
+      <i class="fas fa-caret-down show-collapsed"></i>
+      <i class="fas fa-caret-up hide-collapsed"></i>
+  </button>
+{% endblock %}
+
+{% block value_container %}
+  <ul class="collapse" id="{{field.propertyName}}-payments-list">
+    {% for id,data in payments %}
+      <li>  
+        <b>{{ id }}</b>:&nbsp;
+        <button 
+          class="btn btn-info btn-xs payment-collapse-button" 
+          type="button" 
+          data-toggle="collapse" 
+          data-target="#{{field.propertyName}}-payment-{{ id }}" 
+          aria-expanded="true" 
+          aria-controls="{{field.propertyName}}-payment-{{ id }}">
+            <i class="fas fa-caret-down show-collapsed"></i>
+            <i class="fas fa-caret-up hide-collapsed"></i>
+        </button><br/>
+        <ul class="collapse in" id="{{field.propertyName}}-payment-{{ id }}">
+          <li>Date : {{ data.date }}</li>
+          <li>Origine : {{ data.origin }}</li>
+          {% if data.adhesion %}
+            <ul>
+              {% for annee,value in data.adhesion %}
+                <li>{{ annee }} : {{ value }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+          {% if data.adhesion_groupe %}
+            <ul>
+              {% for annee,value in data.adhesion_groupe %}
+                <li>{{ annee }} : {{ value }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+          {% if data.don %}
+            <ul>
+              {% for annee,value in data.don %}
+                <li>{{ annee }} : {{ value }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </ul>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

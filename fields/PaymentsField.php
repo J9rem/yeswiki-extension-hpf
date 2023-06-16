@@ -13,6 +13,7 @@ namespace YesWiki\Hpf\Field;
 
 use Psr\Container\ContainerInterface;
 use YesWiki\Bazar\Field\TextField;
+use YesWiki\Hpf\Service\HpfService;
 
 /**
  * @Field({"payments"})
@@ -25,5 +26,12 @@ class PaymentsField extends TextField
         $this->subType = "text";
         $this->readAccess = "@admins";
         $this->writeAccess = "@admins";
+    }
+
+    protected function renderStatic($entry)
+    {
+        $value = $this->getValue($entry);
+        $payments = $this->getService(HpfService::class)->convertStringToPayments($value);
+        return $this->render('@bazar/fields/payments.twig',compact(['payments']));
     }
 }
