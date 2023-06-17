@@ -88,12 +88,7 @@ let appParams = {
           return data
       },
       removePayment(keyToRemove){
-        this.payments = (keyToRemove == 0)
-          ? this.payments.slice(1)
-          : [
-            ...this.payments.slice(0,keyToRemove),
-            ...this.payments.slice(keyToRemove+1)
-          ]
+        this.payments.splice(keyToRemove,1)
       },
       sortArrayDateThenIdDesc(array){
         return array.sort((a,b)=>{
