@@ -7,6 +7,15 @@
  * file that was distributed with this source code.
  *#}
 
+{% macro blocAdhesionDon(key,title) %}
+    <li>
+        <b>{{ title }} :</b>
+        <ul v-if="payment.{{ key }}">
+            <li v-for="(value,annee) in payment.{{ key }}">{{"{{ annee }}"}} : {{"{{ value }}"}}</li>
+        </ul>
+    </li>
+{% endmacro %}
+
 {% extends "@bazar/layouts/input.twig" %}
 
 {% block label %}
@@ -30,60 +39,30 @@
     <div class="collapse" id="{{field.propertyName}}-payments-input">
         <div class="payment-input-field" data-payments="{{ payments|json_encode|e('html_attr') }}">
             <ul>
-                <li v-for="id in paymentsOrder">
-                    <b><input
-                        type="text"
-                        :value="id"
-                        @input="updatePaymentId(id,$event.target.value)"
-                        form="unknown-id"
-                        /></b>:&nbsp;
+                <li v-for="(payment,key) in payments">
+                    <b><input type="text" v-model="payments[key].id" form="unknown-id" /></b>:&nbsp;
                     <button 
                         class="btn btn-info btn-xs" 
                         type="button"
-                        @click="toggleVisibility(id)"
+                        @click="payment.visibility = !payment.visibility"
                         >
-                            <i v-if="id in paymentsVisibility && !paymentsVisibility[id]" class="fas fa-caret-down"></i>
-                            <i v-if="!(id in paymentsVisibility) || paymentsVisibility[id]" class="fas fa-caret-up"></i>
+                            <i v-if="!payment.visibility" class="fas fa-caret-down"></i>
+                            <i v-if="payment.visibility" class="fas fa-caret-up"></i>
                     </button>
                     <button 
                         class="btn btn-danger btn-xs" 
                         type="button"
-                        @click="removePayment(id)"
+                        @click="removePayment(key)"
                         >❌</button><br/>
-                    <ul v-show="paymentsVisibility[id] ?? true" :id="`{{field.propertyName}}-payment-input-${id}`">
-                        <li>Date : 
-                            <input
-                                type="text"
-                                size="2"
-                                :value="day(id)"
-                                @change="setDay(id,$event.target.value)"
-                                form="unknown-id"
-                                />/
-                            <input
-                                type="text"
-                                size="2"
-                                :value="month(id)"
-                                @change="setMonth(id,$event.target.value)"
-                                form="unknown-id"
-                                />/
-                            <input
-                                type="text"
-                                size="4"
-                                :value="year(id)"
-                                @change="setYear(id,$event.target.value)"
-                                form="unknown-id"
-                                />
+                    <ul v-show="payment.visibility" :id="`{{field.propertyName}}-payment-input-${payments[key].id}`">
+                        <li>Date : <input type="text" size="2" v-model="payments[key].day" form="unknown-id" pattern="[0-9]{2}"/>/
+                            <input type="text" size="2" v-model="payments[key].month" form="unknown-id" pattern="[0-9]{2}"/>/
+                            <input type="text" size="4" v-model="payments[key].year" form="unknown-id" pattern="[0-9]{4}"/>
                         </li>
-                        <li>Origine :  {{"{{ payments[id].origin }}"}}</li>
-                        <ul v-if="payments[id].adhesion">
-                            <li v-for="(value,annee) in payments[id].adhesion">{{"{{ annee }}"}} : {{"{{ value }}"}}</li>
-                        </ul>
-                        <ul v-if="payments[id].adhesion_groupe">
-                            <li v-for="(value,annee) in payments[id].adhesion_groupe">{{"{{ annee }}"}} : {{"{{ value }}"}}</li>
-                        </ul>
-                        <ul v-if="payments[id].don">
-                            <li v-for="(value,annee) in payments[id].don">{{"{{ annee }}"}} : {{"{{ value }}"}}</li>
-                        </ul>
+                        <li>Origine : <input type="text" v-model="payments[key].origin" form="unknown-id" /></li>
+                        {{ _self.blocAdhesionDon('adhesion','Adhésions') }}
+                        {{ _self.blocAdhesionDon('adhesion_groupe','Adhésions groupe') }}
+                        {{ _self.blocAdhesionDon('don','Dons') }}
                     </ul>
                 </li>
             </ul>
@@ -92,7 +71,6 @@
                 class="btn btn-success btn-xs" 
                 type="button"
                 @click="createPayment"
-                v-show="!('' in payments)"
                 >➕</button>
             <input
                 type="text"
@@ -100,10 +78,6 @@
                 id="{{ field.name }}"
                 name="{{ field.name }}"
                 class="form-control input-xxlarge"
-                maxlength="{{ field.maxChars }}"
-                size="{{ field.maxChars }}"
-                {% if field.pattern %}pattern="{{ field.pattern }}"{% endif %}
-                placeholder="{{ field.label|raw('html')|striptags }}"
                 {% if field.required %}required{% endif %}
                 {# style="display:none;" #}
             />
