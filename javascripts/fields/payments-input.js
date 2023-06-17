@@ -13,15 +13,15 @@ let rootsElements = ['.payment-input-field'];
 let isVueJS3 = (typeof Vue.createApp == "function");
 
 let appParams = {
-    // components: {SpinnerLoader},
+    components: {vuejsDatepicker/*,SpinnerLoader*/},
     data: function() {
         return {
+          datePickerLang: vdp_translation_index,
+          datePickerLanguage: null,
           defaultPayment: {
             id: '',
             origin: '',
-            day: '',
-            month: '',
-            year: '',
+            customDate: '',
             visibility: true
           },
           payments: [],
@@ -41,9 +41,7 @@ let appParams = {
                   let data = {...payment}
                   delete data.id
                   delete data.visibility
-                  delete data.day
-                  delete data.month
-                  delete data.year
+                  delete data.customDate
                   data.date = this.generateDate(payment)
                   return  [
                     payment.id,
@@ -65,18 +63,35 @@ let appParams = {
         this.assignValueReactive(newVal,this.defaultPayment)
         this.payments.push(newVal)
       },
+      customFormatterDate(date){
+        const dd = (new Date(date))
+        let day = dd.getDate()
+        if (day < 10){
+          day = `0${day}`
+        }
+        let month = dd.getMonth()+1
+        if (month < 10){
+          month = `0${month}`
+        }
+        const year = dd.getFullYear()
+        return `${day}/${month}/${year}`
+
+      },
       convertPaymentsToArray(payments){
         return Object.entries(payments).map(this.generatePaymentFromArray)
       },
       generateDate(payment){
-        if (String(payment.year).length !== 4 ||
-          String(payment.month).length !== 2 ||
-          String(payment.day).length !== 2){
+        if (String(payment.customDate).length == 0){
           return '';
         }
-        const date = `${payment.year}-${payment.month}-${payment.day}`
-        const parsed = Date.parse(date)
-        return isNaN(parsed) ? '' : date;
+        const parsed = Date.parse(payment.customDate)
+        if (isNaN(parsed)){
+          console.log({notADate:payment.customDate,payment:{...payment}})
+          return ''
+        }
+        const date = new Date(parsed)
+        date.setHours(12) // to prevent errors with change time UTC/locale
+        return date.toISOString().slice(0,10)
       },
       generatePaymentFromArray([id,value]){
         let data = {}
@@ -87,12 +102,7 @@ let appParams = {
         if ('date' in value && value.date.length > 0){
           const parsed = Date.parse(value.date)
           if (!isNaN(parsed)){
-            const date = new Date(value.date)
-            let day = date.getDate()
-            data.day = (day < 10) ? `0${day}` : String(day)
-            let month = date.getMonth() + 1
-            data.month = (month < 10) ? `0${month}` : String(month)
-            data.year = String(date.getFullYear())
+            data.customDate = (new Date(parsed)).toISOString().slice(0,10)
           }
         }
         return data
@@ -106,9 +116,18 @@ let appParams = {
           return (result === 0) ? (b.id >= a.id): result
         })
       },
+      updateDate({key,date,event}){
+        console.log({key,date,event})
+        if (date !== null){
+          this.payments[key].customDate = date
+        }
+      }
     },
     mounted(){
       const el = $(isVueJS3 ? this.$el.parentNode : this.$el)
+      this.datePickerLanguage = (wiki.locale in this.datePickerLang)
+        ? this.datePickerLang[wiki.locale]
+        : this.datePickerLang.en
       let importedPayments = {}
       try {
         importedPayments = JSON.parse(el[0].dataset.payments)

@@ -35,6 +35,8 @@
 
 {% block input %}
     {{ include_javascript('javascripts/vendor/vue/vue.js') }}
+    {{ include_javascript('tools/hpf/javascripts/vendor/vuejs-datepicker/vuejs-datepicker.min.js') }}
+    {{ include_javascript('tools/hpf/javascripts/vendor/vuejs-datepicker/translations.min.js') }}
     {{ include_javascript('tools/hpf/javascripts/fields/payments-input.js',false,true) }}
     <div class="collapse" id="{{field.propertyName}}-payments-input">
         <div class="payment-input-field" data-payments="{{ payments|json_encode|e('html_attr') }}">
@@ -55,9 +57,16 @@
                         @click="removePayment(key)"
                         >❌</button><br/>
                     <ul v-show="payment.visibility" :id="`{{field.propertyName}}-payment-input-${payment.id}`">
-                        <li>Date : <input type="text" size="2" v-model="payment.day" form="unknown-id" pattern="0[1-9]|[1-2][0-9]|3[0-1]"/>/
-                            <input type="text" size="2" v-model="payment.month" form="unknown-id" pattern="0[1-9]|1[0-2]"/>/
-                            <input type="text" size="4" v-model="payment.year" form="unknown-id" pattern="[1-2][0-9]{3}"/>
+                        <li>Date : <vuejs-datepicker 
+                                :format="customFormatterDate" 
+                                typeable="true" 
+                                :name="`datepicker-${payment.id}`" 
+                                monday-first="true"
+                                :language="datePickerLanguage"
+                                wrapper-class="datepicker-container"
+                                :value="payment.customDate"
+                                @selected="(date)=>updateDate({key,date,event})">
+                            </vuejs-datepicker> ({{ "{{ customFormatterDate(payment.customDate) }}" }})
                         </li>
                         <li>Origine : <input type="text" v-model="payment.origin" form="unknown-id" /></li>
                         {{ _self.blocAdhesionDon('adhesion','Adhésions') }}
