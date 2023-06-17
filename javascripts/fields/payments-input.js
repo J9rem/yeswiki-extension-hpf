@@ -104,7 +104,12 @@ let appParams = {
         importedPayments = JSON.parse(el[0].dataset.payments)
       } catch (error) {
       }
-      this.payments = this.sortArrayDateThenIdDesc(this.convertPaymentsToArray(importedPayments))
+      // empty this.payments
+      this.payments.splice(0,this.payments.length)
+      // add element with reactivity
+      this.sortArrayDateThenIdDesc(this.convertPaymentsToArray(importedPayments)).forEach((el)=>{
+        this.payments.push(el)
+      })
     }
 };
 
