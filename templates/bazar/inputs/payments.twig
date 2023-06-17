@@ -40,7 +40,7 @@
         <div class="payment-input-field" data-payments="{{ payments|json_encode|e('html_attr') }}">
             <ul>
                 <li v-for="(payment,key) in payments">
-                    <b><input type="text" v-model="payments[key].id" form="unknown-id" /></b>:&nbsp;
+                    <b><input type="text" v-model="payment.id" form="unknown-id" /></b>:&nbsp;
                     <button 
                         class="btn btn-info btn-xs" 
                         type="button"
@@ -54,12 +54,12 @@
                         type="button"
                         @click="removePayment(key)"
                         >❌</button><br/>
-                    <ul v-show="payment.visibility" :id="`{{field.propertyName}}-payment-input-${payments[key].id}`">
-                        <li>Date : <input type="text" size="2" v-model="payments[key].day" form="unknown-id" pattern="[0-9]{2}"/>/
-                            <input type="text" size="2" v-model="payments[key].month" form="unknown-id" pattern="[0-9]{2}"/>/
-                            <input type="text" size="4" v-model="payments[key].year" form="unknown-id" pattern="[0-9]{4}"/>
+                    <ul v-show="payment.visibility" :id="`{{field.propertyName}}-payment-input-${payment.id}`">
+                        <li>Date : <input type="text" size="2" v-model="payment.day" form="unknown-id" pattern="0[1-9]|[1-2][0-9]|3[0-1]"/>/
+                            <input type="text" size="2" v-model="payment.month" form="unknown-id" pattern="0[1-9]|1[0-2]"/>/
+                            <input type="text" size="4" v-model="payment.year" form="unknown-id" pattern="[1-2][0-9]{3}"/>
                         </li>
-                        <li>Origine : <input type="text" v-model="payments[key].origin" form="unknown-id" /></li>
+                        <li>Origine : <input type="text" v-model="payment.origin" form="unknown-id" /></li>
                         {{ _self.blocAdhesionDon('adhesion','Adhésions') }}
                         {{ _self.blocAdhesionDon('adhesion_groupe','Adhésions groupe') }}
                         {{ _self.blocAdhesionDon('don','Dons') }}

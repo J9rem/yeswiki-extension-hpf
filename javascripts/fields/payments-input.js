@@ -55,8 +55,15 @@ let appParams = {
       }
     },
     methods:{
+      assignValueReactive(obj,original){
+        for (const key in original) {
+          this.$set(obj,key,original[key])
+        }
+      },
       createPayment(){
-        this.payments.push({...this.defaultPayment})
+        let newVal = {}
+        this.assignValueReactive(newVal,this.defaultPayment)
+        this.payments.push(newVal)
       },
       convertPaymentsToArray(payments){
         return Object.entries(payments).map(this.generatePaymentFromArray)
@@ -67,25 +74,28 @@ let appParams = {
           String(payment.day).length !== 2){
           return '';
         }
-        const date = `${payment.year}${payment.month}${payment.day}`
+        const date = `${payment.year}-${payment.month}-${payment.day}`
         const parsed = Date.parse(date)
         return isNaN(parsed) ? '' : date;
       },
       generatePaymentFromArray([id,value]){
-        let data = {...this.defaultPayment,...value}
-          data.id = id
-          data.visibility = true
-          if ('date' in data && data.date.length > 0){
-            const parsed = Date.parse(data.date)
-            if (!isNaN(parsed)){
-              let day = parsed.getDate()
-              data.day = (day < 10) ? `0${day}` : String(day)
-              let month = parsed.getMonth() + 1
-              data.month = (month < 10) ? `0${month}` : String(month)
-              data.year = String(parsed.getYear())
-            }
+        let data = {}
+        this.assignValueReactive(data,this.defaultPayment)
+        this.assignValueReactive(data,value)
+        this.$set(data,'visibility',true)
+        data.id = id
+        if ('date' in value && value.date.length > 0){
+          const parsed = Date.parse(value.date)
+          if (!isNaN(parsed)){
+            const date = new Date(value.date)
+            let day = date.getDate()
+            data.day = (day < 10) ? `0${day}` : String(day)
+            let month = date.getMonth() + 1
+            data.month = (month < 10) ? `0${month}` : String(month)
+            data.year = String(date.getFullYear())
           }
-          return data
+        }
+        return data
       },
       removePayment(keyToRemove){
         this.payments.splice(keyToRemove,1)
