@@ -16,124 +16,84 @@ let appParams = {
     // components: {SpinnerLoader},
     data: function() {
         return {
-          payments: {},
-          paymentsOrder: [],
-          paymentsVisibility: {}
+          defaultPayment: {
+            id: '',
+            origin: '',
+            day: '',
+            month: '',
+            year: '',
+            visibility: true
+          },
+          payments: [],
         };
     },
     computed: {
       value(){
-        return Object.keys(this.payments).length === 0 
+        return this.payments.length === 0 
           ? '' 
           : JSON.stringify(
               Object.fromEntries(
-                Object
-                  .entries(this.payments)
-                  .filter(
-                    ([id,data])=>{
-                      return id.length > 0 && 
-                        'origin' in data && 
-                        data.origin.length > 0
-                    }
-                  )
+                this.payments.filter((payment)=>{
+                  return payment.id.length > 0 &&
+                    payment.origin.length > 0 &&
+                    this.generateDate(payment).length > 0
+                }).map((payment)=>{
+                  let data = {...payment}
+                  delete data.id
+                  delete data.visibility
+                  delete data.day
+                  delete data.month
+                  delete data.year
+                  data.date = this.generateDate(payment)
+                  return  [
+                    payment.id,
+                    data
+                  ]
+                })
               )
             )
       }
     },
     methods:{
       createPayment(){
-        if (!('' in this.payments)){
-          this.$set(this.payments,'',{date:'',origin:''})
-          this.paymentsOrder.push('')
-        }
+        this.payments.push({...this.defaultPayment})
       },
-      day(id){
-        const date = this.payments[id].date
-        return String(this.extractDate(date).day).trim()
+      convertPaymentsToArray(payments){
+        return Object.entries(payments).map(this.generatePaymentFromArray)
       },
-      extractDate(date){
-        let foundDate = {
-          day:'',
-          month:'',
-          year:''
+      generateDate(payment){
+        if (String(payment.year).length !== 4 ||
+          String(payment.month).length !== 2 ||
+          String(payment.day).length !== 2){
+          return '';
         }
+        const date = `${payment.year}${payment.month}${payment.day}`
         const parsed = Date.parse(date)
-        if (isNaN(parsed)){
-          if (date.length > 7){
-            let dayAsNumber = Number(date.slice(6,8))
-            if (!isNaN(dayAsNumber) && dayAsNumber > 0 && dayAsNumber < 32){
-              foundDate.day = date.slice(6,8)
-            }
-            let monthAsNumber = Number(date.slice(4,6))
-            if (!isNaN(monthAsNumber) && monthAsNumber > 0 && monthAsNumber < 13){
-              foundDate.month = date.slice(4,6)
-            }
-            let yearAsNumber = Number(date.slice(0,4))
-            if (!isNaN(yearAsNumber)){
-              foundDate.year = date.slice(0,4)
+        return isNaN(parsed) ? '' : date;
+      },
+      generatePaymentFromArray([id,value]){
+        let data = {...this.defaultPayment,...value}
+          data.id = id
+          data.visibility = true
+          if ('date' in data && data.date.length > 0){
+            const parsed = Date.parse(data.date)
+            if (!isNaN(parsed)){
+              let day = parsed.getDate()
+              data.day = (day < 10) ? `0${day}` : String(day)
+              let month = parsed.getMonth() + 1
+              data.month = (month < 10) ? `0${month}` : String(month)
+              data.year = String(parsed.getYear())
             }
           }
-        } else {
-          foundDate.day = parsed.getDate()
-          foundDate.month = parsed.getMonth() + 1
-          foundDate.year = parsed.getFullYear()
-        }
-        if (foundDate.day.length > 0){
-          let dayAsNumber = Number(foundDate.day)
-          foundDate.day = (dayAsNumber < 10) ? `0${dayAsNumber}` : dayAsNumber
-        }
-        if (foundDate.month.length > 0){
-          let monthAsNumber = Number(foundDate.month)
-          foundDate.month = (monthAsNumber < 10) ? `0${monthAsNumber}` : monthAsNumber
-        }
-        return foundDate
+          return data
       },
-      formatDate(date){
-        let formattedDate = `${date.year}${date.month}${date.day}`
-        let parsed = Date.parse(formattedDate)
-        if (isNaN(parsed)){
-          return '' +
-            (String(date.year).length !== 4 ? '    ' : String(date.year)) +
-            (String(date.month).length !== 2 ? '  ' : String(date.month)) +
-            (String(date.day).length !== 2 ? '  ' : String(date.day))
-        } else {
-          return formattedDate
-        }
-      },
-      month(id){
-        const date = this.payments[id].date
-        return String(this.extractDate(date).month).trim()
-      },
-      removePayment(paymentId){
-        if (paymentId in this.paymentsVisibility) {
-          this.$delete(this.paymentsVisibility,paymentId)
-        }
-        if (paymentId in this.payments) {
-          this.$delete(this.payments,paymentId)
-        }
-        if (this.paymentsOrder.includes(paymentId)){
-          this.paymentsOrder = this.paymentsOrder.filter((id)=>id!=paymentId)
-        }
-      },
-      setDatePartial(id,value,type,test){
-        const asNumber = Number(value)
-        if (id in this.payments && (value.length === 0 || (!isNaN(asNumber) && test(asNumber)))){
-          let foundDate = this.extractDate(this.payments[id].date)
-          foundDate[type] = value
-          const previous = this.payments[id].date
-          const newVal = this.formatDate(foundDate)
-          this.payments[id].date = newVal
-          console.log({id,value,type,previous,foundDate,newVal})
-        }
-      },
-      setDay(id,day){
-        this.setDatePartial(id,day,'day',(dayAsNumber)=>dayAsNumber>0 && dayAsNumber < 32)
-      },
-      setMonth(id,month){
-        this.setDatePartial(id,month,'month',(monthAsNumber)=>monthAsNumber>0 && monthAsNumber < 13)
-      },
-      setYear(id,year){
-        this.setDatePartial(id,year,'year',()=>true)
+      removePayment(keyToRemove){
+        this.payments = (keyToRemove == 0)
+          ? this.payments.slice(1)
+          : [
+            ...this.payments.slice(0,keyToRemove),
+            ...this.payments.slice(keyToRemove+1)
+          ]
       },
       sortArrayDateThenIdDesc(array){
         return array.sort((a,b)=>{
@@ -141,28 +101,6 @@ let appParams = {
           return (result === 0) ? (b.id >= a.id): result
         })
       },
-      toggleVisibility(paymentId){
-        this.$set(this.paymentsVisibility,paymentId,(paymentId in this.paymentsVisibility) ? !this.paymentsVisibility[paymentId] : false)
-      },
-      updatePaymentId(oldId,newId){
-        if (oldId in this.payments){
-          const oldData = {...this.payments[oldId]}
-          const oldVisibility = oldId in this.paymentsVisibility ? this.paymentsVisibility[oldId] : null
-          this.$delete(this.payments,oldId)
-          this.$delete(this.paymentsVisibility,oldId)
-          this.$set(this.payments,newId,oldData)
-          if (oldVisibility !== null){
-            this.$set(this.paymentsVisibility,newId,oldVisibility)
-          }
-          if (this.paymentsOrder.includes(oldId)){
-            this.paymentsOrder = this.paymentsOrder.map((id)=>(id == oldId) ? newId : id).filter((id)=>(id != oldId))
-          }
-        }
-      },
-      year(id){
-        const date = this.payments[id].date
-        return String(this.extractDate(date).year).trim()
-      }
     },
     mounted(){
       const el = $(isVueJS3 ? this.$el.parentNode : this.$el)
@@ -171,10 +109,7 @@ let appParams = {
         importedPayments = JSON.parse(el[0].dataset.payments)
       } catch (error) {
       }
-      this.payments = importedPayments
-      this.paymentsOrder = this.sortArrayDateThenIdDesc(Object.entries(importedPayments).map(([id,data])=>{return{...data,...{id}}})).map((data)=>data.id)
-    },
-    watch: {
+      this.payments = this.sortArrayDateThenIdDesc(this.convertPaymentsToArray(importedPayments))
     }
 };
 
