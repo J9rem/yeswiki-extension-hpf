@@ -29,8 +29,13 @@ copySync(
     { overwrite: true }
   )
 // locale
+// copySync(
+//     'node_modules/vuejs-datepicker/dist/locale/translations',
+//     'javascripts/vendor/vuejs-datepicker/locale',
+//     { overwrite: true }
+//   )
 copySync(
-    'node_modules/vuejs-datepicker/dist/locale/translations',
-    'javascripts/vendor/vuejs-datepicker/locale',
+    'node_modules/vuejs-datepicker/dist/locale/index.js',
+    'javascripts/vendor/vuejs-datepicker/translations.min.js',
     { overwrite: true }
   )

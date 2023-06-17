@@ -19,3 +19,16 @@
 .payment-collapse-button.collapsed .hide-collapsed {
     display: none;
 }
+
+.datepicker-container {
+    display: inline-block;
+}
+
+.datepicker-container > div:first-child {
+    width: 130px;
+    overflow: hidden;
+    height: 34px;
+}
+.datepicker-container > div:first-child > input {
+    width: 130px;
+}

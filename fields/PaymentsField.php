@@ -58,4 +58,22 @@ class PaymentsField extends TextField
         });
         return $payments;
     }
+
+    public function formatValuesBeforeSave($entry)
+    {
+        if (empty($this->propertyName)) {
+            return [];
+        }
+        $dirtyHtml = $this->getValue($entry);
+        $fieldsToRemove = [];
+        foreach($entry as $key=>$value){
+            if (is_string($key) && substr($key,0,strlen('datepicker-')) == 'datepicker-'){
+                $fieldsToRemove[] = $key;
+            }
+        }
+        return [
+            $this->propertyName => $dirtyHtml,
+            'fields-to-remove' => $fieldsToRemove
+        ];
+    }
 }
