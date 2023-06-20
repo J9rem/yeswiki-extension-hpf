@@ -42,27 +42,24 @@
         <ul class="collapse in" id="{{field.propertyName}}-payment-{{ id }}">
           <li>Date : {{ data.date is empty ? '' : (data.date|slice(8,2) ~ '/' ~ data.date|slice(5,2) ~ '/' ~ data.date|slice(0,4)) }}</li>
           <li>Origine : {{ data.origin }}</li>
-          {% if data.adhesion %}
-            <ul>
-              {% for annee,value in data.adhesion %}
-                <li>{{ annee }} : {{ value }}</li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-          {% if data.adhesion_groupe %}
-            <ul>
-              {% for annee,value in data.adhesion_groupe %}
-                <li>{{ annee }} : {{ value }}</li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-          {% if data.don %}
-            <ul>
-              {% for annee,value in data.don %}
-                <li>{{ annee }} : {{ value }}</li>
-              {% endfor %}
-            </ul>
-          {% endif %}
+          <li>Total : {{ data.total is empty ? 0 : data.total }}&nbsp;€</li>
+          {% set paramsInternal = {key:'adhesion',title:'Adhésion'} %}
+          {% block elempart %}
+            {% if data[paramsInternal.key] %}
+              <li>
+                {{ paramsInternal.title }} :<br>
+                <ul>
+                  {% for annee,value in data[paramsInternal.key] %}
+                    <li>{{ annee }} : {{ value }}&nbsp;€</li>
+                  {% endfor %}
+                </ul>
+              </li>
+            {% endif %}
+          {% endblock elempart %}
+          {% set paramsInternal = {key:'adhesion_groupe',title:'Adhésion groupe'} %}
+          {{ block('elempart') }}
+          {% set paramsInternal = {key:'don',title:'Don'} %}
+          {{ block('elempart') }}
         </ul>
       </li>
     {% endfor %}

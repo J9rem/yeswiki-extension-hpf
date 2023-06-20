@@ -13,6 +13,7 @@ namespace YesWiki\Hpf\Field;
 
 use Psr\Container\ContainerInterface;
 use YesWiki\Bazar\Field\TextField;
+use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Hpf\Service\HpfService;
 
 /**
@@ -20,6 +21,15 @@ use YesWiki\Hpf\Service\HpfService;
  */
 class PaymentsField extends TextField
 {
+    public const AVAILABLE_ORIGINS = [
+        'helloasso',
+        'virement',
+        'cheque',
+        'structure',
+        'espece'
+    ];
+    protected $hpfService;
+
     public function __construct(array $values, ContainerInterface $services)
     {
         parent::__construct($values, $services);
@@ -39,15 +49,54 @@ class PaymentsField extends TextField
     {
         $value = $this->getValue($entry);
         $payments = $this->convertStringToPaymentsSorted($value);
+        $formManager = $this->getService(FormManager::class);
+        $paymentsFormIds = $this->hpfService->getCurrentPaymentsFormIds();
+        $formIds = [];
+        if (empty($entry['id_typeannonce'])){
+            $formsIds = $paymentsFormIds;
+        } else {
+            $formIds = [$entry['id_typeannonce']];
+        }
+        $options = [
+            'years' => [],
+            'origins' => []
+        ];
+        foreach(HpfService::PAYED_FIELDNAMES['years'] as $name => $fieldName){
+            $field = null;
+            foreach ($formIds as $formId) {
+                if (empty($field)){
+                    $field = $formManager->findFieldFromNameOrPropertyName($fieldName, $formId);
+                }
+            }
+            if (!empty($field)){
+                $options['years'][$name] = $field->getOptions();
+            }
+        }
+        foreach($paymentsFormIds as $id){
+            $form = $formManager->getOne($id);
+            $options['origins'][] = [
+                'id' => self::AVAILABLE_ORIGINS[0].":$id",
+                'name' => self::AVAILABLE_ORIGINS[0].":$id ({$form['bn_label_nature']})"
+            ];
+        }
+        foreach(self::AVAILABLE_ORIGINS as $name){
+            $options['origins'][] = [
+                'id' => $name,
+                'name' => $name
+            ];
+        }
+
         return $this->render('@bazar/inputs/payments.twig',[
             'payments' => $payments,
-            'value' => json_encode($payments)
+            'value' => json_encode($payments),
+            'options' => $options
         ]);
     }
 
     protected function convertStringToPaymentsSorted($value): array
     {
-        $payments = $this->getService(HpfService::class)->convertStringToPayments($value);
+        $this->hpfService = $this->getService(HpfService::class);
+        $payments = $this->hpfService->convertStringToPayments($value);
         uksort($payments,function($keyA,$keyB) use ($payments){
             $valA = $payments[$keyA];
             $valB = $payments[$keyB];
