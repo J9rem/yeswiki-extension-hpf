@@ -7,12 +7,29 @@
  * file that was distributed with this source code.
  *#}
 
-{% macro blocAdhesionDon(key,title) %}
+{% macro blocAdhesionDon(elemKey,title,options) %}
+    {% set aliasElemKey = (elemKey == 'adhesion') ? 'membership' : ((elemKey == 'adhesion_groupe') ? 'group_membership' : 'donation') %}
     <li>
-        <b>{{ title }} :</b>
-        <ul v-if="payment.{{ key }}">
-            <li v-for="(value,annee) in payment.{{ key }}">{{"{{ annee }}"}} : {{"{{ value }}"}}</li>
+        <b>{{ title }} : </b>
+        <ul v-if="payment.{{ elemKey }}">
+            <li v-for="([annee,value],keyYear) in payment.{{ elemKey }}">
+                <select form="unknown-id" v-model="payment.{{ elemKey }}[keyYear][0]">
+                    {% for optionName,optionValue in options.years[aliasElemKey] %}
+                        <option value="{{ optionName }}">{{ optionValue }}</option>
+                    {% endfor %}
+                </select> : <input type="text" v-model="payment.{{ elemKey }}[keyYear][1]" form="unknown-id" pattern="[0-9]+([.,][0-9]{1,2})?"/>&nbsp;€
+                <button 
+                    class="btn btn-danger btn-xs" 
+                    type="button"
+                    @click="removeSubElem(key,{{ elemKey|json_encode }},keyYear)"
+                    >❌</button>
+            </li>
         </ul>
+        <button 
+            class="btn btn-success btn-xs" 
+            type="button"
+            @click="createSubElem(key,{{ elemKey|json_encode }})"
+            >➕</button>
     </li>
 {% endmacro %}
 
@@ -59,19 +76,26 @@
                     <ul v-show="payment.visibility" :id="`{{field.propertyName}}-payment-input-${payment.id}`">
                         <li>Date : <vuejs-datepicker 
                                 :format="customFormatterDate" 
-                                typeable="true" 
+                                :typeable="true" 
                                 :name="`datepicker-${payment.id}`" 
-                                monday-first="true"
+                                :monday-first="true"
                                 :language="datePickerLanguage"
                                 wrapper-class="datepicker-container"
                                 :value="payment.customDate"
-                                @selected="(date)=>updateDate({key,date,event})">
+                                @selected="(date)=>updateDate({key,date})">
                             </vuejs-datepicker> ({{ "{{ customFormatterDate(payment.customDate) }}" }})
                         </li>
-                        <li>Origine : <input type="text" v-model="payment.origin" form="unknown-id" /></li>
-                        {{ _self.blocAdhesionDon('adhesion','Adhésions') }}
-                        {{ _self.blocAdhesionDon('adhesion_groupe','Adhésions groupe') }}
-                        {{ _self.blocAdhesionDon('don','Dons') }}
+                        <li>Origine :
+                            <select form="unknown-id" v-model="payment.origin">
+                                {% for option in options.origins %}
+                                    <option value="{{ option.id }}">{{ option.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </li>
+                        <li>Total : <input type="text" v-model="payment.total" form="unknown-id" pattern="[0-9]+([.,][0-9]{1,2})?"/>&nbsp;€</li>
+                        {{ _self.blocAdhesionDon('adhesion','Adhésions',options) }}
+                        {{ _self.blocAdhesionDon('adhesion_groupe','Adhésions groupe',options) }}
+                        {{ _self.blocAdhesionDon('don','Dons',options) }}
                     </ul>
                 </li>
             </ul>

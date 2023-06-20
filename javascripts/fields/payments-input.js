@@ -22,7 +22,8 @@ let appParams = {
             id: '',
             origin: '',
             customDate: '',
-            visibility: true
+            visibility: true,
+            total: 0
           },
           payments: [],
         };
@@ -41,7 +42,14 @@ let appParams = {
                   let data = {...payment}
                   delete data.id
                   delete data.visibility
-                  delete data.customDate
+                  delete data.customDate;
+                  ['adhesion','adhesion_groupe','don'].forEach((name)=>{
+                    if (!(name in data) || data[name].length === 0){
+                      delete data[name]
+                    } else {
+                      data[name] = Object.fromEntries(data[name])
+                    }
+                  })
                   data.date = this.generateDate(payment)
                   return  [
                     payment.id,
@@ -62,6 +70,12 @@ let appParams = {
         let newVal = {}
         this.assignValueReactive(newVal,this.defaultPayment)
         this.payments.push(newVal)
+      },
+      createSubElem(key,elemKey){
+        if (!(elemKey in this.payments[key])){
+          this.$set(this.payments[key],elemKey,[])
+        }
+        this.payments[key][elemKey].push(['',''])
       },
       customFormatterDate(date){
         const dd = (new Date(date))
@@ -97,7 +111,16 @@ let appParams = {
         let data = {}
         this.assignValueReactive(data,this.defaultPayment)
         this.assignValueReactive(data,value)
-        this.$set(data,'visibility',true)
+        this.$set(data,'visibility',true);
+        ['adhesion','adhesion_groupe','don'].forEach((name)=>{
+          if (name in data){
+            if (Object.keys(data[name]).length > 0){
+              data[name] = Object.entries(data[name])
+            } else {
+              this.$delete(data,name)
+            }
+          }
+        })
         data.id = id
         if ('date' in value && value.date.length > 0){
           const parsed = Date.parse(value.date)
@@ -106,6 +129,9 @@ let appParams = {
           }
         }
         return data
+      },
+      removeSubElem(key,elemKey,keyYear){
+        this.payments[key][elemKey].splice(keyYear,1)
       },
       removePayment(keyToRemove){
         this.payments.splice(keyToRemove,1)
@@ -116,8 +142,7 @@ let appParams = {
           return (result === 0) ? (b.id >= a.id): result
         })
       },
-      updateDate({key,date,event}){
-        console.log({key,date,event})
+      updateDate({key,date}){
         if (date !== null){
           this.payments[key].customDate = date
         }
