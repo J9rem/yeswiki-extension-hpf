@@ -9,6 +9,8 @@
 
 {% extends "@bazar/layouts/field.twig" %}
 
+{% set currentId = ((entry.id_fiche is empty) ? random() : entry.id_fiche) ~ "-" ~ field.propertyName ~"-payments-list" %}
+
 {% block label %}
   {{ include_css('tools/hpf/styles/fields/payments.css') }}
   {{ parent() }}
@@ -16,16 +18,16 @@
     class="btn btn-info btn-xs collapsed payment-collapse-button" 
     type="button" 
     data-toggle="collapse" 
-    data-target="#{{field.propertyName}}-payments-list" 
+    data-target="#{{currentId}}" 
     aria-expanded="false" 
-    aria-controls="{{field.propertyName}}-payments-list">
+    aria-controls="{{currentId}}">
       <i class="fas fa-caret-down show-collapsed"></i>
       <i class="fas fa-caret-up hide-collapsed"></i>
   </button>
 {% endblock %}
 
 {% block value_container %}
-  <ul class="collapse" id="{{field.propertyName}}-payments-list">
+  <ul class="collapse" id="{{currentId}}">
     {% for id,data in payments %}
       <li>  
         <b>{{ id }}</b>:&nbsp;
@@ -33,13 +35,13 @@
           class="btn btn-info btn-xs payment-collapse-button" 
           type="button" 
           data-toggle="collapse" 
-          data-target="#{{field.propertyName}}-payment-{{ id }}" 
+          data-target="#{{currentId}}-{{ id }}" 
           aria-expanded="true" 
-          aria-controls="{{field.propertyName}}-payment-{{ id }}">
+          aria-controls="{{currentId}}-{{ id }}">
             <i class="fas fa-caret-down show-collapsed"></i>
             <i class="fas fa-caret-up hide-collapsed"></i>
         </button><br/>
-        <ul class="collapse in" id="{{field.propertyName}}-payment-{{ id }}">
+        <ul class="collapse in" id="{{currentId}}-{{ id }}">
           <li>Date : {{ data.date is empty ? '' : (data.date|slice(8,2) ~ '/' ~ data.date|slice(5,2) ~ '/' ~ data.date|slice(0,4)) }}</li>
           <li>Origine : {{ data.origin }}</li>
           <li>Total : {{ data.total is empty ? 0 : data.total }}&nbsp;€</li>
