@@ -9,28 +9,30 @@
 
 {% macro blocAdhesionDon(elemKey,title,options) %}
     {% set aliasElemKey = (elemKey == 'adhesion') ? 'membership' : ((elemKey == 'adhesion_groupe') ? 'group_membership' : 'donation') %}
-    <li>
-        <b>{{ title }} : </b>
-        <ul v-if="payment.{{ elemKey }}">
-            <li v-for="([annee,value],keyYear) in payment.{{ elemKey }}">
-                <select form="unknown-id" v-model="payment.{{ elemKey }}[keyYear][0]">
-                    {% for optionName,optionValue in options.years[aliasElemKey] %}
-                        <option value="{{ optionName }}">{{ optionValue }}</option>
-                    {% endfor %}
-                </select> : <input type="text" v-model="payment.{{ elemKey }}[keyYear][1]" form="unknown-id" pattern="[0-9]+([.,][0-9]{1,2})?"/>&nbsp;€
-                <button 
-                    class="btn btn-danger btn-xs" 
-                    type="button"
-                    @click="removeSubElem(key,{{ elemKey|json_encode }},keyYear)"
-                    >❌</button>
-            </li>
-        </ul>
-        <button 
-            class="btn btn-success btn-xs" 
-            type="button"
-            @click="createSubElem(key,{{ elemKey|json_encode }})"
-            >➕</button>
-    </li>
+    {% if options.years[aliasElemKey] is not empty %}
+        <li>
+            <b>{{ title }} : </b>
+            <ul v-if="payment.{{ elemKey }}">
+                <li v-for="([annee,value],keyYear) in payment.{{ elemKey }}">
+                    <select form="unknown-id" v-model="payment.{{ elemKey }}[keyYear][0]">
+                        {% for optionName,optionValue in options.years[aliasElemKey] %}
+                            <option value="{{ optionName }}">{{ optionValue }}</option>
+                        {% endfor %}
+                    </select> : <input type="text" v-model="payment.{{ elemKey }}[keyYear][1]" form="unknown-id" pattern="[0-9]+([.,][0-9]{1,2})?"/>&nbsp;€
+                    <button 
+                        class="btn btn-danger btn-xs" 
+                        type="button"
+                        @click="removeSubElem(key,{{ elemKey|json_encode }},keyYear)"
+                        >❌</button>
+                </li>
+            </ul>
+            <button 
+                class="btn btn-success btn-xs" 
+                type="button"
+                @click="createSubElem(key,{{ elemKey|json_encode }})"
+                >➕</button>
+        </li>
+    {% endif %}
 {% endmacro %}
 
 {% extends "@bazar/layouts/input.twig" %}
