@@ -220,7 +220,12 @@ class HPFPaymentStatusAction extends YesWikiAction
         <a href="{$this->wiki->Href('',"api/hpf/refresh-payment/{$entry['id_fiche']}")}" class="hpf-here-link">
         HTML;
         $hereLinkEnd = '</a>';
-        $entryLink = $this->wiki->format("[[{$entry['id_fiche']} {$entry['id_fiche']}]]");
+        $form = $this->formManager->getOne($entry['id_typeannonce']);
+        $entryLink = $this->wiki->format("[[{$entry['id_fiche']} {$entry['id_fiche']}]]".(
+            !empty($form['bn_label_nature'])
+            ? " (${$form['bn_label_nature']})"
+            : ''
+        ));
         $paymentMessage = $this->render("@templates/alert-message.twig", [
             'type' => 'secondary-2',
             'message' => str_replace(
