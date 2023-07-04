@@ -223,7 +223,7 @@ class HPFPaymentStatusAction extends YesWikiAction
         $form = $this->formManager->getOne($entry['id_typeannonce']);
         $entryLink = $this->wiki->format("[[{$entry['id_fiche']} {$entry['id_fiche']}]]".(
             !empty($form['bn_label_nature'])
-            ? " (${$form['bn_label_nature']})"
+            ? " ({$form['bn_label_nature']})"
             : ''
         ));
         $paymentMessage = $this->render("@templates/alert-message.twig", [
