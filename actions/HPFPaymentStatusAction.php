@@ -81,7 +81,6 @@ class HPFPaymentStatusAction extends YesWikiAction
         $output = '';
         foreach ($contribEntries as $contribEntryInt) {
             $output .= $this->renderOneEntry($contribEntryInt,$contribFormId,$user);
-            break; // only one for tests
         }
         return $output;
         
