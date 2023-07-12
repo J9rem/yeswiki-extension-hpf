@@ -12,7 +12,6 @@
   {% set imWidth = 170 %}
   {% set imHeight = 170 %}
   {% set firstTokenCrop = csrfToken("GET api/images/cache/#{imWidth}/#{imHeight}/crop") %}
-  {# be carfeul to use POST if new antiCsrf token #}
   <div class="panel-group no-dblclick" style="opacity: 0;" :class="{ready: ready}" v-if="ready">
     <div v-if="entriesToDisplay.length == 0">
     </div>

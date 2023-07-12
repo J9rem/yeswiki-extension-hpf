@@ -1,9 +1,0 @@
-{
-  "scripts": {
-    "postinstall": "node ./javascripts/extract-node-packages.js"
-  },
-  "devDependencies": {
-    "fs-extra": "^11.1.1",
-    "vuejs-datepicker": "^1.6.2"
-  }
-}
