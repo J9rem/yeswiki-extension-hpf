@@ -11,6 +11,7 @@
 
 namespace YesWiki\Hpf;
 
+use Throwable;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\YesWikiAction;
@@ -59,8 +60,8 @@ class HPFPaymentStatusAction extends YesWikiAction
             ? $this->arguments['formid']
             : $contribFormIds[0]
             ;
-        $contribEntry = $this->hpfService->getCurrentContribEntry($contribFormId, $user['email'],$this->arguments['entry_id'],$user['name']);
-        if (empty($contribEntry)) {
+        $contribEntries = $this->hpfService->getCurrentContribEntry($contribFormId, $user['email'],$this->arguments['entry_id'],$user['name']);
+        if (empty($contribEntries)) {
             $output = "";
             if (!empty($this->arguments['entry_id'])) {
                 $output .= $this->updateOtherEntry($contribFormId);
@@ -70,10 +71,30 @@ class HPFPaymentStatusAction extends YesWikiAction
                 'message' => $this->arguments['empty_message']
             ]);
             return $output;
-        } elseif (!empty($this->arguments['entry_id']) && $this->arguments['entry_id'] != $contribEntry['id_fiche']) {
+        } 
+        $contribEntry = $contribEntries[array_key_first($contribEntries)];
+        if (!empty($this->arguments['entry_id']) && !in_array($this->arguments['entry_id'],array_map(function($e){
+            return $e['id_fiche'] ?? '';
+        },$contribEntries))) {
             return $this->updateOtherEntry($contribEntry['id_typeannonce']);
         }
+        $output = '';
+        foreach ($contribEntries as $contribEntryInt) {
+            $output .= $this->renderOneEntry($contribEntryInt,$contribFormId,$user);
+            break; // only one for tests
+        }
+        return $output;
         
+    }
+    /**
+     * render one entry
+     * @param array $contribEntry
+     * @param string $contribFormId
+     * @param User|array $user
+     * @return string
+     */
+    protected function renderOneEntry(array $contribEntry, string $contribFormId, $user):string
+    {        
         $previousCalcValue = $contribEntry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
         $calcValue = $this->updatePaymentsForEntry($contribEntry, $user['email']);
 
@@ -133,7 +154,7 @@ class HPFPaymentStatusAction extends YesWikiAction
             } else {
                 return $paymentMessage.$changedValueMsg;
             }
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             return empty($this->arguments['nothing_to_pay_message']) ? "" :
                 $this->render("@templates/alert-message.twig", [
                     'type' => 'danger',

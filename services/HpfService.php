@@ -125,7 +125,7 @@ class HpfService
      * @param string $email
      * @param string $preferedEntryId
      * @param string $preferedUserName
-     * @return array $entry or []
+     * @return array $entries
      * @throws Exception
      */
     public function getCurrentContribEntry(string $formId, string $email = "", string $preferedEntryId = "", string $preferedUserName = ''): array
@@ -159,14 +159,19 @@ class HpfService
                             return !empty($entry['owner']) && $entry['owner'] == $preferedUserName;
                         })
                         : [];
-                    $idFiche = !empty($sameIds)
-                        ? $sameIds[array_key_first($sameIds)]['id_fiche']
+                    $ids = !empty($sameIds)
+                        ? $sameIds
                         : (
                             !empty($sameOwner)
-                            ? $sameOwner[array_key_first($sameOwner)]['id_fiche']
-                            : $entries[array_key_first($entries)]['id_fiche']
+                            ? $sameOwner
+                            : $entries
                         );
-                    return $this->entryManager->getOne($idFiche, false, null, false, true);
+                    if (!empty($ids) && $this->wiki->UserIsAdmin()){
+                        $ids = [$ids[array_key_first($ids)]];
+                    }
+                    return array_map(function($id){
+                        return $this->entryManager->getOne($id['id_fiche'], false, null, false, true);
+                    },$ids);
                 }
             }
         } catch (Throwable $th) {
@@ -351,9 +356,9 @@ class HpfService
                     $cacheEntries[$paymentEmail] = [];
                 }
                 if (!isset($cacheEntries[$paymentEmail]['entry'])) {
-                    $entry = $this->getCurrentContribEntry($formId, $paymentEmail,$preferedEntryId);
-                    if (!empty($entry)) {
-                        $cacheEntries[$paymentEmail]['entry'] = $entry;
+                    $entries = $this->getCurrentContribEntry($formId, $paymentEmail,$preferedEntryId);
+                    if (!empty($entries)) {
+                        $cacheEntries[$paymentEmail]['entry'] = $entries[array_key_first($entries)];
                         $cacheEntries[$paymentEmail]['previousTotal'] = $cacheEntries[$paymentEmail]['entry'][self::CALC_FIELDNAMES['total']] ?? "";
                         $cacheEntries[$paymentEmail]['previousPayments'] = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
                     }
@@ -471,9 +476,9 @@ class HpfService
         $this->refreshPaymentsInfo($entry['id_typeannonce'], $email, $entry['id_fiche'] ?? '');
 
         // reload entry
-        $entry = $this->getCurrentContribEntry($entry['id_typeannonce'], $email, $entry['id_fiche'] ?? '');
+        $entries = $this->getCurrentContribEntry($entry['id_typeannonce'], $email, $entry['id_fiche'] ?? '');
 
-        $calcValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
+        $calcValue = !empty($entries) ? ($entries[array_key_first($entries)][HpfService::CALC_FIELDNAMES["total"]] ?? 0 ) : 0;
 
         return $calcValue;
     }
