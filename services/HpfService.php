@@ -842,7 +842,7 @@ class HpfService
      * @return string $paymentContent
      * @throws Exception
      */
-    public function appendFormatPaymentForField(string $paymentContent,array $params): array
+    public function appendFormatPaymentForField(string $paymentContent,array $params): string
     {
         $newPayment = $this->formatPaymentForField($params);
         $formattedPayments = $this->convertStringToPayments($paymentContent);
