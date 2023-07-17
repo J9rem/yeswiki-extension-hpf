@@ -19,6 +19,9 @@ use YesWiki\Bazar\Service\ListManager;
 use YesWiki\Core\Controller\AuthController;
 use YesWiki\Core\Service\ConfigurationService;
 use YesWiki\Hpf\Service\HpfService;
+use YesWiki\Shop\Entity\Payment;
+use YesWiki\Shop\Entity\User;
+use YesWiki\Shop\HelloAssoPayments;
 use YesWiki\Test\Core\YesWikiTestCase;
 use YesWiki\Wiki;
 
@@ -30,6 +33,8 @@ class HpfServiceTest extends YesWikiTestCase
     private const FORM_ID = 'HpfTestForm';
     private const LIST_ID = 'ListeHpfTestUniqIdListe';
     private const ENTRY_ID = 'HpfTestUniqIdEntry';
+    private const ENTRY_EMAIL = 'test@oui-wiki.pro';
+    private const DEFAULT_PAYMENT_ID = '13245768A';
 
     /**
      * @covers HpfService::__construct
@@ -100,6 +105,7 @@ class HpfServiceTest extends YesWikiTestCase
 
     /**
      * @depends testGetCurrentPaymentsFormIds
+     * @param array $services [$wiki,$hpfService,$wakkaConfig,$hpfParamdefined]
      * @return array [$wiki,$hpfService,$wakkaConfig,$hpfParamdefined]
      */
     public function testHpfParamDefined(
@@ -108,12 +114,38 @@ class HpfServiceTest extends YesWikiTestCase
     {
         $this->assertTrue($services['hpfParamdefined'],"'hpf' param must be defined !");
         self::$cache['canSetList'] = true;
+        $paymentsFormIds = $services['hpfService']->getCurrentPaymentsFormIds();
+        $formManager = $services['wiki']->services->get(FormManager::class);
+        foreach($paymentsFormIds as $id){
+            $form = $formManager->getOne($id);
+            if (!empty($id) && empty($form)){
+                self::$cache['currentFormId'] = strval($id);
+                break;
+            }
+        }
+        if (empty(self::$cache['currentFormId'])){
+            self::$cache['currentFormId'] = $formManager->findNewId();
+            $configurationService = $services['wiki']->services->get(ConfigurationService::class);
+            $config = $configurationService->getConfiguration('wakka.config.php');
+            $config->load();
+            $newValues = $paymentsFormIds;
+            $newValues[] = self::$cache['currentFormId'];
+            $config['hpf'] = array_merge(
+                $config['hpf'] ?? [],
+                [
+                    'contribFormIds' => implode(',',$newValues)
+                ]
+            );
+            $configurationService->write($config);
+            $this->assertTrue(false,'all contrib form ids are used => RESTART TESTS');
+        }
         return $services;
     }
 
     /**
      * @depends testHpfParamDefined
      * @dataProvider bfCalcProvider
+     * @covers HpfService::getCurrentContribEntry
      * @param string $bf_value
      * @param string $bf_value_groupe
      * @param string $bf_value_don
@@ -121,6 +153,7 @@ class HpfServiceTest extends YesWikiTestCase
      * @param string $waited_bf_adhesion_groupe_a_payer
      * @param string $waited_bf_don_a_payer
      * @param string $waited_bf_calc
+     * @param array $services [$wiki,$hpfService,$wakkaConfig,$hpfParamdefined]
      * @return array [$wiki,$hpfService,$wakkaConfig,$hpfParamdefined]
      */
     public function testBfCalc(
@@ -138,15 +171,15 @@ class HpfServiceTest extends YesWikiTestCase
         $this->updateEntry(true,compact([
             'bf_value',
             'bf_value_groupe',
-            'bf_value_don',
-            'waited_bf_adhesion_a_payer',
-            'waited_bf_adhesion_groupe_a_payer',
-            'waited_bf_don_a_payer',
-            'waited_bf_calc',
+            'bf_value_don'
         ]));
         
-        $entryManager = $services['wiki']->services->get(EntryManager::class);
-        $entry = $entryManager->getOne(self::ENTRY_ID);
+        $entries = $services['hpfService']->getCurrentContribEntry(
+            self::$cache['currentFormId'], 
+            self::ENTRY_EMAIL,
+            self::ENTRY_ID);
+
+        $entry = !empty($entries) ? $entries[array_key_first($entries)] : [];
 
         // delete the entry
         $this->updateEntry(false,[]);
@@ -154,6 +187,8 @@ class HpfServiceTest extends YesWikiTestCase
         // tests
         $this->assertNotEmpty($entry,'entry should not be empty');
         $this->assertIsArray($entry,'entry should be array');
+        $this->assertArrayHasKey('bf_mail',$entry,"entry should contain key 'bf_mail'");
+        $this->assertSame(self::ENTRY_EMAIL,$entry['bf_mail'],"entry['bf_mail'] should be ".self::ENTRY_EMAIL);
         foreach([
             'bf_value',
             'bf_value_groupe',
@@ -170,7 +205,7 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_value_groupe',
             'bf_value_don'
         ] as $key){
-            $this->assertSame($entry[$key],$$key,"entry['$key'] should by {$$key}");
+            $this->assertSame($$key,$entry[$key],"entry['$key'] should be {$$key}");
         }
         foreach([
             'bf_adhesion_a_payer',
@@ -179,9 +214,8 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_calc'
         ] as $key){
             $waitedName = "waited_$key";
-            $this->assertSame($entry[$key],$$waitedName,"entry['$key'] should by {$$waitedName}");
+            $this->assertSame($$waitedName,$entry[$key],"entry['$key'] should by {$$waitedName}");
         }
-        return $services;
     }
 
     /**
@@ -257,6 +291,86 @@ class HpfServiceTest extends YesWikiTestCase
     }
 
     /**
+     * @depends testHpfParamDefined
+     * @depends testBfCalc
+     * @covers HpfService::updateEntryWithPayment
+     * @dataProvider updateEntryWithPaymentProvider
+     * @param string $bf_value
+     * @param string $bf_value_groupe
+     * @param string $bf_value_don
+     * @param string $paymentId
+     * @param string $paymentAmount
+     * @param string $paymentDate
+     * @param array $services [$wiki,$hpfService,$wakkaConfig,$hpfParamdefined]
+     * @return array [$wiki,$hpfService,$wakkaConfig,$hpfParamdefined]
+     */
+    public function testUpdateEntryWithPayment(
+        string $bf_value,
+        string $bf_value_groupe,
+        string $bf_value_don,
+        string $paymentId,
+        string $paymentAmount,
+        string $paymentDate,
+        array $services
+    ) 
+    {
+        // create an entry
+        $this->updateEntry(true,compact([
+            'bf_value',
+            'bf_value_groupe',
+            'bf_value_don'
+        ]));
+
+        $user = new user();
+        $user->email = self::ENTRY_EMAIL;
+        $payment = new Payment([
+            'id' => $paymentId,
+            'payer' => $user,
+            'amount' => $paymentAmount,
+            'date' => $paymentDate
+        ]);
+        $payments = new HelloAssoPayments(
+            [$payment], //payments
+            [] // $otherData
+        );
+
+        $entryManager = $services['wiki']->services->get(EntryManager::class);
+        $entry = $entryManager->getOne(self::ENTRY_ID);
+
+        $entry = $services['hpfService']->updateEntryWithPayment($entry,$payment);
+
+        // delete the entry
+        $this->updateEntry(false,[]);
+
+        
+        // tests
+        $this->assertNotEmpty($entry,'entry should not be empty');
+        $this->assertIsArray($entry,'entry should be array');
+        $this->assertArrayHasKey('bf_payments',$entry,"entry should contain key 'bf_payments'");
+        $this->assertSame($paymentId,$entry['bf_payments'],"entry['bf_payments'] should be $paymentId");
+
+        return $services;
+    }
+    
+    /**
+     * provide list of sets to test updateEntryWithPayment
+     */
+    public function updateEntryWithPaymentProvider(): array
+    {
+        $currentDate = (new DateTime())->format("Y-m-d H:i:s");
+        return [
+            'empty' => [
+                'bf_value' => '',
+                'bf_value_groupe' => '',
+                'bf_value_don' => '',
+                'paymentId' => self::DEFAULT_PAYMENT_ID,
+                'paymentAmount' => '100',
+                'paymentDate' => $currentDate
+            ]
+        ];
+    }
+
+    /**
      * setup a list and form for other tests
      */
     protected function setUp(): void
@@ -323,6 +437,7 @@ class HpfServiceTest extends YesWikiTestCase
         $listId = self::LIST_ID;
         $template = <<<TXT
         texte***bf_titre***Nom*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
+        champs_mail***bf_mail***Email*** *** * *** ***form*** ***1***0*** *** * *** * *** *** *** ***
         texte***bf_value***Valeur souhaitée*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
         texte***bf_value_groupe***Valeur groupe souhaitée*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
         texte***bf_value_don***Valeur don souhaité*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
@@ -339,20 +454,20 @@ class HpfServiceTest extends YesWikiTestCase
         calc***bf_adhesion_groupe_a_payer***Adhésion groupe brute*** ***{value} €***(abs(bf_value_groupe) - abs(bf_adhesion_groupe_payee_$currentYear) + abs(abs(bf_value_groupe) - abs(bf_adhesion_groupe_payee_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
         calc***bf_don_a_payer***Don brut*** ***{value} €***(abs(bf_value_don) - abs(bf_dons_payes_$currentYear) + abs(abs(bf_value_don) - abs(bf_dons_payes_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
         calc***bf_calc***Reste à payer*** ***{value} €***bf_adhesion_a_payer+bf_adhesion_groupe_a_payer+bf_don_a_payer*** *** *** *** *** *** * *** *** *** *** ***
+        payments***bf_payments***Liste des paiements*** *** *** *** *** *** *** *** *** *** *** *** *** ***
         TXT;
         $id = self::$cache['currentFormId'] ?? '';
         $form = null;
         if (!empty($id)){
             $form = $formManager->getOne($id);
-            if (empty($form)){
-                self::$cache['currentFormId'] = '';
-            }
         }
         if ($install && empty($form)){
-            $newId = $formManager->findNewId();
-            self::$cache['currentFormId'] = $newId;
+            if (empty(self::$cache['currentFormId'])){
+                $newId = $formManager->findNewId();
+                self::$cache['currentFormId'] = $newId;
+            }
             $formManager->create([
-                'bn_id_nature' => $newId,
+                'bn_id_nature' => self::$cache['currentFormId'],
                 'bn_label_nature' => $name,
                 'bn_template' => $template,
                 'bn_description' => 'template de test',
@@ -411,7 +526,8 @@ class HpfServiceTest extends YesWikiTestCase
                         [
                         'antispam' => 1,
                         'bf_titre' => $id,
-                        'id_fiche' => $id
+                        'id_fiche' => $id,
+                        'bf_mail' => self::ENTRY_EMAIL
                         ]
                     )
                 );

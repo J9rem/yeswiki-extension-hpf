@@ -490,7 +490,7 @@ class HpfService
      * @param Payment $payment
      * @return array $updatedEntry
      */
-    private function updateEntryWithPayment(array $entry, Payment $payment):array
+    public function updateEntryWithPayment(array $entry, Payment $payment):array
     {
         $contribFormIds = $this->getCurrentPaymentsFormIds();
         if (!in_array($entry['id_typeannonce'], $contribFormIds)) {
