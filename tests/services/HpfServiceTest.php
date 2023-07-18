@@ -18,6 +18,7 @@ use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Bazar\Service\ListManager;
 use YesWiki\Core\Controller\AuthController;
 use YesWiki\Core\Service\ConfigurationService;
+use YesWiki\Core\Service\PageManager;
 use YesWiki\Hpf\Service\HpfService;
 use YesWiki\Shop\Entity\Payment;
 use YesWiki\Shop\Entity\User;
@@ -30,6 +31,7 @@ require_once 'tests/YesWikiTestCase.php';
 class HpfServiceTest extends YesWikiTestCase
 {
     private static $cache;
+    private static $myWiki;
     private const FORM_ID = 'HpfTestForm';
     private const LIST_ID = 'ListeHpfTestUniqIdListe';
     private const ENTRY_ID = 'HpfTestUniqIdEntry';
@@ -43,6 +45,7 @@ class HpfServiceTest extends YesWikiTestCase
     public function testHpfServiceExisting(): array
     {
         $wiki = $this->getWiki();
+        self::$myWiki = $wiki;
         $this->assertTrue($wiki->services->has(HpfService::class));
         return ['wiki' => $wiki,'hpfService' => $wiki->services->get(HpfService::class)];
     }
@@ -112,6 +115,7 @@ class HpfServiceTest extends YesWikiTestCase
         array $services
     ) 
     {
+        $GLOBALS['wiki'] = $services['wiki'];
         $this->assertTrue($services['hpfParamdefined'],"'hpf' param must be defined !");
         self::$cache['canSetList'] = true;
         $paymentsFormIds = $services['hpfService']->getCurrentPaymentsFormIds();
@@ -145,7 +149,7 @@ class HpfServiceTest extends YesWikiTestCase
     /**
      * @depends testHpfParamDefined
      * @dataProvider bfCalcProvider
-     * @covers HpfService::getCurrentContribEntry
+     * @covers HpfService::getCurrentContribEntries
      * @param string $bf_value
      * @param string $bf_value_groupe
      * @param string $bf_value_don
@@ -174,7 +178,7 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_value_don'
         ]));
         
-        $entries = $services['hpfService']->getCurrentContribEntry(
+        $entries = $services['hpfService']->getCurrentContribEntries(
             self::$cache['currentFormId'], 
             self::ENTRY_EMAIL,
             self::ENTRY_ID);
@@ -329,10 +333,10 @@ class HpfServiceTest extends YesWikiTestCase
             'amount' => $paymentAmount,
             'date' => $paymentDate
         ]);
-        $payments = new HelloAssoPayments(
-            [$payment], //payments
-            [] // $otherData
-        );
+        // $payments = new HelloAssoPayments(
+        //     [$payment], //payments
+        //     [] // $otherData
+        // );
 
         $entryManager = $services['wiki']->services->get(EntryManager::class);
         $entry = $entryManager->getOne(self::ENTRY_ID);
@@ -377,33 +381,35 @@ class HpfServiceTest extends YesWikiTestCase
     {
         if ((self::$cache['canSetList'] ?? false) === true){
             // create List
-            $this->updateList(true);
+            self::updateList(true);
             // create Form
-            $this->updateForm(true);
+            self::updateForm(true);
         }
     }
     
     /**
      * remove list and form for other tests
      */
-    protected function tearDown(): void
+    public static function tearDownAfterClass(): void
     {
         // remove List
-        $this->updateList(false);
+        self::updateList(false);
         // remove Form
-        $this->updateForm(false);
+        self::updateForm(false);
     }
 
     /**
      * update a list
      * @param bool $install
      */
-    protected function updateList(bool $install)
+    public static function updateList(bool $install)
     {
-        $wiki = $this->getWiki();
-        $GLOBALS['wiki'] = $wiki;
+        if (empty(self::$myWiki)){
+            return;
+        }
+        $GLOBALS['wiki'] = self::$myWiki;
 
-        $listManager = $wiki->services->get(ListManager::class);
+        $listManager = self::$myWiki->services->get(ListManager::class);
 
         $id = self::LIST_ID;
         $list = $listManager->getOne($id);
@@ -414,7 +420,7 @@ class HpfServiceTest extends YesWikiTestCase
             $values[strval($currentYear)] = strval($currentYear);
             $listManager->create('HpfTestUniqIdListe',$values);
         } elseif (!$install && !empty($list)){
-            $this->actAsAdmin(function() use($listManager,$id){
+            self::actAsAdmin(function() use($listManager,$id){
                 $listManager->delete($id);
             });
         }
@@ -424,38 +430,14 @@ class HpfServiceTest extends YesWikiTestCase
      * update a form
      * @param bool $install
      */
-    protected function updateForm(bool $install)
+    public static function updateForm(bool $install)
     {
-        $wiki = $this->getWiki();
-        $GLOBALS['wiki'] = $wiki;
+        if (empty(self::$myWiki)){
+            return;
+        }
+        $GLOBALS['wiki'] = self::$myWiki;
+        $formManager = self::$myWiki->services->get(FormManager::class);
 
-        $formManager = $wiki->services->get(FormManager::class);
-
-        $name = self::FORM_ID;
-        $currentYear = strval((new DateTime())->format('Y'));
-        $previousYear = strval(intval($currentYear)-1);
-        $listId = self::LIST_ID;
-        $template = <<<TXT
-        texte***bf_titre***Nom*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
-        champs_mail***bf_mail***Email*** *** * *** ***form*** ***1***0*** *** * *** * *** *** *** ***
-        texte***bf_value***Valeur souhaitée*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
-        texte***bf_value_groupe***Valeur groupe souhaitée*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
-        texte***bf_value_don***Valeur don souhaité*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
-        texte***bf_adhesion_payee_$previousYear***Adhésion payée en $previousYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
-        texte***bf_adhesion_payee_$currentYear***Adhésion payée en $currentYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
-        texte***bf_adhesion_groupe_payee_$previousYear***Adhésion groupe payée en $previousYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
-        texte***bf_adhesion_groupe_payee_$currentYear***Adhésion groupe payée en $currentYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
-        texte***bf_dons_payes_$previousYear***Dons payé en $previousYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
-        texte***bf_dons_payes_$currentYear***Dons payé en $currentYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
-        checkbox***$listId***Années adhésions payées*** *** *** ***bf_annees_adhesions_payees*** ***0*** *** *** * *** * *** *** *** ***
-        checkbox***$listId***Années adhésions groupe payées*** *** *** ***bf_annees_adhesions_groupe_payees*** ***0*** *** *** * *** * *** *** *** ***
-        checkbox***$listId***Années dons payés*** *** *** ***bf_annees_dons_payes*** ***0*** *** *** * *** * *** *** *** ***
-        calc***bf_adhesion_a_payer***Adhésion brute*** ***{value} €***(abs(bf_value) - abs(bf_adhesion_payee_$currentYear) + abs(abs(bf_value) - abs(bf_adhesion_payee_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
-        calc***bf_adhesion_groupe_a_payer***Adhésion groupe brute*** ***{value} €***(abs(bf_value_groupe) - abs(bf_adhesion_groupe_payee_$currentYear) + abs(abs(bf_value_groupe) - abs(bf_adhesion_groupe_payee_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
-        calc***bf_don_a_payer***Don brut*** ***{value} €***(abs(bf_value_don) - abs(bf_dons_payes_$currentYear) + abs(abs(bf_value_don) - abs(bf_dons_payes_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
-        calc***bf_calc***Reste à payer*** ***{value} €***bf_adhesion_a_payer+bf_adhesion_groupe_a_payer+bf_don_a_payer*** *** *** *** *** *** * *** *** *** *** ***
-        payments***bf_payments***Liste des paiements*** *** *** *** *** *** *** *** *** *** *** *** *** ***
-        TXT;
         $id = self::$cache['currentFormId'] ?? '';
         $form = null;
         if (!empty($id)){
@@ -466,6 +448,31 @@ class HpfServiceTest extends YesWikiTestCase
                 $newId = $formManager->findNewId();
                 self::$cache['currentFormId'] = $newId;
             }
+            $name = self::FORM_ID;
+            $currentYear = strval((new DateTime())->format('Y'));
+            $previousYear = strval(intval($currentYear)-1);
+            $listId = self::LIST_ID;
+            $template = <<<TXT
+            texte***bf_titre***Nom*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
+            champs_mail***bf_mail***Email*** *** * *** ***form*** ***1***0*** *** * *** * *** *** *** ***
+            texte***bf_value***Valeur souhaitée*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
+            texte***bf_value_groupe***Valeur groupe souhaitée*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
+            texte***bf_value_don***Valeur don souhaité*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
+            texte***bf_adhesion_payee_$previousYear***Adhésion payée en $previousYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
+            texte***bf_adhesion_payee_$currentYear***Adhésion payée en $currentYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
+            texte***bf_adhesion_groupe_payee_$previousYear***Adhésion groupe payée en $previousYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
+            texte***bf_adhesion_groupe_payee_$currentYear***Adhésion groupe payée en $currentYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
+            texte***bf_dons_payes_$previousYear***Dons payé en $previousYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
+            texte***bf_dons_payes_$currentYear***Dons payé en $currentYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
+            checkbox***$listId***Années adhésions payées*** *** *** ***bf_annees_adhesions_payees*** ***0*** *** *** * *** * *** *** *** ***
+            checkbox***$listId***Années adhésions groupe payées*** *** *** ***bf_annees_adhesions_groupe_payees*** ***0*** *** *** * *** * *** *** *** ***
+            checkbox***$listId***Années dons payés*** *** *** ***bf_annees_dons_payes*** ***0*** *** *** * *** * *** *** *** ***
+            calc***bf_adhesion_a_payer***Adhésion brute*** ***{value} €***(abs(bf_value) - abs(bf_adhesion_payee_$currentYear) + abs(abs(bf_value) - abs(bf_adhesion_payee_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
+            calc***bf_adhesion_groupe_a_payer***Adhésion groupe brute*** ***{value} €***(abs(bf_value_groupe) - abs(bf_adhesion_groupe_payee_$currentYear) + abs(abs(bf_value_groupe) - abs(bf_adhesion_groupe_payee_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
+            calc***bf_don_a_payer***Don brut*** ***{value} €***(abs(bf_value_don) - abs(bf_dons_payes_$currentYear) + abs(abs(bf_value_don) - abs(bf_dons_payes_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
+            calc***bf_calc***Reste à payer*** ***{value} €***bf_adhesion_a_payer+bf_adhesion_groupe_a_payer+bf_don_a_payer*** *** *** *** *** *** * *** *** *** *** ***
+            payments***bf_payments***Liste des paiements*** *** *** *** *** *** *** *** *** *** *** *** *** ***
+            TXT;
             $formManager->create([
                 'bn_id_nature' => self::$cache['currentFormId'],
                 'bn_label_nature' => $name,
@@ -485,10 +492,12 @@ class HpfServiceTest extends YesWikiTestCase
      * act as admin
      * @param callable $callback
      */
-    protected function actAsAdmin($callback)
+    public static function actAsAdmin($callback)
     {
-        $wiki = $this->getWiki();
-        $authController = $wiki->services->get(AuthController::class);
+        if (empty(self::$myWiki)){
+            return;
+        }
+        $authController = self::$myWiki->services->get(AuthController::class);
         
         $previousUser = $authController->getLoggedUser();
         if (!empty($previousUser['name'])){
@@ -512,6 +521,7 @@ class HpfServiceTest extends YesWikiTestCase
     {
         $wiki = $this->getWiki();
         $GLOBALS['wiki'] = $wiki;
+        $GLOBALS['_BAZAR_'] = []; // reset cache
 
         $entryManager = $wiki->services->get(EntryManager::class);
 
@@ -534,7 +544,7 @@ class HpfServiceTest extends YesWikiTestCase
 
             }
         } elseif (!$install && !empty($entry)){
-            $this->actAsAdmin(function() use($entryManager,$id){
+            self::actAsAdmin(function() use($entryManager,$id){
                 $entryManager->delete($id);
             });
         }

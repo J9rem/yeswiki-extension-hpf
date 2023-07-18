@@ -60,7 +60,7 @@ class HPFPaymentStatusAction extends YesWikiAction
             ? $this->arguments['formid']
             : $contribFormIds[0]
             ;
-        $contribEntries = $this->hpfService->getCurrentContribEntry($contribFormId, $user['email'],$this->arguments['entry_id'],$user['name']);
+        $contribEntries = $this->hpfService->getCurrentContribEntries($contribFormId, $user['email'],$this->arguments['entry_id'],$user['name']);
         if (empty($contribEntries)) {
             $output = "";
             if (!empty($this->arguments['entry_id'])) {
