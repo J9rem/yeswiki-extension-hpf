@@ -474,7 +474,7 @@ class HpfService
      * refresh entry from HelloAsso then reload entry and gives calcValue
      * @param array $entry
      * @param string $email
-     * @return string|floatval $calcValue
+     * @return array $entry
      */
     public function refreshEntryFromHelloAsso(array $entry, string $email)
     {
@@ -484,9 +484,7 @@ class HpfService
         // reload entry
         $entries = $this->getCurrentContribEntries($entry['id_typeannonce'], $email, $entry['id_fiche'] ?? '');
 
-        $calcValue = !empty($entries) ? ($entries[array_key_first($entries)][HpfService::CALC_FIELDNAMES["total"]] ?? 0 ) : 0;
-
-        return $calcValue;
+        return !empty($entries) ? $entries[array_key_first($entries)] : [];
     }
 
     /* === THE MOST IMPORTANT FUNCTION === */
