@@ -218,98 +218,77 @@ class HpfServiceTest extends YesWikiTestCase
      */
     public function bfCalcProvider(): array
     {
-        return [
-            'empty' => [
-                [
-                    'bf_montant_adhesion_mixte_college_1_libre' => '',
-                    'bf_montant_adhesion_mixte_college_2_libre' => '',
-                    'bf_montant_don_ponctuel_libre' => '',
-                    'waited' => [
-                        'bf_adhesion_a_payer' => '0',
-                        'bf_adhesion_groupe_a_payer' => '0',
-                        'bf_don_a_payer' => '0',
-                        'bf_calc' => '0'
-                    ]
-                ]
-            ],
-            'only adhesion' => [
-                [
-                  'bf_montant_adhesion_mixte_college_1_libre' => '10.0',
-                  'bf_montant_adhesion_mixte_college_2_libre' => '',
-                  'bf_montant_don_ponctuel_libre' => '',
-                  'waited' => [
-                      'bf_adhesion_a_payer' => '10',
-                      'bf_adhesion_groupe_a_payer' => '0',
-                      'bf_don_a_payer' => '0',
-                      'bf_calc' => '10',
-                  ]
-                ]
-            ],
-            'only adhesion group' => [
-                [
-                  'bf_montant_adhesion_mixte_college_1_libre' => '',
-                  'bf_montant_adhesion_mixte_college_2_libre' => '11.0',
-                  'bf_montant_don_ponctuel_libre' => '',
-                  'waited' => [
-                      'bf_adhesion_a_payer' => '0',
-                      'bf_adhesion_groupe_a_payer' => '11',
-                      'bf_don_a_payer' => '0',
-                      'bf_calc' => '11',
-                  ]
-                ]
-            ],
-            'only donation' => [
-                [
-                  'bf_montant_adhesion_mixte_college_1_libre' => '',
-                  'bf_montant_adhesion_mixte_college_2_libre' => '',
-                  'bf_montant_don_ponctuel_libre' => '12.1',
-                  'waited' => [
-                      'bf_adhesion_a_payer' => '0',
-                      'bf_adhesion_groupe_a_payer' => '0',
-                      'bf_don_a_payer' => '12.1',
-                      'bf_calc' => '12.1',
-                  ]
-                ]
-            ],
-            'two adhesions' => [
-                [
-                  'bf_montant_adhesion_mixte_college_1_libre' => '5.6',
-                  'bf_montant_adhesion_mixte_college_2_libre' => '6.7',
-                  'bf_montant_don_ponctuel_libre' => '',
-                  'waited' => [
-                      'bf_adhesion_a_payer' => '5.6',
-                      'bf_adhesion_groupe_a_payer' => '6.7',
-                      'bf_don_a_payer' => '0',
-                      'bf_calc' => '12.3',
-                  ]
-                ]
-            ],
-            'two adhesions and 0 donation' => [
-                [
-                  'bf_montant_adhesion_mixte_college_1_libre' => '5.6',
-                  'bf_montant_adhesion_mixte_college_2_libre' => '6.7',
-                  'bf_montant_don_ponctuel_libre' => '0',
-                  'waited' => [
-                      'bf_adhesion_a_payer' => '5.6',
-                      'bf_adhesion_groupe_a_payer' => '6.7',
-                      'bf_don_a_payer' => '0',
-                      'bf_calc' => '12.3',
-                  ]
-                ]
-            ],
-            'two adhesions and donation' => [
-                [
-                  'bf_montant_adhesion_mixte_college_1_libre' => '5.6',
-                  'bf_montant_adhesion_mixte_college_2_libre' => '6.7',
-                  'bf_montant_don_ponctuel_libre' => '2.1',
-                  'waited' => [
-                      'bf_adhesion_a_payer' => '5.6',
-                      'bf_adhesion_groupe_a_payer' => '6.7',
-                      'bf_don_a_payer' => '2.1',
-                      'bf_calc' => '14.4',
-                  ]
-                ]
+        $default = [
+            'bf_montant_adhesion_mixte_college_1_libre' => '',
+            'bf_montant_adhesion_mixte_college_2_libre' => '',
+            'bf_montant_don_ponctuel_libre' => '',
+            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
+            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
+            'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
+            'waited' => [
+                'bf_adhesion_a_payer' => '0',
+                'bf_adhesion_groupe_a_payer' => '0',
+                'bf_don_a_payer' => '0',
+                'bf_calc' => '0',
+                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
+                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
+                'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
             ]
+        ];
+        return [
+            'empty' => [$default],
+            'only adhesion' => [array_replace_recursive($default,[
+                'bf_montant_adhesion_mixte_college_1_libre' => '10.0',
+                'waited' => [
+                    'bf_adhesion_a_payer' => '10',
+                    'bf_calc' => '10',
+                ]
+            ])],
+            'only adhesion group' => [array_replace_recursive($default,[
+                'bf_montant_adhesion_mixte_college_2_libre' => '11.0',
+                'waited' => [
+                    'bf_adhesion_groupe_a_payer' => '11',
+                    'bf_calc' => '11',
+                ]
+            ])],
+            'only donation' => [array_replace_recursive($default,[
+                'bf_montant_don_ponctuel_libre' => '12.1',
+                'waited' => [
+                    'bf_don_a_payer' => '12.1',
+                    'bf_calc' => '12.1',
+                ]
+            ])],
+            'two adhesions' => [array_replace_recursive($default,[
+                'bf_montant_adhesion_mixte_college_1_libre' => '5.6',
+                'bf_montant_adhesion_mixte_college_2_libre' => '6.7',
+                'waited' => [
+                    'bf_adhesion_a_payer' => '5.6',
+                    'bf_adhesion_groupe_a_payer' => '6.7',
+                    'bf_calc' => '12.3',
+                ]
+            ])],
+            'two adhesions and 0 donation' => [array_replace_recursive($default,[
+                'bf_montant_adhesion_mixte_college_1_libre' => '5.6',
+                'bf_montant_adhesion_mixte_college_2_libre' => '6.7',
+                'bf_montant_don_ponctuel_libre' => '0',
+                'waited' => [
+                    'bf_adhesion_a_payer' => '5.6',
+                    'bf_adhesion_groupe_a_payer' => '6.7',
+                    'bf_don_a_payer' => '0',
+                    'bf_calc' => '12.3',
+                ]
+            ])],
+            'two adhesions and donation' => [array_replace_recursive($default,[
+                'bf_montant_adhesion_mixte_college_1_libre' => '5.6',
+                'bf_montant_adhesion_mixte_college_2_libre' => '6.7',
+                'bf_montant_don_ponctuel_libre' => '2.1',
+                'waited' => [
+                    'bf_adhesion_a_payer' => '5.6',
+                    'bf_adhesion_groupe_a_payer' => '6.7',
+                    'bf_don_a_payer' => '2.1',
+                    'bf_calc' => '14.4',
+                ]
+            ])]
         ];
     }
 
@@ -397,227 +376,111 @@ class HpfServiceTest extends YesWikiTestCase
         $date = new DateTime();
         $currentDate = $date->format("Y-m-d H:i:s");
         $currentYear = $date->format("Y");
+        $default = [
+            'bf_montant_adhesion_mixte_college_1_libre' => '',
+            'bf_montant_adhesion_mixte_college_2_libre' => '',
+            'bf_montant_don_ponctuel_libre' => '',
+            'paymentId' => self::DEFAULT_PAYMENT_ID,
+            'paymentAmount' => '0',
+            'paymentDate' => $currentDate,
+            'waited' => [
+                'bf_montant_adhesion_mixte_college_1_libre' => '',
+                'bf_montant_adhesion_mixte_college_2_libre' => '',
+                'bf_montant_don_ponctuel_libre' => '',
+                'bf_adhesion_a_payer' => '0',
+                'bf_adhesion_groupe_a_payer' => '0',
+                'bf_don_a_payer' => '0',
+                'bf_calc' => '0',
+            ],
+            "bf_adhesion_payee_$currentYear" => '',
+            "bf_adhesion_groupe_payee_$currentYear" => '',
+            "bf_dons_payes_$currentYear" => '',
+        ];
         return [
-            'empty' => [
-                 [
-                    'bf_montant_adhesion_mixte_college_1_libre' => '',
-                    'bf_montant_adhesion_mixte_college_2_libre' => '',
-                    'bf_montant_don_ponctuel_libre' => '',
-                    'paymentId' => self::DEFAULT_PAYMENT_ID,
-                    'paymentAmount' => '100',
-                    'paymentDate' => $currentDate,
-                    'waited' => [
-                        'bf_montant_adhesion_mixte_college_1_libre' => '',
-                        'bf_montant_adhesion_mixte_college_2_libre' => '',
-                        'bf_montant_don_ponctuel_libre' => '',
-                        'bf_adhesion_a_payer' => '0',
-                        'bf_adhesion_groupe_a_payer' => '0',
-                        'bf_don_a_payer' => '0',
-                        'bf_calc' => '0',
-                    ],
-                    "bf_adhesion_payee_$currentYear" => '',
-                    "bf_adhesion_groupe_payee_$currentYear" => '',
-                    "bf_dons_payes_$currentYear" => '100',
-                ]
-            ],
-            'partial adhesion only' => [
-                 [
+            'empty' => [array_replace_recursive($default,[
+                'paymentAmount' => '100',
+                "bf_dons_payes_$currentYear" => '100',
+            ])],
+            'partial adhesion only' => [array_replace_recursive($default,[
+                'bf_montant_adhesion_mixte_college_1_libre' => '20',
+                'paymentAmount' => '10',
+                'waited' => [
                     'bf_montant_adhesion_mixte_college_1_libre' => '20',
-                    'bf_montant_adhesion_mixte_college_2_libre' => '',
-                    'bf_montant_don_ponctuel_libre' => '',
-                    'paymentId' => self::DEFAULT_PAYMENT_ID,
-                    'paymentAmount' => '10',
-                    'paymentDate' => $currentDate,
-                    'waited' => [
-                        'bf_montant_adhesion_mixte_college_1_libre' => '20',
-                        'bf_montant_adhesion_mixte_college_2_libre' => '',
-                        'bf_montant_don_ponctuel_libre' => '',
-                        'bf_adhesion_a_payer' => '10',
-                        'bf_adhesion_groupe_a_payer' => '0',
-                        'bf_don_a_payer' => '0',
-                        'bf_calc' => '10',
-                    ],
-                    "bf_adhesion_payee_$currentYear" => '10',
-                    "bf_adhesion_groupe_payee_$currentYear" => '',
-                    "bf_dons_payes_$currentYear" => '',
-                ]
-            ],
-            'full adhesion only' => [
-                 [
-                    'bf_montant_adhesion_mixte_college_1_libre' => '20',
-                    'bf_montant_adhesion_mixte_college_2_libre' => '',
-                    'bf_montant_don_ponctuel_libre' => '',
-                    'paymentId' => self::DEFAULT_PAYMENT_ID,
-                    'paymentAmount' => '20',
-                    'paymentDate' => $currentDate,
-                    'waited' => [
-                        'bf_montant_adhesion_mixte_college_1_libre' => '20',
-                        'bf_montant_adhesion_mixte_college_2_libre' => '',
-                        'bf_montant_don_ponctuel_libre' => '',
-                        'bf_adhesion_a_payer' => '0',
-                        'bf_adhesion_groupe_a_payer' => '0',
-                        'bf_don_a_payer' => '0',
-                        'bf_calc' => '0',
-                    ],
-                    "bf_adhesion_payee_$currentYear" => '20',
-                    "bf_adhesion_groupe_payee_$currentYear" => '',
-                    "bf_dons_payes_$currentYear" => '',
-                ]
-            ],
-            'more than adhesion only' => [
-                 [
-                    'bf_montant_adhesion_mixte_college_1_libre' => '20',
-                    'bf_montant_adhesion_mixte_college_2_libre' => '',
-                    'bf_montant_don_ponctuel_libre' => '',
-                    'paymentId' => self::DEFAULT_PAYMENT_ID,
-                    'paymentAmount' => '30.4',
-                    'paymentDate' => $currentDate,
-                    'waited' => [
-                        'bf_montant_adhesion_mixte_college_1_libre' => '20',
-                        'bf_montant_adhesion_mixte_college_2_libre' => '',
-                        'bf_montant_don_ponctuel_libre' => '',
-                        'bf_adhesion_a_payer' => '0',
-                        'bf_adhesion_groupe_a_payer' => '0',
-                        'bf_don_a_payer' => '0',
-                        'bf_calc' => '0',
-                    ],
-                    "bf_adhesion_payee_$currentYear" => '20',
-                    "bf_adhesion_groupe_payee_$currentYear" => '',
-                    "bf_dons_payes_$currentYear" => '10.4',
-                ]
-            ],
-            'partial adhesion groupe only' => [
-                 [
-                    'bf_montant_adhesion_mixte_college_1_libre' => '',
+                    'bf_adhesion_a_payer' => '10',
+                    'bf_calc' => '10',
+                ],
+                "bf_adhesion_payee_$currentYear" => '10'
+            ])],
+            'full adhesion only' => [array_replace_recursive($default,[
+                'bf_montant_adhesion_mixte_college_1_libre' => '20',
+                'paymentAmount' => '20',
+                'waited' => [
+                    'bf_montant_adhesion_mixte_college_1_libre' => '20'
+                ],
+                "bf_adhesion_payee_$currentYear" => '20'
+            ])],
+            'more than adhesion only' => [array_replace_recursive($default,[
+                'bf_montant_adhesion_mixte_college_1_libre' => '20',
+                'paymentAmount' => '30.4',
+                'waited' => [
+                    'bf_montant_adhesion_mixte_college_1_libre' => '20'
+                ],
+                "bf_adhesion_payee_$currentYear" => '20',
+                "bf_dons_payes_$currentYear" => '10.4'
+            ])],
+            'partial adhesion groupe only' => [array_replace_recursive($default,[
+                'bf_montant_adhesion_mixte_college_2_libre' => '23',
+                'paymentAmount' => '10',
+                'waited' => [
                     'bf_montant_adhesion_mixte_college_2_libre' => '23',
-                    'bf_montant_don_ponctuel_libre' => '',
-                    'paymentId' => self::DEFAULT_PAYMENT_ID,
-                    'paymentAmount' => '10',
-                    'paymentDate' => $currentDate,
-                    'waited' => [
-                        'bf_montant_adhesion_mixte_college_1_libre' => '',
-                        'bf_montant_adhesion_mixte_college_2_libre' => '23',
-                        'bf_montant_don_ponctuel_libre' => '',
-                        'bf_adhesion_a_payer' => '0',
-                        'bf_adhesion_groupe_a_payer' => '13',
-                        'bf_don_a_payer' => '0',
-                        'bf_calc' => '13',
-                    ],
-                    "bf_adhesion_payee_$currentYear" => '',
-                    "bf_adhesion_groupe_payee_$currentYear" => '10',
-                    "bf_dons_payes_$currentYear" => '',
-                ]
-            ],
-            'full adhesion groupe only' => [
-                 [
-                    'bf_montant_adhesion_mixte_college_1_libre' => '',
+                    'bf_adhesion_groupe_a_payer' => '13',
+                    'bf_calc' => '13',
+                ],
+                "bf_adhesion_groupe_payee_$currentYear" => '10',
+            ])],
+            'full adhesion groupe only' => [array_replace_recursive($default,[
+                'bf_montant_adhesion_mixte_college_2_libre' => '24',
+                'paymentAmount' => '24',
+                'waited' => [
                     'bf_montant_adhesion_mixte_college_2_libre' => '24',
-                    'bf_montant_don_ponctuel_libre' => '',
-                    'paymentId' => self::DEFAULT_PAYMENT_ID,
-                    'paymentAmount' => '24',
-                    'paymentDate' => $currentDate,
-                    'waited' => [
-                        'bf_montant_adhesion_mixte_college_1_libre' => '',
-                        'bf_montant_adhesion_mixte_college_2_libre' => '24',
-                        'bf_montant_don_ponctuel_libre' => '',
-                        'bf_adhesion_a_payer' => '0',
-                        'bf_adhesion_groupe_a_payer' => '0',
-                        'bf_don_a_payer' => '0',
-                        'bf_calc' => '0',
-                    ],
-                    "bf_adhesion_payee_$currentYear" => '',
-                    "bf_adhesion_groupe_payee_$currentYear" => '24',
-                    "bf_dons_payes_$currentYear" => '',
-                ]
-            ],
-            'more than adhesion groupe only' => [
-                 [
-                    'bf_montant_adhesion_mixte_college_1_libre' => '',
+                ],
+                "bf_adhesion_groupe_payee_$currentYear" => '24',
+            ])],
+            'more than adhesion groupe only' => [array_replace_recursive($default,[
+                'bf_montant_adhesion_mixte_college_2_libre' => '25',
+                'paymentAmount' => '30.4',
+                'waited' => [
                     'bf_montant_adhesion_mixte_college_2_libre' => '25',
-                    'bf_montant_don_ponctuel_libre' => '',
-                    'paymentId' => self::DEFAULT_PAYMENT_ID,
-                    'paymentAmount' => '30.4',
-                    'paymentDate' => $currentDate,
-                    'waited' => [
-                        'bf_montant_adhesion_mixte_college_1_libre' => '',
-                        'bf_montant_adhesion_mixte_college_2_libre' => '25',
-                        'bf_montant_don_ponctuel_libre' => '',
-                        'bf_adhesion_a_payer' => '0',
-                        'bf_adhesion_groupe_a_payer' => '0',
-                        'bf_don_a_payer' => '0',
-                        'bf_calc' => '0',
-                    ],
-                    "bf_adhesion_payee_$currentYear" => '',
-                    "bf_adhesion_groupe_payee_$currentYear" => '25',
-                    "bf_dons_payes_$currentYear" => '5.4',
-                ]
-            ],
-            'partial don only' => [
-                 [
-                    'bf_montant_adhesion_mixte_college_1_libre' => '',
-                    'bf_montant_adhesion_mixte_college_2_libre' => '',
-                    'bf_montant_don_ponctuel_libre' => '17',
-                    'paymentId' => self::DEFAULT_PAYMENT_ID,
-                    'paymentAmount' => '10',
-                    'paymentDate' => $currentDate,
-                    'waited' => [
-                        'bf_montant_adhesion_mixte_college_1_libre' => '',
-                        'bf_montant_adhesion_mixte_college_2_libre' => '',
-                        'bf_montant_don_ponctuel_libre' => '7',
-                        'bf_adhesion_a_payer' => '0',
-                        'bf_adhesion_groupe_a_payer' => '0',
-                        'bf_don_a_payer' => '7',
-                        'bf_calc' => '7',
-                    ],
-                    "bf_adhesion_payee_$currentYear" => '',
-                    "bf_adhesion_groupe_payee_$currentYear" => '',
-                    "bf_dons_payes_$currentYear" => '10',
-                ]
-            ],
-            'full don only' => [
-                 [
-                    'bf_montant_adhesion_mixte_college_1_libre' => '',
-                    'bf_montant_adhesion_mixte_college_2_libre' => '',
-                    'bf_montant_don_ponctuel_libre' => '18',
-                    'paymentId' => self::DEFAULT_PAYMENT_ID,
-                    'paymentAmount' => '18',
-                    'paymentDate' => $currentDate,
-                    'waited' => [
-                        'bf_montant_adhesion_mixte_college_1_libre' => '',
-                        'bf_montant_adhesion_mixte_college_2_libre' => '',
-                        'bf_montant_don_ponctuel_libre' => '0',
-                        'bf_adhesion_a_payer' => '0',
-                        'bf_adhesion_groupe_a_payer' => '0',
-                        'bf_don_a_payer' => '0',
-                        'bf_calc' => '0',
-                    ],
-                    "bf_adhesion_payee_$currentYear" => '',
-                    "bf_adhesion_groupe_payee_$currentYear" => '',
-                    "bf_dons_payes_$currentYear" => '18',
-                ]
-            ],
-            'more than don only' => [
-                 [
-                    'bf_montant_adhesion_mixte_college_1_libre' => '',
-                    'bf_montant_adhesion_mixte_college_2_libre' => '',
-                    'bf_montant_don_ponctuel_libre' => '17',
-                    'paymentId' => self::DEFAULT_PAYMENT_ID,
-                    'paymentAmount' => '30.9',
-                    'paymentDate' => $currentDate,
-                    'waited' => [
-                        'bf_montant_adhesion_mixte_college_1_libre' => '',
-                        'bf_montant_adhesion_mixte_college_2_libre' => '',
-                        'bf_montant_don_ponctuel_libre' => '0',
-                        'bf_adhesion_a_payer' => '0',
-                        'bf_adhesion_groupe_a_payer' => '0',
-                        'bf_don_a_payer' => '0',
-                        'bf_calc' => '0',
-                    ],
-                    "bf_adhesion_payee_$currentYear" => '',
-                    "bf_adhesion_groupe_payee_$currentYear" => '',
-                    "bf_dons_payes_$currentYear" => '30.9',
-                ]
-            ]
+                ],
+                "bf_adhesion_groupe_payee_$currentYear" => '25',
+                "bf_dons_payes_$currentYear" => '5.4',
+            ])],
+            'partial don only' => [array_replace_recursive($default,[
+                'bf_montant_don_ponctuel_libre' => '17',
+                'paymentAmount' => '10',
+                'waited' => [
+                    'bf_montant_don_ponctuel_libre' => '7',
+                    'bf_don_a_payer' => '7',
+                    'bf_calc' => '7',
+                ],
+                "bf_dons_payes_$currentYear" => '10',
+            ])],
+            'full don only' => [array_replace_recursive($default,[
+                'bf_montant_don_ponctuel_libre' => '18',
+                'paymentAmount' => '18',
+                'waited' => [
+                    'bf_montant_don_ponctuel_libre' => '0',
+                ],
+                "bf_dons_payes_$currentYear" => '18',
+            ])],
+            'more than don only' => [array_replace_recursive($default,[
+                'bf_montant_don_ponctuel_libre' => '17',
+                'paymentAmount' => '30.9',
+                'waited' => [
+                    'bf_montant_don_ponctuel_libre' => '0',
+                ],
+                "bf_dons_payes_$currentYear" => '30.9',
+            ])]
         ];
     }
 
