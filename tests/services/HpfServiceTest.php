@@ -368,7 +368,16 @@ class HpfServiceTest extends YesWikiTestCase
             $this->assertNotEmpty($entry,"entry ($type) should not be empty");
             $this->assertIsArray($entry,"entry ($type) should be array");
             $this->assertArrayHasKey('bf_payments',$entry,"entry ($type) should contain key 'bf_payments'");
-            $this->assertSame($data['paymentId'],$entry['bf_payments'],"entry['bf_payments'] ($type) should be {$data['paymentId']}");
+            $this->assertIsString($entry['bf_payments'],"entry ($type) should be a string");
+            $jsonDecoded = json_decode($entry['bf_payments'],true);
+            $this->assertIsArray($jsonDecoded,"entry['bf_payments'] ($type) should be array json encoded");
+            $this->assertArrayHasKey($data['paymentId'],$jsonDecoded,"entry['bf_payments'] ($type) should be array with key '{$data['paymentId']}'");
+            $this->assertIsArray($jsonDecoded[$data['paymentId']],"entry['bf_payments'] ($type) should be array of array json encoded");
+            foreach($data['waited']['bf_payment'] as $key => $waitedValue){
+                $this->assertArrayHasKey($key,$jsonDecoded[$data['paymentId']],"entry['bf_payments'] ($type) should be array json_encoded with key '$key'");
+                $w = is_string($waitedValue) ? str_replace('{formId}',self::$cache['currentFormId'],$waitedValue) : $waitedValue;
+                $this->assertSame($w,$jsonDecoded[$data['paymentId']][$key],"entry['bf_payments']['$key'] ($type) should be same as '".json_encode($w)."'");
+            }
             foreach([
                 'bf_montant_adhesion_mixte_college_1_libre',
                 'bf_montant_adhesion_mixte_college_2_libre',
@@ -426,7 +435,12 @@ class HpfServiceTest extends YesWikiTestCase
                 'bf_calc' => '0',
                 'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
                 'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
-                'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard'
+                'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
+                'bf_payment' => [
+                    'date' => $currentDate,
+                    'origin' => "helloasso:{formId}",
+                    'total' => '0'
+                ]
             ],
             "bf_adhesion_payee_$currentYear" => '',
             "bf_adhesion_groupe_payee_$currentYear" => '',
@@ -436,6 +450,14 @@ class HpfServiceTest extends YesWikiTestCase
             'empty' => [array_replace_recursive($default,[
                 'paymentAmount' => '100',
                 "bf_dons_payes_$currentYear" => '100',
+                'waited' => [
+                    'bf_payment' => [
+                        'total' => '100',
+                        'don' => [
+                            "$currentYear" => '100'
+                        ]
+                    ]
+                ],
             ])],
             'partial adhesion only' => [array_replace_recursive($default,[
                 'bf_montant_adhesion_mixte_college_1_libre' => '20',
@@ -444,6 +466,12 @@ class HpfServiceTest extends YesWikiTestCase
                     'bf_montant_adhesion_mixte_college_1_libre' => '20',
                     'bf_adhesion_a_payer' => '10',
                     'bf_calc' => '10',
+                    'bf_payment' => [
+                        'total' => '10',
+                        'adhesion' => [
+                            "$currentYear" => '10'
+                        ]
+                    ]
                 ],
                 "bf_adhesion_payee_$currentYear" => '10'
             ])],
@@ -451,7 +479,13 @@ class HpfServiceTest extends YesWikiTestCase
                 'bf_montant_adhesion_mixte_college_1_libre' => '20',
                 'paymentAmount' => '20',
                 'waited' => [
-                    'bf_montant_adhesion_mixte_college_1_libre' => '20'
+                    'bf_montant_adhesion_mixte_college_1_libre' => '20',
+                    'bf_payment' => [
+                        'total' => '20',
+                        'adhesion' => [
+                            "$currentYear" => '20'
+                        ]
+                    ]
                 ],
                 "bf_adhesion_payee_$currentYear" => '20'
             ])],
@@ -459,7 +493,16 @@ class HpfServiceTest extends YesWikiTestCase
                 'bf_montant_adhesion_mixte_college_1_libre' => '20',
                 'paymentAmount' => '30.4',
                 'waited' => [
-                    'bf_montant_adhesion_mixte_college_1_libre' => '20'
+                    'bf_montant_adhesion_mixte_college_1_libre' => '20',
+                    'bf_payment' => [
+                        'total' => '30.4',
+                        'adhesion' => [
+                            "$currentYear" => '20'
+                        ],
+                        'don' => [
+                            "$currentYear" => '10.4'
+                        ]
+                    ]
                 ],
                 "bf_adhesion_payee_$currentYear" => '20',
                 "bf_dons_payes_$currentYear" => '10.4'
@@ -471,6 +514,12 @@ class HpfServiceTest extends YesWikiTestCase
                     'bf_montant_adhesion_mixte_college_2_libre' => '23',
                     'bf_adhesion_groupe_a_payer' => '13',
                     'bf_calc' => '13',
+                    'bf_payment' => [
+                        'total' => '10',
+                        'adhesion_groupe' => [
+                            "$currentYear" => '10'
+                        ]
+                    ]
                 ],
                 "bf_adhesion_groupe_payee_$currentYear" => '10',
             ])],
@@ -479,6 +528,12 @@ class HpfServiceTest extends YesWikiTestCase
                 'paymentAmount' => '24',
                 'waited' => [
                     'bf_montant_adhesion_mixte_college_2_libre' => '24',
+                    'bf_payment' => [
+                        'total' => '24',
+                        'adhesion_groupe' => [
+                            "$currentYear" => '24'
+                        ]
+                    ]
                 ],
                 "bf_adhesion_groupe_payee_$currentYear" => '24',
             ])],
@@ -487,6 +542,15 @@ class HpfServiceTest extends YesWikiTestCase
                 'paymentAmount' => '30.4',
                 'waited' => [
                     'bf_montant_adhesion_mixte_college_2_libre' => '25',
+                    'bf_payment' => [
+                        'total' => '30.4',
+                        'adhesion_groupe' => [
+                            "$currentYear" => '25'
+                        ],
+                        'don' => [
+                            "$currentYear" => '5.4'
+                        ]
+                    ]
                 ],
                 "bf_adhesion_groupe_payee_$currentYear" => '25',
                 "bf_dons_payes_$currentYear" => '5.4',
@@ -499,6 +563,12 @@ class HpfServiceTest extends YesWikiTestCase
                     'bf_don_a_payer' => '7',
                     'bf_calc' => '7',
                     'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'libre',
+                    'bf_payment' => [
+                        'total' => '10',
+                        'don' => [
+                            "$currentYear" => '10'
+                        ]
+                    ]
                 ],
                 "bf_dons_payes_$currentYear" => '10',
             ])],
@@ -508,6 +578,12 @@ class HpfServiceTest extends YesWikiTestCase
                 'waited' => [
                     'bf_montant_don_ponctuel_libre' => '0',
                     'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'libre',
+                    'bf_payment' => [
+                        'total' => '18',
+                        'don' => [
+                            "$currentYear" => '18'
+                        ]
+                    ]
                 ],
                 "bf_dons_payes_$currentYear" => '18',
             ])],
@@ -517,6 +593,12 @@ class HpfServiceTest extends YesWikiTestCase
                 'waited' => [
                     'bf_montant_don_ponctuel_libre' => '0',
                     'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'libre',
+                    'bf_payment' => [
+                        'total' => '30.9',
+                        'don' => [
+                            "$currentYear" => '30.9'
+                        ]
+                    ]
                 ],
                 "bf_dons_payes_$currentYear" => '30.9',
             ])]

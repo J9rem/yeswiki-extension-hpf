@@ -960,7 +960,7 @@ class HpfService
             $formattedPayment[$id]['adhesion'][$annee_adhesion] = $valeur_adhesion;
         }
         if (!empty($annee_adhesion_groupe) && !empty($annee_adhesion_groupe)){
-            $formattedPayment[$id]['adhesion_groupe'][$annee_adhesion_groupe] = $annee_adhesion_groupe;
+            $formattedPayment[$id]['adhesion_groupe'][$annee_adhesion_groupe] = $valeur_adhesion_groupe;
         }
         if (!empty($annee_don) && !empty($valeur_don)){
             $formattedPayment[$id]['don'][$annee_don] = $valeur_don;
@@ -971,6 +971,6 @@ class HpfService
     protected function isAlreadyRegisteredPayment(array &$entry,Payment $payment): bool
     {
         $payments = $this->convertStringToPayments($entry[self::PAYMENTS_FIELDNAME] ?? '');
-        return array_key_exists($payment->$id,$payments);
+        return array_key_exists($payment->id,$payments);
     }
 }
