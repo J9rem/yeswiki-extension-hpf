@@ -1,0 +1,69 @@
+{#
+ * This file is part of the YesWiki Extension hpf.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *#}
+
+{% extends "@bazar/layouts/field.twig" %}
+
+{% set currentId = ((entry.id_fiche is empty) ? random() : entry.id_fiche) ~ "-" ~ field.propertyName ~"-payments-list" %}
+
+{% block label %}
+  {{ include_css('tools/hpf/styles/fields/payments.css') }}
+  {{ parent() }}
+  <button 
+    class="btn btn-info btn-xs collapsed payment-collapse-button" 
+    type="button" 
+    data-toggle="collapse" 
+    data-target="#{{currentId}}" 
+    aria-expanded="false" 
+    aria-controls="{{currentId}}">
+      <i class="fas fa-caret-down show-collapsed"></i>
+      <i class="fas fa-caret-up hide-collapsed"></i>
+  </button>
+{% endblock %}
+
+{% block value_container %}
+  <ul class="collapse" id="{{currentId}}">
+    {% for id,data in payments %}
+      <li>  
+        <b>{{ id }}</b>:&nbsp;
+        <button 
+          class="btn btn-info btn-xs payment-collapse-button" 
+          type="button" 
+          data-toggle="collapse" 
+          data-target="#{{currentId}}-{{ id }}" 
+          aria-expanded="true" 
+          aria-controls="{{currentId}}-{{ id }}">
+            <i class="fas fa-caret-down show-collapsed"></i>
+            <i class="fas fa-caret-up hide-collapsed"></i>
+        </button><br/>
+        <ul class="collapse in" id="{{currentId}}-{{ id }}">
+          <li>Date : {{ data.date is empty ? '' : (data.date|slice(8,2) ~ '/' ~ data.date|slice(5,2) ~ '/' ~ data.date|slice(0,4)) }}</li>
+          <li>Origine : {{ data.origin }}</li>
+          <li>Total : {{ data.total is empty ? 0 : data.total }}&nbsp;€</li>
+          {% set paramsInternal = {key:'adhesion',title:'Adhésion'} %}
+          {% block elempart %}
+            {% if data[paramsInternal.key] %}
+              <li>
+                {{ paramsInternal.title }} :<br>
+                <ul>
+                  {% for annee,value in data[paramsInternal.key] %}
+                    <li>{{ annee }} : {{ value }}&nbsp;€</li>
+                  {% endfor %}
+                </ul>
+              </li>
+            {% endif %}
+          {% endblock elempart %}
+          {% set paramsInternal = {key:'adhesion_groupe',title:'Adhésion groupe'} %}
+          {{ block('elempart') }}
+          {% set paramsInternal = {key:'don',title:'Don'} %}
+          {{ block('elempart') }}
+        </ul>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}
