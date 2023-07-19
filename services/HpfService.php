@@ -726,8 +726,7 @@ class HpfService
             "`body_r` = ''");
 
         // reset page Manager cache
-        $this->pageManager->cache(false,$data['id_fiche']);
-        $this->pageManager->unsetCacheOwner(['tag'=>$data['id_fiche']]);
+        $this->pageManager->cache(null,$data['id_fiche']);
 
         $updatedEntry = $this->entryManager->getOne($data['id_fiche'], false, null, false, true);
 
