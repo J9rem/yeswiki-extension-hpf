@@ -140,6 +140,14 @@ class HpfService
                 if (empty($form)) {
                     throw new Exception("hpf['formId'] do not correspond to an existing form!");
                 }
+                // delete cache
+                $GLOBALS['_BAZAR_'] = array_filter(
+                    $GLOBALS['_BAZAR_'] ?? [],
+                    function($k){
+                        return substr($k,0,strlen('bazar-search-')) !== 'bazar-search-';
+                    },
+                    ARRAY_FILTER_USE_KEY
+                );
                 $entries = $this->entryManager->search([
                     'formsIds' => [$form['bn_id_nature']],
                     'queries' => [
