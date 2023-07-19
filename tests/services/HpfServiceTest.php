@@ -38,6 +38,7 @@ class HpfServiceTest extends YesWikiTestCase
     private const ENTRY_ID = 'HpfTestUniqIdEntry';
     private const ENTRY_EMAIL = 'test@oui-wiki.pro';
     private const DEFAULT_PAYMENT_ID = '13245768A';
+    private const OTHER_PAYMENT_ID = '13245768B';
 
     /**
      * @covers HpfService::__construct
@@ -316,6 +317,85 @@ class HpfServiceTest extends YesWikiTestCase
         array $services
     ) 
     {
+        $entriesToCheck = $this->prepareEntriesToTest($data,$services);
+        
+        // tests
+        foreach ($entriesToCheck as $type => $entry) {
+            $this->testEntry($data,$entry,$type);
+        }
+
+        // payment already defined
+        
+        $entriesToCheck = $this->prepareEntriesToTest(array_replace_recursive($data,[
+            'bf_payments' => $data['paymentId']
+        ]),$services);
+
+        $this->testEntry($data,$entriesToCheck['calc'],'calc payment existing');
+        $currentYear = (new DateTime($data['paymentDate']))->format("Y");
+        $this->testEntry(
+            array_replace_recursive($data,[
+                'waited' => array_merge(array_intersect_key(
+                    $data,
+                    array_fill_keys([
+                        'bf_montant_adhesion_mixte_college_1_libre',
+                        'bf_montant_adhesion_mixte_college_2_libre',
+                        'bf_montant_don_ponctuel_libre',
+                        'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+                        'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+                        'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
+                    ],1)
+                ),[
+                    'bf_adhesion_a_payer' => strval(floatval($data['bf_montant_adhesion_mixte_college_1_libre'])),
+                    'bf_adhesion_groupe_a_payer' => strval(floatval($data['bf_montant_adhesion_mixte_college_2_libre'])),
+                    'bf_don_a_payer' => strval(floatval($data['bf_montant_don_ponctuel_libre'])),
+                    'bf_calc' => strval(floatval($data['bf_montant_adhesion_mixte_college_1_libre'])
+                        +floatval($data['bf_montant_adhesion_mixte_college_2_libre'])
+                        +floatval($data['bf_montant_don_ponctuel_libre'])),
+                ]),
+                "bf_adhesion_payee_$currentYear" => '',
+                "bf_adhesion_groupe_payee_$currentYear" => '',
+                "bf_dons_payes_$currentYear" => '',
+            ]),
+            $entriesToCheck['updated'],
+            'updated payment existing',
+            function($entry) use ($data){
+                $this->assertSame($data['paymentId'],$entry['bf_payments'],"entry['bf_payments'] (updated payment existing) should be same as '{$data['paymentId']}'");
+                return;
+            }
+        );
+
+        // other payment already defined
+        
+        $entriesToCheck = $this->prepareEntriesToTest(array_replace_recursive($data,[
+            'bf_payments' => self::OTHER_PAYMENT_ID
+        ]),$services);
+
+        foreach ($entriesToCheck as $type => $entry) {
+            $this->testEntry($data,$entry,"$type other payment existing");
+            $jsonDecoded = json_decode($entry['bf_payments'],true);
+            $this->assertArrayHasKey(self::OTHER_PAYMENT_ID,$jsonDecoded,"entry['bf_payments'] ($type other payment existing) should be array with key '".self::OTHER_PAYMENT_ID."'");
+            $this->assertIsArray($jsonDecoded[self::OTHER_PAYMENT_ID],"entry['bf_payments'] ($type other payment existing) should be array of array json encoded");
+            foreach([
+                'date' => '',
+                'origin' => 'helloasso',
+                'total' => ''
+            ] as $key => $waitedValue){
+                $this->assertArrayHasKey($key,$jsonDecoded[self::OTHER_PAYMENT_ID],"entry['bf_payments'] ($type other payment existing) should be array json_encoded with key '$key'");
+                $this->assertSame($waitedValue,$jsonDecoded[self::OTHER_PAYMENT_ID][$key],"entry['bf_payments']['$key'] ($type other payment existing) should be same as '".json_encode($waitedValue)."'");
+            }
+        }
+
+        return $services;
+    }
+
+    /**
+     * prepare entries to test
+     * @param array $data
+     * @param array $services
+     * @return array $entriesToTest [$calc,$update]
+     */
+    protected function prepareEntriesToTest(array $data, array $services): array
+    {
         // create an entry
         $this->updateEntry(true,array_intersect_key(
             $data,
@@ -323,6 +403,7 @@ class HpfServiceTest extends YesWikiTestCase
                 'bf_montant_adhesion_mixte_college_1_libre',
                 'bf_montant_adhesion_mixte_college_2_libre',
                 'bf_montant_don_ponctuel_libre',
+                'bf_payments',
                 'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
                 'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
                 'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
@@ -343,7 +424,7 @@ class HpfServiceTest extends YesWikiTestCase
         );
 
         $entryManager = $services['wiki']->services->get(EntryManager::class);
-        $rawentry = $entryManager->getOne(self::ENTRY_ID);
+        $rawentry = $entryManager->getOne(self::ENTRY_ID, false, null, false, true); // no cache
 
         $entriesToCheck = [];
         $entriesToCheck['calc'] = $services['hpfService']->updateEntryWithPayment($rawentry,$payment);
@@ -361,14 +442,23 @@ class HpfServiceTest extends YesWikiTestCase
 
         // delete the entry
         $this->updateEntry(false,[]);
+        return $entriesToCheck;
+    }
 
-        
-        // tests
-        foreach ($entriesToCheck as $type => $entry) {
-            $this->assertNotEmpty($entry,"entry ($type) should not be empty");
-            $this->assertIsArray($entry,"entry ($type) should be array");
-            $this->assertArrayHasKey('bf_payments',$entry,"entry ($type) should contain key 'bf_payments'");
-            $this->assertIsString($entry['bf_payments'],"entry ($type) should be a string");
+    /**
+     * test entry
+     * @param array $data
+     * @param array $entry
+     * @param string $type
+     * @param callable $testPayment
+     */
+    protected function testEntry(array $data,array $entry,string $type, $testPayment = null)
+    {
+        $this->assertNotEmpty($entry,"entry ($type) should not be empty");
+        $this->assertIsArray($entry,"entry ($type) should be array");
+        $this->assertArrayHasKey('bf_payments',$entry,"entry ($type) should contain key 'bf_payments'");
+        $this->assertIsString($entry['bf_payments'],"entry ($type) should be a string");
+        if (!is_callable($testPayment)){
             $jsonDecoded = json_decode($entry['bf_payments'],true);
             $this->assertIsArray($jsonDecoded,"entry['bf_payments'] ($type) should be array json encoded");
             $this->assertArrayHasKey($data['paymentId'],$jsonDecoded,"entry['bf_payments'] ($type) should be array with key '{$data['paymentId']}'");
@@ -378,47 +468,49 @@ class HpfServiceTest extends YesWikiTestCase
                 $w = is_string($waitedValue) ? str_replace('{formId}',self::$cache['currentFormId'],$waitedValue) : $waitedValue;
                 $this->assertSame($w,$jsonDecoded[$data['paymentId']][$key],"entry['bf_payments']['$key'] ($type) should be same as '".json_encode($w)."'");
             }
-            foreach([
-                'bf_montant_adhesion_mixte_college_1_libre',
-                'bf_montant_adhesion_mixte_college_2_libre',
-                'bf_montant_don_ponctuel_libre',
-                'bf_adhesion_a_payer',
-                'bf_adhesion_groupe_a_payer',
-                'bf_don_a_payer',
-                'bf_calc',
-                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
-                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
-                'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
-            ] as $key){
-                $this->assertArrayHasKey($key,$entry,"entry ($type) should contain key '$key'");
-                $this->assertSame($data['waited'][$key],$entry[$key],"entry['$key'] ($type) should be '{$data['waited'][$key]}'");
-            }
-            $currentYear = (new DateTime())->format("Y");
-            foreach ([
-                'bf_adhesion_payee',
-                'bf_adhesion_groupe_payee',
-                'bf_dons_payes',
-            ] as $key) {
-                $this->assertArrayHasKey("{$key}_$currentYear",$entry,"entry ($type) should contain key '{$key}_$currentYear'");
-                $this->assertSame($data["{$key}_$currentYear"],$entry["{$key}_$currentYear"],"entry['{$key}_$currentYear'] ($type) should be '{$data["{$key}_$currentYear"]}'");
-            }
+        } else {
+            $testPayment($entry);
         }
-
-        return $services;
+        foreach([
+            'bf_montant_adhesion_mixte_college_1_libre',
+            'bf_montant_adhesion_mixte_college_2_libre',
+            'bf_montant_don_ponctuel_libre',
+            'bf_adhesion_a_payer',
+            'bf_adhesion_groupe_a_payer',
+            'bf_don_a_payer',
+            'bf_calc',
+            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+            'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
+        ] as $key){
+            $this->assertArrayHasKey($key,$entry,"entry ($type) should contain key '$key'");
+            $this->assertSame($data['waited'][$key],$entry[$key],"entry['$key'] ($type) should be '{$data['waited'][$key]}'");
+        }
+        $currentYear = (new DateTime())->format("Y");
+        foreach ([
+            'bf_adhesion_payee',
+            'bf_adhesion_groupe_payee',
+            'bf_dons_payes',
+        ] as $key) {
+            $this->assertArrayHasKey("{$key}_$currentYear",$entry,"entry ($type) should contain key '{$key}_$currentYear'");
+            $this->assertSame($data["{$key}_$currentYear"],$entry["{$key}_$currentYear"],"entry['{$key}_$currentYear'] ($type) should be '{$data["{$key}_$currentYear"]}'");
+        }
     }
-    
+
     /**
-     * provide list of sets to test updateEntryWithPayment
+     * get default data
+     * @return array
      */
-    public function updateEntryWithPaymentProvider(): array
+    public function getDefaultTestData():array
     {
         $date = new DateTime();
         $currentDate = $date->format("Y-m-d H:i:s");
         $currentYear = $date->format("Y");
-        $default = [
+        return [
             'bf_montant_adhesion_mixte_college_1_libre' => '',
             'bf_montant_adhesion_mixte_college_2_libre' => '',
             'bf_montant_don_ponctuel_libre' => '',
+            'bf_payments' => '',
             'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
             'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
             'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
@@ -446,6 +538,16 @@ class HpfServiceTest extends YesWikiTestCase
             "bf_adhesion_groupe_payee_$currentYear" => '',
             "bf_dons_payes_$currentYear" => '',
         ];
+    }
+    
+    /**
+     * provide list of sets to test updateEntryWithPayment
+     */
+    public function updateEntryWithPaymentProvider(): array
+    {
+        $date = new DateTime();
+        $currentYear = $date->format("Y");
+        $default = $this->getDefaultTestData();
         return [
             'empty' => [array_replace_recursive($default,[
                 'paymentAmount' => '100',
