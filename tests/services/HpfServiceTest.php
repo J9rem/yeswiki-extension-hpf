@@ -733,7 +733,7 @@ class HpfServiceTest extends YesWikiTestCase
             checkbox***$listId***Années dons payés*** *** *** ***bf_annees_dons_payes*** ***0*** *** *** * *** * *** *** *** ***
             calc***bf_adhesion_a_payer***Adhésion brute*** ***{value} €***(abs(bf_montant_adhesion_mixte_college_1_libre) - abs(bf_adhesion_payee_$currentYear) + abs(abs(bf_montant_adhesion_mixte_college_1_libre) - abs(bf_adhesion_payee_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
             calc***bf_adhesion_groupe_a_payer***Adhésion groupe brute*** ***{value} €***(abs(bf_montant_adhesion_mixte_college_2_libre) - abs(bf_adhesion_groupe_payee_$currentYear) + abs(abs(bf_montant_adhesion_mixte_college_2_libre) - abs(bf_adhesion_groupe_payee_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
-            calc***bf_don_a_payer***Don brut*** ***{value} €***(abs(bf_montant_don_ponctuel_libre) - abs(bf_dons_payes_$currentYear) + abs(abs(bf_montant_don_ponctuel_libre) - abs(bf_dons_payes_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
+            calc***bf_don_a_payer***Don brut*** ***{value} €***(bf_montant_don_ponctuel_libre + abs(bf_montant_don_ponctuel_libre))/2*** *** *** *** *** *** * *** *** *** *** ***
             calc***bf_calc***Reste à payer*** ***{value} €***bf_adhesion_a_payer+bf_adhesion_groupe_a_payer+bf_don_a_payer*** *** *** *** *** *** * *** *** *** *** ***
             payments***bf_payments***Liste des paiements*** *** *** *** *** *** *** *** *** *** *** *** *** ***
             TXT;
