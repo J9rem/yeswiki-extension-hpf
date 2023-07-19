@@ -636,7 +636,13 @@ class HpfService
 
     private function updateWantedDonation(array &$entry,$valueToPay,$restToAffect)
     {
-        $entry['bf_montant_don_ponctuel'] = 'libre';
+        $field = $this->formManager->findFieldFromNameOrPropertyName('bf_montant_don_ponctuel',$entry['id_typeannonce'] ?? null);
+        if (!empty($field)) {
+            $propertyName = $field->getPropertyName();
+            if (!empty($propertyName)){
+                $entry[$propertyName] = 'libre';
+            }
+        }
         $entry['bf_montant_don_ponctuel_libre'] = strval(max(0,$valueToPay-$restToAffect));
     }
 

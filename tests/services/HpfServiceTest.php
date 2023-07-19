@@ -166,7 +166,10 @@ class HpfServiceTest extends YesWikiTestCase
             array_fill_keys([
                 'bf_montant_adhesion_mixte_college_1_libre',
                 'bf_montant_adhesion_mixte_college_2_libre',
-                'bf_montant_don_ponctuel_libre'
+                'bf_montant_don_ponctuel_libre',
+                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+                'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
             ],1)
         ));
         
@@ -192,7 +195,10 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_adhesion_a_payer',
             'bf_adhesion_groupe_a_payer',
             'bf_don_a_payer',
-            'bf_calc'
+            'bf_calc',
+            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+            'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
         ] as $key){
             $this->assertArrayHasKey($key,$entry,"entry should contain key '$key'");
         }
@@ -207,7 +213,10 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_adhesion_a_payer',
             'bf_adhesion_groupe_a_payer',
             'bf_don_a_payer',
-            'bf_calc'
+            'bf_calc',
+            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+            'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
         ] as $key){
             $this->assertSame($data['waited'][$key],$entry[$key],"entry['$key'] should by {$data['waited'][$key]}");
         }
@@ -312,7 +321,10 @@ class HpfServiceTest extends YesWikiTestCase
             array_fill_keys([
                 'bf_montant_adhesion_mixte_college_1_libre',
                 'bf_montant_adhesion_mixte_college_2_libre',
-                'bf_montant_don_ponctuel_libre'
+                'bf_montant_don_ponctuel_libre',
+                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+                'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
             ],1)
         ));
 
@@ -350,7 +362,10 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_adhesion_a_payer',
             'bf_adhesion_groupe_a_payer',
             'bf_don_a_payer',
-            'bf_calc'
+            'bf_calc',
+            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+            'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
         ] as $key){
             $this->assertArrayHasKey($key,$entry,"entry should contain key '$key'");
             $this->assertSame($data['waited'][$key],$entry[$key],"entry['$key'] should be '{$data['waited'][$key]}'");
@@ -380,6 +395,9 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_montant_adhesion_mixte_college_1_libre' => '',
             'bf_montant_adhesion_mixte_college_2_libre' => '',
             'bf_montant_don_ponctuel_libre' => '',
+            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
+            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
+            'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
             'paymentId' => self::DEFAULT_PAYMENT_ID,
             'paymentAmount' => '0',
             'paymentDate' => $currentDate,
@@ -391,6 +409,9 @@ class HpfServiceTest extends YesWikiTestCase
                 'bf_adhesion_groupe_a_payer' => '0',
                 'bf_don_a_payer' => '0',
                 'bf_calc' => '0',
+                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
+                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
+                'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard'
             ],
             "bf_adhesion_payee_$currentYear" => '',
             "bf_adhesion_groupe_payee_$currentYear" => '',
@@ -462,6 +483,7 @@ class HpfServiceTest extends YesWikiTestCase
                     'bf_montant_don_ponctuel_libre' => '7',
                     'bf_don_a_payer' => '7',
                     'bf_calc' => '7',
+                    'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'libre',
                 ],
                 "bf_dons_payes_$currentYear" => '10',
             ])],
@@ -470,6 +492,7 @@ class HpfServiceTest extends YesWikiTestCase
                 'paymentAmount' => '18',
                 'waited' => [
                     'bf_montant_don_ponctuel_libre' => '0',
+                    'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'libre',
                 ],
                 "bf_dons_payes_$currentYear" => '18',
             ])],
@@ -478,6 +501,7 @@ class HpfServiceTest extends YesWikiTestCase
                 'paymentAmount' => '30.9',
                 'waited' => [
                     'bf_montant_don_ponctuel_libre' => '0',
+                    'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'libre',
                 ],
                 "bf_dons_payes_$currentYear" => '30.9',
             ])]
