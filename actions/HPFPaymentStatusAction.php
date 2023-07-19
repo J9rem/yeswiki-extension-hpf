@@ -174,7 +174,7 @@ class HPFPaymentStatusAction extends YesWikiAction
     private function updatePaymentsForEntry(array $entry, string $email)
     {
         // update CalcField before check
-        $newEntry = $this->hpfService->updateCalcFields($entry, HpfService::CALC_FIELDNAMES);
+        $newEntry = $this->hpfService->updateCalcFields($entry);
         $previousValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
         $newValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
         if ($previousValue != $newValue) {

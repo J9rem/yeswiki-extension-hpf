@@ -584,7 +584,7 @@ class HpfService
             $paymentParams
         );
         
-        $entry = $this->updateCalcFields($entry, HpfService::CALC_FIELDNAMES);
+        $entry = $this->updateCalcFields($entry);
 
         return $entry;
     }
