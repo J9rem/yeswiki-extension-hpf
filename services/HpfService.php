@@ -753,10 +753,15 @@ class HpfService
             "`body` = '" . $this->dbService->escape(json_encode($data)) . "', ".
             "`body_r` = ''");
 
-        // reset page Manager cache
-        $this->pageManager->cache(null,$data['id_fiche']);
-
         $updatedEntry = $this->entryManager->getOne($data['id_fiche'], false, null, false, true);
+
+        // reset page Manager cache
+        $this->pageManager->cache(array_merge($oldPage,[
+            'tag' => $data['id_fiche'],
+            'time' => $data['date_maj_fiche'],
+            'latest' => 'Y',
+            'body' => json_encode($data),
+        ]),$data['id_fiche']);
 
         return $updatedEntry;
     }
