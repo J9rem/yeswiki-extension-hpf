@@ -16,12 +16,14 @@ let appParams = {
     components: {vuejsDatepicker/*,SpinnerLoader*/},
     data: function() {
         return {
+          // currentFormIdInternal: null,
           datePickerLang: vdp_translation_index,
           datePickerLanguage: null,
           defaultPayment: {
             id: '',
             origin: '',
             customDate: '',
+            refreshing: false,
             visibility: true,
             total: 0
           },
@@ -29,6 +31,18 @@ let appParams = {
         };
     },
     computed: {
+      // currentFormId(){
+      //   if (this.currentFormIdInternal === null){
+      //     const formInput = $(this.element).closest('form#formulaire').find('input[name=id_typeannonce][type=hidden]')
+      //     if (formInput && formInput.length > 0){
+      //       this.currentFormIdInternal = $(formInput).val()
+      //     }
+      //   }
+      //   return this.currentFormIdInternal
+      // },
+      element(){
+        return $(isVueJS3 ? this.$el.parentNode : this.$el)
+      },
       value(){
         return this.payments.length === 0 
           ? '' 
@@ -41,6 +55,7 @@ let appParams = {
                 }).map((payment)=>{
                   let data = {...payment}
                   delete data.id
+                  delete data.refreshing
                   delete data.visibility
                   delete data.customDate;
                   ['adhesion','adhesion_groupe','don'].forEach((name)=>{
@@ -133,6 +148,34 @@ let appParams = {
       removeSubElem(key,elemKey,keyYear){
         this.payments[key][elemKey].splice(keyYear,1)
       },
+      refreshPayment(key){
+        this.payments[key].refreshing = true
+        const id = String(this.payments?.[key]?.id)
+        if (id.length === 0){
+          return
+        }
+        fetch(`?api/hpf/helloasso/payment/info/${id}`)
+          .then((response)=>{
+            if (response.ok){
+              return response.json()
+            }
+            throw new Error(`response not ok (${response.status} - ${response.statusText}) for id:${id}`)
+          })
+          .then((data)=>{
+            console.log({data})
+            if (data?.found && data?.id === id){
+              const date = data?.date
+              const value = data?.value
+              const form = data?.form
+            }
+          })
+          .catch((error)=>{
+            console.error(error)
+          })
+          .finally(()=>{
+            this.payments[key].refreshing = false
+          })
+      },
       removePayment(keyToRemove){
         this.payments.splice(keyToRemove,1)
       },
@@ -149,7 +192,7 @@ let appParams = {
       }
     },
     mounted(){
-      const el = $(isVueJS3 ? this.$el.parentNode : this.$el)
+      const el = this.element
       this.datePickerLanguage = (wiki.locale in this.datePickerLang)
         ? this.datePickerLang[wiki.locale]
         : this.datePickerLang.en
