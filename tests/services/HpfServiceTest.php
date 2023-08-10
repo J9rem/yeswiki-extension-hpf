@@ -876,8 +876,8 @@ class HpfServiceTest extends YesWikiTestCase
         $entryManager = $wiki->services->get(EntryManager::class);
 
         $id = self::ENTRY_ID;
-        $entry = $entryManager->getOne($id);
-        if ($install && empty($list)){
+        $entry = $entryManager->getOne($id, false, null, false, true); // no cache
+        if ($install && empty($entry)){
             if (!empty(self::$cache['currentFormId'])){
                 $entryManager->create(
                     self::$cache['currentFormId'],
