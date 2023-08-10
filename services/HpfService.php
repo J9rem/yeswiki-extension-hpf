@@ -32,7 +32,7 @@ use YesWiki\Hpf\Field\PaymentsField;
 use YesWiki\Security\Controller\SecurityController;
 use YesWiki\Shop\Entity\Payment;
 use YesWiki\Shop\Entity\Event;
-use YesWiki\Shop\HelloAssoPayments;
+use YesWiki\Shop\Entity\HelloAssoPayments;
 use YesWiki\Shop\Service\EventDispatcher;
 use YesWiki\Shop\Service\HelloAssoService;
 use YesWiki\Wiki;

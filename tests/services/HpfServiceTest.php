@@ -18,11 +18,10 @@ use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Bazar\Service\ListManager;
 use YesWiki\Core\Controller\AuthController;
 use YesWiki\Core\Service\ConfigurationService;
-use YesWiki\Core\Service\PageManager;
 use YesWiki\Hpf\Service\HpfService;
 use YesWiki\Shop\Entity\Payment;
 use YesWiki\Shop\Entity\User;
-use YesWiki\Shop\HelloAssoPayments;
+use YesWiki\Shop\Entity\HelloAssoPayments;
 use YesWiki\Test\Core\YesWikiTestCase;
 use YesWiki\Wiki;
 
