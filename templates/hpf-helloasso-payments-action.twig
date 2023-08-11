@@ -7,10 +7,31 @@
  * file that was distributed with this source code.
  *#}
 
+{{ include_css('styles/vendor/datatables-full/dataTables.bootstrap.min.css') }}
+{{ include_css('tools/bazar/presentation/styles/tableau.css') }}
 {{ include_javascript('javascripts/vendor/vue/vue.js') }}
+{{ include_javascript('javascripts/vendor/datatables-full/jquery.dataTables.min.js') }} 
 {{ include_javascript('tools/hpf/javascripts/helloasso-payments-action.js',false,true) }}
-{# {{ include_css('tools/hpf/styles/helloasso-payments-action.css',) }} #}
 
-<div class="dynamic-hpf-helloasso-payments-action" data-params="{{ params|json_encode }}">
-  {{"{{ JSON.stringify(params) }}"}}
+<div class="dynamic-hpf-helloasso-payments-action">
+    <hpf-table data-params="{{ params|json_encode }}" v-model="isLoading">
+        <template #firstcolumntitle>Collège</template>
+        <template #name>Collège {id}</template>
+        <template #yeartotal>Total année</template>
+        <template #jan>Jan.</template>
+        <template #feb>Fév.</template>
+        <template #mar>Mar.</template>
+        <template #apr>Avr.</template>
+        <template #may>Mai</template>
+        <template #jun>Juin</template>
+        <template #jul>Juil.</template>
+        <template #aug>Août</template>
+        <template #sep>Sep.</template>
+        <template #oct>Oct.</template>
+        <template #nov>Nov.</template>
+        <template #dec>Dec.</template>
+        <template #other>Sans date</template>
+        <template #sum>Total</template>
+    </hpf-table>
+    <spinner-loader v-if="isLoading" class="overlay super-overlay" :height="500"></spinner-loader>
 </div>

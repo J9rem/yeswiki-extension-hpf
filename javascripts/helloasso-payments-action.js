@@ -7,46 +7,37 @@
  * file that was distributed with this source code.
  */
 
+import HpfTable from './components/HpfTable.js'
+import SpinnerLoader from '../../bazar/presentation/javascripts/components/SpinnerLoader.js'
+
 const rootsElements = ['.dynamic-hpf-helloasso-payments-action'];
 const isVueJS3 = (typeof window.Vue.createApp == "function");
 
 let appParams = {
-    data: function() {
+    components: {HpfTable,SpinnerLoader},
+    data(){
         return {
-            params: null
-        };
-    },
-    computed:{
-        element(){
-            return isVueJS3 ? this.$el.parentNode : this.$el
-        }
-    },
-    mounted(){
-        const rawParams = this.element.dataset?.params
-        if (rawParams){
-            try {
-                this.params = JSON.parse(rawParams)
-            } catch (error) {
-                console.error(error)
-            }
+            isLoading: true
         }
     }
 }
 
-if (isVueJS3){
-    let app = window.Vue.createApp(appParams)
-    app.config.globalProperties.wiki = window.wiki
-    app.config.globalProperties._t = window._t
-    rootsElements.forEach(elem => {
-        app.mount(elem)
-    })
-} else {
-    window.Vue.prototype.wiki = window.wiki
-    window.Vue.prototype._t = _t;
-    rootsElements.forEach(elem => {
-        new Vue({
-            ...{el:elem},
-            ...appParams
+document.addEventListener('DOMContentLoaded', () => {
+    if (isVueJS3){
+        let app = window.Vue.createApp(appParams)
+        app.config.globalProperties.wiki = window.wiki
+        app.config.globalProperties._t = window._t
+        rootsElements.forEach(elem => {
+            app.mount(elem)
         })
-    })
-}
+    } else {
+        window.Vue.prototype.wiki = window.wiki
+        window.Vue.prototype._t = _t;
+        rootsElements.forEach(elem => {
+            new Vue({
+                ...{el:elem},
+                ...appParams
+            })
+        })
+    }
+})
