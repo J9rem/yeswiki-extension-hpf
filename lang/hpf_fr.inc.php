@@ -67,6 +67,13 @@ return [
     'HPF_NOT_FOR_EMPTY_TAG' => 'rafraichissement impossible pour un tag vide',
     'HPF_FORBIDEN_FOR_THIS_ENTRY' => 'vous n\'avez ps le droit de modifier cette fiche',
 
+    //actions/HPFHelloAssoPaymentsAction.php
+    'AB_hpf_hpfhelloassopayments_label' => 'Liste des paiements Hello Asso',
+    'AB_hpf_hpfhelloassopayments_college1_label' => 'Collège 1',
+    'AB_hpf_hpfhelloassopayments_college2_label' => 'Collège 2',
+    'AB_hpf_hpfhelloassopayments_college3_label' => 'Collège 3',
+    'AB_hpf_hpfhelloassopayments_college4_label' => 'Collège 4',
+
     // config.yaml
     'EDIT_CONFIG_HINT_HPF[CONTRIBFORMIDS]' => 'Identifiant des formulaires liés au paiement (avec \'bf_mail\' et un champ \'CalcField\'), séparés par des virgules',
     'EDIT_CONFIG_HINT_HPF[PAYMENTSFORMURLS]' => 'Lien vers le formulaire HelloAsso de paiement associé (séparé par des virgules)',

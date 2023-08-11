@@ -8,6 +8,7 @@
 label: _t(AB_HPF_group_label)
 position: 500
 previewHeight: 200px
+onlyForAdmins: true
 actions:
   hpfpaymentstatus:
     label: _t(AB_hpf_hpfpaymentstatus_label)
@@ -40,3 +41,18 @@ actions:
         label: _t(AB_hpf_hpfpaymentstatus_nothing_to_pay_message_label)
         type: text
         hint: _t(AB_hpf_hpfpaymentstatus_nothing_to_pay_message_hint)
+  hpfhelloassopayments:
+    label: _t(AB_hpf_hpfhelloassopayments_label)
+    properties:
+      college1:
+        label: _t(AB_hpf_hpfhelloassopayments_college1_label)
+        type: select-form
+      college2:
+        label: _t(AB_hpf_hpfhelloassopayments_college2_label)
+        type: select-form
+      college3:
+        label: _t(AB_hpf_hpfhelloassopayments_college3_label)
+        type: select-form
+      college4:
+        label: _t(AB_hpf_hpfhelloassopayments_college4_label)
+        type: select-form

@@ -1,0 +1,16 @@
+{#
+ * This file is part of the YesWiki Extension hpf.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *#}
+
+{{ include_javascript('javascripts/vendor/vue/vue.js') }}
+{{ include_javascript('tools/hpf/javascripts/helloasso-payments-action.js',false,true) }}
+{# {{ include_css('tools/hpf/styles/helloasso-payments-action.css',) }} #}
+
+<div class="dynamic-hpf-helloasso-payments-action" data-params="{{ params|json_encode }}">
+  {{"{{ JSON.stringify(params) }}"}}
+</div>
