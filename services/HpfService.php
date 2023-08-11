@@ -994,22 +994,25 @@ class HpfService
             'found' => false,
             'id' => $id
         ];
-        $payment = $this->helloAssoService->getPayment($id);
-        if (!empty($payment) && $payment instanceof Payment){
-            $data['found'] = true;
-            $data = array_merge($data,$payment->jsonSerialize());
-            if (!empty($data['formSlug'])){
-                $sameSlugForms = array_filter(
-                    $this->getCurrentPaymentsFormIds(),
-                    function($formId) use ($data){
-                        $form = $this->getPaymentForm($formId);
-                        return $form['formSlug'] == $data['formSlug'];
+        try {
+            $payment = $this->helloAssoService->getPayment($id);
+            if (!empty($payment) && $payment instanceof Payment){
+                $data['found'] = true;
+                $data = array_merge($data,$payment->jsonSerialize());
+                if (!empty($data['formSlug'])){
+                    $sameSlugForms = array_filter(
+                        $this->getCurrentPaymentsFormIds(),
+                        function($formId) use ($data){
+                            $form = $this->getPaymentForm($formId);
+                            return $form['formSlug'] == $data['formSlug'];
+                        }
+                    );
+                    if (!empty($sameSlugForms)){
+                        $data['form'] = $sameSlugForms[0];
                     }
-                );
-                if (!empty($sameSlugForms)){
-                    $data['form'] = $sameSlugForms[0];
                 }
             }
+        } catch (Throwable $th) {
         }
 
         return $data;
