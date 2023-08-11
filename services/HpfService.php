@@ -990,34 +990,28 @@ class HpfService
         if (empty($id)){
             throw new Exception("id should not be empty");
         }
-        $paymentsFormIds = $this->getCurrentPaymentsFormIds();
         $data = [
             'found' => false,
             'id' => $id
         ];
-        if (empty($forms)){
-            $forms = $paymentsFormIds;
-        } else {
-            $forms = array_map('strval',array_filter($forms,function ($formId) use ($paymentsFormIds){
-                return is_scalar($formId) && (in_array(strval($formId),$paymentsFormIds) || in_array(intval($formId),$paymentsFormIds));
-            }));
-            foreach ($paymentsFormIds as $formId) {
-                if (!in_array($formId,$forms)){
-                    $forms[] = $formId;
+        $payment = $this->helloAssoService->getPayment($id);
+        if (!empty($payment) && $payment instanceof Payment){
+            $data['found'] = true;
+            $data = array_merge($data,$payment->jsonSerialize());
+            if (!empty($data['formSlug'])){
+                $sameSlugForms = array_filter(
+                    $this->getCurrentPaymentsFormIds(),
+                    function($formId) use ($data){
+                        $form = $this->getPaymentForm($formId);
+                        return $form['formSlug'] == $data['formSlug'];
+                    }
+                );
+                if (!empty($sameSlugForms)){
+                    $data['form'] = $sameSlugForms[0];
                 }
             }
         }
-        foreach ($forms as $formId) {
-            if (!$data['found']){
-                // extract helloasso params
-                $form = $this->getPaymentForm($formId);
-                // first found, exit for
-                if (false){
-                    $data['found'] = true;
-                    $data['data'] = []; // TODO update
-                }
-            }
-        }
+
         return $data;
     }
 }

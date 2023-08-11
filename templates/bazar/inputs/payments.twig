@@ -80,7 +80,7 @@
                         type="button"
                         @click="refreshPayment(key)"
                         :disabled="payments[key].refreshing"
-                        >🔃</button><br/>
+                        >↻</button><br/>
                     <ul v-show="payment.visibility" :id="`{{field.propertyName}}-payment-input-${payment.id}`">
                         <li>Date : <vuejs-datepicker 
                                 :format="customFormatterDate" 

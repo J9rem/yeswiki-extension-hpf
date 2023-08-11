@@ -162,11 +162,23 @@ let appParams = {
             throw new Error(`response not ok (${response.status} - ${response.statusText}) for id:${id}`)
           })
           .then((data)=>{
-            console.log({data})
             if (data?.found && data?.id === id){
-              const date = data?.date
-              const value = data?.value
+              const date = data?.date ?? ''
+              const value = data?.amount
               const form = data?.form
+              const currentKeys = Object.keys(this.payments).filter((k)=>this.payments[k]?.id == id)
+              if (currentKeys.length > 0){
+                const currentKey = currentKeys[0]
+                if (date.length > 0){
+                  this.payments[currentKey].customDate = this.generateDate({customDate:date})
+                }
+                if (value !== null){
+                  this.payments[currentKey].total = value
+                }
+                if (form && form > 0){
+                  this.payments[currentKey].origin = `helloasso:${form}`
+                }
+              }
             }
           })
           .catch((error)=>{
