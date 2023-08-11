@@ -74,7 +74,13 @@
                         class="btn btn-danger btn-xs" 
                         type="button"
                         @click="removePayment(key)"
-                        >❌</button><br/>
+                        >❌</button>
+                    <button 
+                        class="btn btn-info btn-xs" 
+                        type="button"
+                        @click="refreshPayment(key)"
+                        :disabled="payments[key].refreshing"
+                        >↻</button><br/>
                     <ul v-show="payment.visibility" :id="`{{field.propertyName}}-payment-input-${payment.id}`">
                         <li>Date : <vuejs-datepicker 
                                 :format="customFormatterDate" 

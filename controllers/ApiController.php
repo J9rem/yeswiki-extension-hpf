@@ -70,4 +70,12 @@ class ApiController extends YesWikiController
             ],404);
         }
     }
+
+    /**
+     * @Route("/api/hpf/helloasso/payment/info/{id}", methods={"GET"},options={"acl":{"public","@admins"}})
+     */
+    public function getPaymentInfo($id)
+    {
+        return new ApiResponse($this->getService(HpfService::class)->getPaymentInfos($id,[]),200);
+    }  
 }

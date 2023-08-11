@@ -18,11 +18,10 @@ use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Bazar\Service\ListManager;
 use YesWiki\Core\Controller\AuthController;
 use YesWiki\Core\Service\ConfigurationService;
-use YesWiki\Core\Service\PageManager;
 use YesWiki\Hpf\Service\HpfService;
 use YesWiki\Shop\Entity\Payment;
 use YesWiki\Shop\Entity\User;
-use YesWiki\Shop\HelloAssoPayments;
+use YesWiki\Shop\Entity\HelloAssoPayments;
 use YesWiki\Test\Core\YesWikiTestCase;
 use YesWiki\Wiki;
 
@@ -876,8 +875,8 @@ class HpfServiceTest extends YesWikiTestCase
         $entryManager = $wiki->services->get(EntryManager::class);
 
         $id = self::ENTRY_ID;
-        $entry = $entryManager->getOne($id);
-        if ($install && empty($list)){
+        $entry = $entryManager->getOne($id, false, null, false, true); // no cache
+        if ($install && empty($entry)){
             if (!empty(self::$cache['currentFormId'])){
                 $entryManager->create(
                     self::$cache['currentFormId'],

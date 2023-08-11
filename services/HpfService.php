@@ -32,7 +32,7 @@ use YesWiki\Hpf\Field\PaymentsField;
 use YesWiki\Security\Controller\SecurityController;
 use YesWiki\Shop\Entity\Payment;
 use YesWiki\Shop\Entity\Event;
-use YesWiki\Shop\HelloAssoPayments;
+use YesWiki\Shop\Entity\HelloAssoPayments;
 use YesWiki\Shop\Service\EventDispatcher;
 use YesWiki\Shop\Service\HelloAssoService;
 use YesWiki\Wiki;
@@ -753,10 +753,15 @@ class HpfService
             "`body` = '" . $this->dbService->escape(json_encode($data)) . "', ".
             "`body_r` = ''");
 
-        // reset page Manager cache
-        $this->pageManager->cache(null,$data['id_fiche']);
-
         $updatedEntry = $this->entryManager->getOne($data['id_fiche'], false, null, false, true);
+
+        // reset page Manager cache
+        $this->pageManager->cache(array_merge($oldPage,[
+            'tag' => $data['id_fiche'],
+            'time' => $data['date_maj_fiche'],
+            'latest' => 'Y',
+            'body' => json_encode($data),
+        ]),$data['id_fiche']);
 
         return $updatedEntry;
     }
@@ -978,5 +983,35 @@ class HpfService
     {
         $payments = $this->convertStringToPayments($entry[self::PAYMENTS_FIELDNAME] ?? '');
         return array_key_exists($payment->id,$payments);
+    }
+
+    public function getPaymentInfos(string $id): array
+    {
+        if (empty($id)){
+            throw new Exception("id should not be empty");
+        }
+        $data = [
+            'found' => false,
+            'id' => $id
+        ];
+        $payment = $this->helloAssoService->getPayment($id);
+        if (!empty($payment) && $payment instanceof Payment){
+            $data['found'] = true;
+            $data = array_merge($data,$payment->jsonSerialize());
+            if (!empty($data['formSlug'])){
+                $sameSlugForms = array_filter(
+                    $this->getCurrentPaymentsFormIds(),
+                    function($formId) use ($data){
+                        $form = $this->getPaymentForm($formId);
+                        return $form['formSlug'] == $data['formSlug'];
+                    }
+                );
+                if (!empty($sameSlugForms)){
+                    $data['form'] = $sameSlugForms[0];
+                }
+            }
+        }
+
+        return $data;
     }
 }
