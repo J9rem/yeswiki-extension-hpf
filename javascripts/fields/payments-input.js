@@ -175,9 +175,9 @@ let appParams = {
                 if (value !== null){
                   this.payments[currentKey].total = String(Number(value)) // keep string
                 }
-                if (form && form > 0){
-                  this.payments[currentKey].origin = `helloasso:${form}`
-                }
+                this.payments[currentKey].origin = (form && form > 0)
+                  ? `helloasso:${form}`
+                  : 'helloasso'
               }
             }
           })

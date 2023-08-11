@@ -1017,4 +1017,14 @@ class HpfService
 
         return $data;
     }
+
+    public function getPaymentsViaEmail(string $email): array
+    {
+        if (empty($email)){
+            throw new Exception("email should not be empty");
+        }
+        return $this->helloAssoService->getPayments([
+            'email' => $email,
+        ])->getPayments();
+    }
 }
