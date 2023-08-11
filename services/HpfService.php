@@ -875,7 +875,7 @@ class HpfService
         if (!empty($paymentContent)){
             try {
                 $jsonDecoded = json_decode($paymentContent,true);
-                if (empty($jsonDecoded)){
+                if (empty($jsonDecoded) || !is_array($jsonDecoded)){
                     throw new Exception('paymentfied is not json encoded');
                 } else {
                     foreach($jsonDecoded as $id => $data){
