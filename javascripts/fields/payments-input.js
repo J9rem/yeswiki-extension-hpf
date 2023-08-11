@@ -173,7 +173,7 @@ let appParams = {
                   this.payments[currentKey].customDate = this.generateDate({customDate:date})
                 }
                 if (value !== null){
-                  this.payments[currentKey].total = value
+                  this.payments[currentKey].total = String(Number(value)) // keep string
                 }
                 if (form && form > 0){
                   this.payments[currentKey].origin = `helloasso:${form}`
