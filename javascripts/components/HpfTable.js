@@ -7,8 +7,8 @@
  * file that was distributed with this source code.
  */
 
-import DynTable from '../../../bazar/presentation/javascripts/components/DynTable.js'
-import TemplateRenderer from '../../../bazar/presentation/javascripts/components/TemplateRenderer.js'
+import DynTable from 'DynTable'
+import TemplateRenderer from 'TemplateRenderer'
 
 const isVueJS3 = (typeof window.Vue.createApp == "function");
 
