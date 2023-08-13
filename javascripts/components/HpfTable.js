@@ -20,11 +20,9 @@ defaultValues.other = 0
 
 const defaultData = {}
 for (let index = 1; index <= 4; index++) {
-    defaultData[`${index}`] = {
-        id: `${index}`,
-        values: {...defaultValues}
-    }
+    defaultData[`${index}`] = {...defaultValues}
 }
+defaultData.donation = {...defaultValues}
 
 export default {
     model: {
@@ -61,13 +59,19 @@ export default {
                     } else {
                         switch (col.data) {
                             case 'name':
-                                formattedData[col.data] = TemplateRenderer.render('HpfPayementsTable',this,'name',{},[['{id}',(row?.id ?? id ) ?? 'unknown']])
+                                formattedData[col.data] = TemplateRenderer.render(
+                                        'HpfPayementsTable',
+                                        this,
+                                        (id === 'donation') ? 'donation' : 'name',
+                                        {},
+                                        [['{id}',id]]
+                                    )
                                 break
                             case 'year':
                                 formattedData[col.data] = this.getSum(row)
                                 break
                             default:
-                                formattedData[col.data] = row.values?.[col.data] ?? row?.[col.data] ?? ''
+                                formattedData[col.data] = row?.[col.data] ?? ''
                                 break
                         }
                     }
@@ -127,7 +131,7 @@ export default {
             return this.columns
         },
         getSum(row){
-            return Object.entries(row.values)
+            return Object.entries(row)
                 .filter(([key,])=>{
                     return (key === 'other' 
                         || (
@@ -188,8 +192,8 @@ export default {
         this.secureResetIsloading().catch(this.manageError)
         this.updatePayments() // to force display table
         // example waiting loading
-        this.payments[3].values[6] = 60
-        this.payments[1].values[12] = 20
+        this.payments[3][6] = 60
+        this.payments[1][12] = 20
         this.$emit('update-loading',false)
     },
     watch:{
