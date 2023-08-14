@@ -1,0 +1,46 @@
+{#
+ * This file is part of the YesWiki Extension hpf.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *#}
+
+{{ include_css('styles/vendor/datatables-full/dataTables.bootstrap.min.css') }}
+{{ include_css('tools/bazar/presentation/styles/tableau.css') }}
+{{ include_javascript('javascripts/vendor/vue/vue.js') }}
+{{ include_javascript('javascripts/vendor/datatables-full/jquery.dataTables.min.js') }} 
+{{ include_javascript('tools/hpf/javascripts/helloasso-payments-action.js',false,true) }}
+
+<div class="dynamic-hpf-helloasso-payments-action">
+    <hpf-table data-params="{{ params|json_encode }}" v-model="isLoading">
+        <template #firstcolumntitle>Collège</template>
+        <template #name>Collège {id}</template>
+        <template #donation>Dons</template>
+        <template #yeartotal>Total année</template>
+        <template #jan>Jan.</template>
+        <template #feb>Fév.</template>
+        <template #mar>Mar.</template>
+        <template #apr>Avr.</template>
+        <template #may>Mai</template>
+        <template #jun>Juin</template>
+        <template #jul>Juil.</template>
+        <template #aug>Août</template>
+        <template #sep>Sep.</template>
+        <template #oct>Oct.</template>
+        <template #nov>Nov.</template>
+        <template #dec>Dec.</template>
+        <template #other>Sans date</template>
+        <template #sumtranslate>{{ _t('SUM') }}</template>
+        <template #selectyear>Choisir l'année</template>
+        <template #title="{year}">Liste des paiements Hello Asso pour {{"{{ year }}"}}</template>
+        <template #gettingcache>Recherche du cache pour l'année {year}</template>
+        <template #cachedisplayed>Données affichées (mise à jour du {date})</template>
+        <template #nocache>Pas de cache pour l'année {year}</template>
+        <template #refresh>Rafraîchissement des données</template>
+        <template #error>Une erreur est survenue</template>
+        <template #refreshingtext>Rafraîchir les données</template>
+    </hpf-table>
+    <spinner-loader v-if="isLoading" class="overlay super-overlay" :height="500"></spinner-loader>
+</div>

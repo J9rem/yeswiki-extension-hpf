@@ -14,6 +14,7 @@ namespace YesWiki\Hpf\Controller;
 use Symfony\Component\Routing\Annotation\Route;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Core\ApiResponse;
+use YesWiki\Core\Controller\CsrfTokenController;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Core\YesWikiController;
 use YesWiki\Hpf\Service\HpfService;
@@ -85,5 +86,21 @@ class ApiController extends YesWikiController
     public function getPaymentsViaEmail($email)
     {
         return new ApiResponse($this->getService(HpfService::class)->getPaymentsViaEmail($email),200);
-    } 
+    }
+    
+    /**
+     * @Route("/api/hpf/helloasso/payment/refreshcache", methods={"POST"},options={"acl":{"public","@admins"}})
+     */
+    public function refreshPaymentCache()
+    {
+        $csrfTokenController = $this->getService(CsrfTokenController::class);
+        $csrfTokenController->checkToken('refresh-payment-cache-token', 'POST', 'anti-csrf-token');
+        $formsIds = (empty($_POST['formsIds']) || !is_array($_POST['formsIds']))
+            ? []
+            : array_filter($_POST['formsIds'],function($v,$k){
+                return in_array(intval($k),[1,2,3,4]) && is_scalar($v) && strval(intval($v)) === strval($v) && intval($v) > 0;
+            },ARRAY_FILTER_USE_BOTH);
+        list('code'=>$code,'output'=>$output) = $this->getService(HpfService::class)->refreshPaymentCache($formsIds);
+        return new ApiResponse($output,$code);
+    }
 }
