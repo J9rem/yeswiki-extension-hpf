@@ -46,7 +46,7 @@ export default {
             return isVueJS3 ? this.$el.parentNode : this.$el
         },
         sumtranslate(){
-            return TemplateRenderer.render('HpfPayementsTable',this,'sumtranslate')
+            return TemplateRenderer.render('HpfPaymentsTable',this,'sumtranslate')
         }
     },
     methods:{
@@ -60,7 +60,7 @@ export default {
                         switch (col.data) {
                             case 'name':
                                 formattedData[col.data] = TemplateRenderer.render(
-                                        'HpfPayementsTable',
+                                        'HpfPaymentsTable',
                                         this,
                                         (id === 'donation') ? 'donation' : 'name',
                                         {},
@@ -87,7 +87,7 @@ export default {
                 data.columns.push({
                     ...{
                         data: 'name',
-                        title: TemplateRenderer.render('HpfPayementsTable',this,'firstcolumntitle'),
+                        title: TemplateRenderer.render('HpfPaymentsTable',this,'firstcolumntitle'),
                         footer: ''
                     },
                     ...width
@@ -96,7 +96,7 @@ export default {
                     ...{
                         data: 'year',
                         class: 'sum-activated',
-                        title: TemplateRenderer.render('HpfPayementsTable',this,'yeartotal'),
+                        title: TemplateRenderer.render('HpfPaymentsTable',this,'yeartotal'),
                         footer: ''
                     },
                     ...width
@@ -120,7 +120,7 @@ export default {
                         ...{
                             data: key,
                             class: 'sum-activated',
-                            title: TemplateRenderer.render('HpfPayementsTable',this,associations?.[key] ?? key),
+                            title: TemplateRenderer.render('HpfPaymentsTable',this,associations?.[key] ?? key),
                             footer: ''
                         },
                         // ...width
