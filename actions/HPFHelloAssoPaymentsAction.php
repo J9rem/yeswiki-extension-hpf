@@ -11,6 +11,7 @@
 
 namespace YesWiki\Hpf;
 
+use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use YesWiki\Core\YesWikiAction;
 
 class HPFHelloAssoPaymentsAction extends YesWikiAction
@@ -48,7 +49,8 @@ class HPFHelloAssoPaymentsAction extends YesWikiAction
                 '2' => $this->arguments['college2'],
                 '3' => $this->arguments['college3'],
                 '4' => $this->arguments['college4']
-            ]
+            ],
+            'anti-csrf-token' => $this->getService(CsrfTokenManager::class)->refreshToken('refresh-payment-cache-token')->getValue()
         ];
 
         return $this->render('@hpf/hpf-helloasso-payments-action.twig',compact(['params']));        

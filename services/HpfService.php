@@ -16,6 +16,7 @@ use DateTime;
 use DateInterval;
 use Exception;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use Throwable;
 use YesWiki\Bazar\Field\BazarField;
 use YesWiki\Bazar\Field\CalcField;
@@ -40,6 +41,8 @@ use YesWiki\Wiki;
 class HpfService
 {
     public const PAYMENTS_FIELDNAME = "bf_payments";
+    public const TYPE_PAYMENT_FIELDNAME = "bf_moyen_paiement";
+    public const CB_TYPE_PAYMENT_FIELDVALUE = "cb";
     public const TYPE_CONTRIB = [
         'fieldName' => "bf_type_contributeur",
         'keys' => [
@@ -65,11 +68,13 @@ class HpfService
         "total" => "bf_calc"
     ];
 
-    public const HELLOASSO_HPF_PROPERTY = 'https://www.habitatparticipatif-france.fr/HelloAssoLog';
     public const HELLOASSO_API_PROPERTY = 'https://www.habitatparticipatif-france.fr/HelloAssoApiLog';
+    public const HELLOASSO_HPF_PROPERTY = 'https://www.habitatparticipatif-france.fr/HelloAssoLog';
+    public const HELLOASSO_HPF_PAYMENTS_CACHE_PROPERTY = 'https://www.habitatparticipatif-france.fr/PaymentsCache';
 
     protected $aclService;
     protected $assetsManager;
+    protected $csrfTokenManager;
     protected $dbService;
     protected $debug;
     protected $entryManager;
@@ -87,6 +92,7 @@ class HpfService
     public function __construct(
         AclService $aclService,
         AssetsManager $assetsManager,
+        CsrfTokenManager $csrfTokenManager,
         DbService $dbService,
         EntryManager $entryManager,
         FormManager $formManager,
@@ -100,6 +106,7 @@ class HpfService
     ) {
         $this->aclService = $aclService;
         $this->assetsManager = $assetsManager;
+        $this->csrfTokenManager = $csrfTokenManager;
         $this->dbService = $dbService;
         $this->debug = null;
         $this->entryManager = $entryManager;
@@ -1026,5 +1033,167 @@ class HpfService
         return $this->helloAssoService->getPayments([
             'email' => $email,
         ])->getPayments();
+    }
+
+    public function refreshPaymentCache(array $formsIds): array
+    {
+        $code = 200;
+        $output = [];
+        $payments = [];
+        $currentYear = intval((new DateTime())->format('Y'));
+        for ($y=2022; $y <= ($currentYear+1) ; $y++) { 
+            $payments[strval($y)] = $this->getDefaultPayments();
+        }
+        $fieldCache = [];
+        foreach($formsIds as $college => $formId){
+            $entries = $this->entryManager->search([
+                'formsIds' => [$formId]
+            ]);
+            if (!empty($entries)){
+                foreach ($entries as $entry) {
+                    $this->updatePayments($payments,$college,$entry,$fieldCache);
+                }
+            }
+        }
+        $this->registerCache($payments);
+        $output['message'] = 'ok';
+        $output['newtoken'] = $this->csrfTokenManager->refreshToken('refresh-payment-cache-token')->getValue();
+        return compact(['code','output']);
+    }
+
+    protected function getDefaultPayments():array
+    {
+        $defaultPayment = [];
+        for ($i=1; $i <= 12; $i++) { 
+            $defaultPayment["$i"] = 0;
+        }
+        $defaultPayment['o'] = 0;
+        return [
+            "1" => $defaultPayment,
+            "2" => $defaultPayment,
+            "3" => $defaultPayment,
+            "4" => $defaultPayment,
+            "d" => $defaultPayment
+        ];
+    }
+
+    protected function updatePayments(array &$payments,string $college, array $entry, array &$fieldCache)
+    {
+        // check is $entry id CB
+        if (empty($entry['id_typeannonce'])){
+            return;
+        }
+        $formId = $entry['id_typeannonce'];
+        try {
+            $paymentTypePropertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,self::TYPE_PAYMENT_FIELDNAME);
+        } catch (Throwable $th) {
+            return ;
+        }
+        $isCb = !(empty($entry[$paymentTypePropertyName]) && $entry[$paymentTypePropertyName] == self::CB_TYPE_PAYMENT_FIELDVALUE);
+        $years = array_keys($payments);
+        $data = [];
+        foreach(['membership','group_membership','donation'] as $fieldName){
+            // init data
+            $data[$fieldName] = array_fill_keys($years, $this->getDefaultPayments()['1']);
+            // if CB, extract membership by years and type
+            if ($isCb){
+                foreach($years as $year){
+                    $fullFieldName = str_replace('{year}',$year,self::PAYED_FIELDNAMES[$fieldName]);
+                    try {
+                        $propertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,$fullFieldName);
+                        $data[$fieldName][$year]['o'] = floatval($entry[$propertyName] ?? 0);
+                    } catch (Throwable $th) {
+                    }
+                }
+            }
+        }
+
+        // extract payments
+        // append in dedicated date
+        foreach(['membership'=>'college','group_membership'=>'college','donation'=>'d'] as $fieldName => $destination){
+            $destinationKey = ($destination === 'college') ? $college : $destination;
+            foreach($data[$fieldName] as $year => $values){
+                foreach($values as $month => $value){
+                    $payments[$year][$destinationKey][$month] += $value;
+                }
+            }
+        }
+    }
+
+    protected function getPropertyNameFromFormOrCache(string $formId,array &$fieldCache,string $name): string
+    {
+        if (empty($fieldCache[$formId])){
+            $fieldCache[$formId] = [];
+        }
+        if (empty($fieldCache[$formId][$name])){
+            $fieldCache[$formId][$name] = $this->formManager->findFieldFromNameOrPropertyName(
+                $name,
+                $formId
+            );
+        }
+        if (empty($fieldCache[$formId][$name])){
+            throw new Exception("Not found field");
+        }
+        $paymentTypePropertyName = $fieldCache[$formId][$name]->getPropertyName();
+        
+        if (empty($paymentTypePropertyName)){
+            throw new Exception("Empty property name");
+        }
+        return $paymentTypePropertyName;
+    }
+
+    protected function registerCache(array $payments)
+    {
+        $date = (new DateTime())->format('d-m-Y H:i:s');
+        $previousTriples = $this->tripleStore->getMatching(
+            null,
+            self::HELLOASSO_HPF_PAYMENTS_CACHE_PROPERTY,
+            null
+        );
+        $triples = [];
+        if (!empty($previousTriples)){
+            // clean cache if not present in payments
+            foreach($previousTriples as $triple){
+                if (!array_key_exists($triple['resource'],$payments)){
+                    try {
+                        $this->tripleStore->delete(
+                            $triple['resource'],
+                            $triple['property']
+                        );
+                    } catch (Throwable $th) {
+                        //throw $th;
+                    } 
+                } else {
+                    $triples[strval($triple['resource'])] = $triple;
+                }
+            }
+        }
+        foreach($payments as $year => $values){
+            $newValue = json_encode([
+                'date' => $date,
+                'values' => $values
+            ]);
+            try {
+                if (array_key_exists($year,$triples)){
+                    $this->tripleStore->update(
+                        $triples[$year]['resource'],
+                        $triples[$year]['property'],
+                        $triples[$year]['value'],
+                        $newValue,
+                        '',
+                        ''
+                    );
+                } else {
+                    $this->tripleStore->create(
+                        $year,
+                        self::HELLOASSO_HPF_PAYMENTS_CACHE_PROPERTY,
+                        $newValue,
+                        '',
+                        ''
+                    );
+                }
+            } catch(Throwable $th){
+            }
+        }
     }
 }

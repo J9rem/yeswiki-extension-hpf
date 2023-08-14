@@ -33,6 +33,14 @@
         <template #dec>Dec.</template>
         <template #other>Sans date</template>
         <template #sumtranslate>{{ _t('SUM') }}</template>
+        <template #selectyear>Choisir l'année</template>
+        <template #title="{year}">Liste des paiements Hello Asso pour {{"{{ year }}"}}</template>
+        <template #gettingcache>Recherche du cache pour l'année {year}</template>
+        <template #cachedisplayed>Données affichées (mise à jour du {date})</template>
+        <template #nocache>Pas de cache pour l'année {year}</template>
+        <template #refresh>Rafraîchissement des données</template>
+        <template #error>Une erreur est survenue</template>
+        <template #refreshingtext>Rafraîchir les données</template>
     </hpf-table>
     <spinner-loader v-if="isLoading" class="overlay super-overlay" :height="500"></spinner-loader>
 </div>
