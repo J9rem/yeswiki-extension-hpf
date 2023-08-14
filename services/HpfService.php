@@ -1108,10 +1108,64 @@ class HpfService
             }
         }
 
+        $associations = [
+            'membership'=>$college,
+            'group_membership'=>$college == '1' ? '2' : $college,
+            'donation'=>'d'
+        ];
+
         // extract payments
+        try {
+            $propertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,self::PAYMENTS_FIELDNAME);
+        } catch (Throwable $th) {
+            $propertyName = '';
+        }
+        if(!empty($propertyName) && !empty($entry[$propertyName])){
+            $paymentsFromField = $this->convertStringToPayments($entry[$propertyName]);
+            foreach($paymentsFromField as $id => $payment){
+                if (!empty($payment['date'])
+                    && !empty($payment['origin'])
+                    && !empty($payment['total'])
+                    && !empty($payment['origin'])
+                    && substr($payment['origin'],0,strlen('helloasso')) === 'helloasso'){
+                    $date = new DateTime($payment['date']);
+                    if (!empty($date)){
+                        foreach($associations as $fieldName => $destinationKey){
+                            switch ($fieldName) {
+                                case 'membership':
+                                    $localFieldName = 'adhesion';
+                                    break;
+                                case 'group_membership':
+                                    $localFieldName = 'adhesion_groupe';
+                                    break;
+                                case 'donation':
+                                    $localFieldName = 'don';
+                                    break;
+                                default:
+                                $localFieldName = '';
+                                    break;
+                            }
+                            if(!empty($payment[$localFieldName])){
+                                foreach($payment[$localFieldName] as $year => $value){
+                                    $month = strval(intval($date->format('m')));
+                                    $paymentYear = $date->format('Y');
+                                    $val = floatval($value);
+                                    if (array_key_exists($paymentYear,$data[$fieldName])){
+                                        $data[$fieldName][$paymentYear][$month] += $val;
+                                    }
+                                    if (array_key_exists($year,$data[$fieldName])){
+                                        $data[$fieldName][$year]['o'] = max(0,$data[$fieldName][$year]['o']-$val);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         // append in dedicated date
-        foreach(['membership'=>'college','group_membership'=>'college','donation'=>'d'] as $fieldName => $destination){
-            $destinationKey = ($destination === 'college') ? $college : $destination;
+        foreach($associations as $fieldName => $destinationKey){
             foreach($data[$fieldName] as $year => $values){
                 foreach($values as $month => $value){
                     $payments[$year][$destinationKey][$month] += $value;
