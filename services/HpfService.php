@@ -1030,9 +1030,10 @@ class HpfService
         if (empty($email)){
             throw new Exception("email should not be empty");
         }
-        return $this->helloAssoService->getPayments([
+        $results = $this->helloAssoService->getPayments([
             'email' => $email,
-        ])->getPayments();
+        ]);
+        return empty($results) ? [] : $results->getPayments();
     }
 
     public function refreshPaymentCache(array $formsIds, string $college3to4fieldname): array
