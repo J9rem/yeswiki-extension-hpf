@@ -97,6 +97,9 @@ export default {
                             default:
                                 if (Array.isArray(row?.[col.data]?.[1])){
                                     formattedData[col.data] = {v:row?.[col.data]?.[0] ?? '',e:row[col.data][1]}
+                                    formattedData[col.data].toString = ()=>{
+                                        return formattedData[col.data].v
+                                    }
                                 } else {
                                     formattedData[col.data] = row?.[col.data]?.[0] ?? ''
                                 }
@@ -197,8 +200,10 @@ export default {
                                                 .join(',')
                                                 : (
                                                     this.params.forms?.[row?.id ?? -1]
-                                                    ?? this.params.forms?.partner
-                                                    ?? 0
+                                                    ?? (row?.id == '4'
+                                                        ? this.params.forms?.[3]
+                                                        : (row?.id == '5' ? this.params.forms?.partner : ''))
+                                                    ?? ''
                                                 )
                                             )
                                         })],
