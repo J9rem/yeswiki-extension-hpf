@@ -1099,7 +1099,7 @@ class HpfService
         } catch (Throwable $th) {
             return ;
         }
-        $isCb = !(empty($entry[$paymentTypePropertyName]) && $entry[$paymentTypePropertyName] == self::CB_TYPE_PAYMENT_FIELDVALUE);
+        $isCb = (!empty($entry[$paymentTypePropertyName]) && $entry[$paymentTypePropertyName] == self::CB_TYPE_PAYMENT_FIELDVALUE);
         $years = array_keys($payments);
         $data = [];
         foreach(['membership','group_membership','donation'] as $fieldName){
