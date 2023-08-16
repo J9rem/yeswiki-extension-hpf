@@ -42,7 +42,7 @@ class PaymentsField extends TextField
     {
         $value = $this->getValue($entry);
         $payments = $this->convertStringToPaymentsSorted($value);
-        return $this->render('@bazar/fields/payments.twig',compact(['payments','entry']));
+        return empty($value) ? '' : $this->render('@bazar/fields/payments.twig',compact(['payments','entry']));
     }
 
     protected function renderInput($entry)
