@@ -73,6 +73,8 @@ return [
     'AB_hpf_hpfhelloassopayments_college2_label' => 'Collège 2',
     'AB_hpf_hpfhelloassopayments_college3_label' => 'Collège 3',
     'AB_hpf_hpfhelloassopayments_college4_label' => 'Collège 4',
+    'AB_hpf_hpfhelloassopayments_college3to4fieldname_label' => 'Nom du champ d\'association du collège 3 vers le collège 4',
+    'AB_hpf_hpfhelloassopayments_partner_label' => 'Partenaires',
 
     // config.yaml
     'EDIT_CONFIG_HINT_HPF[CONTRIBFORMIDS]' => 'Identifiant des formulaires liés au paiement (avec \'bf_mail\' et un champ \'CalcField\'), séparés par des virgules',

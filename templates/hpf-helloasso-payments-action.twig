@@ -17,6 +17,7 @@
     <hpf-table data-params="{{ params|json_encode }}" v-model="isLoading">
         <template #firstcolumntitle>Collège</template>
         <template #name>Collège {id}</template>
+        <template #partner>{{ _t('AB_hpf_hpfhelloassopayments_partner_label') }}</template>
         <template #donation>Dons</template>
         <template #yeartotal>Total année</template>
         <template #jan>Jan.</template>

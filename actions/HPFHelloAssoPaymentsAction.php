@@ -22,7 +22,9 @@ class HPFHelloAssoPaymentsAction extends YesWikiAction
             'college1' => $this->formatString($arg,'college1'),
             'college2' => $this->formatString($arg,'college2'),
             'college3' => $this->formatString($arg,'college3'),
-            'college4' => $this->formatString($arg,'college4')
+            'college4' => $this->formatString($arg,'college4'),
+            'partner' => $this->formatString($arg,'partner'),
+            'college3to4fieldname' => $this->formatString($arg,'college3to4fieldname')
         ]);
     }
 
@@ -48,8 +50,10 @@ class HPFHelloAssoPaymentsAction extends YesWikiAction
                 '1' => $this->arguments['college1'],
                 '2' => $this->arguments['college2'],
                 '3' => $this->arguments['college3'],
-                '4' => $this->arguments['college4']
+                '4' => $this->arguments['college4'],
+                'partner' => $this->arguments['partner']
             ],
+            'college3to4fieldname' => $this->arguments['college3to4fieldname'],
             'anti-csrf-token' => $this->getService(CsrfTokenManager::class)->refreshToken('refresh-payment-cache-token')->getValue()
         ];
 

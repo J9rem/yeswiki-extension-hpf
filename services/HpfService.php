@@ -1035,7 +1035,7 @@ class HpfService
         ])->getPayments();
     }
 
-    public function refreshPaymentCache(array $formsIds): array
+    public function refreshPaymentCache(array $formsIds, string $college3to4fieldname): array
     {
         $code = 200;
         $output = [];
@@ -1051,7 +1051,7 @@ class HpfService
             ]);
             if (!empty($entries)){
                 foreach ($entries as $entry) {
-                    $this->updatePayments($payments,$college,$entry,$fieldCache);
+                    $this->updatePayments($payments,$college,$entry,$fieldCache,$college3to4fieldname);
                 }
             }
         }
@@ -1077,7 +1077,7 @@ class HpfService
         ];
     }
 
-    protected function updatePayments(array &$payments,string $college, array $entry, array &$fieldCache)
+    protected function updatePayments(array &$payments,string $college, array $entry, array &$fieldCache, string $college3to4fieldname)
     {
         // check is $entry id CB
         if (empty($entry['id_typeannonce'])){
@@ -1107,10 +1107,28 @@ class HpfService
                 }
             }
         }
+        // update college
+        try {
+            $collegeAdhesionpropertyName = empty($college3to4fieldname)
+                ? ''
+                : $this->getPropertyNameFromFormOrCache($formId,$fieldCache,$college3to4fieldname);
+        } catch (Throwable $th) {
+            $collegeAdhesionpropertyName = '';
+        }
+
+        $updatedCollege = (
+                $college == '3' 
+                && !empty($collegeAdhesionpropertyName)
+                && !empty($entry[$collegeAdhesionpropertyName])
+                && is_scalar($entry[$collegeAdhesionpropertyName])
+                && $entry[$collegeAdhesionpropertyName] == '4'
+            )
+            ? '4'
+            : $college;
 
         $associations = [
-            'membership'=>$college,
-            'group_membership'=>$college == '1' ? '2' : $college,
+            'membership'=>$updatedCollege,
+            'group_membership'=>$college == '1' ? '2' : $updatedCollege,
             'donation'=>'d'
         ];
 

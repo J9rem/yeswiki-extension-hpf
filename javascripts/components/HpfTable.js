@@ -19,7 +19,7 @@ for (let index = 1; index <= 12; index++) {
 defaultValues.other = 0
 
 const defaultData = {}
-for (let index = 1; index <= 4; index++) {
+for (let index = 1; index <= 5; index++) {
     defaultData[`${index}`] = {...defaultValues}
 }
 defaultData.donation = {...defaultValues}
@@ -81,7 +81,12 @@ export default {
                                 formattedData[col.data] = TemplateRenderer.render(
                                         'HpfPaymentsTable',
                                         this,
-                                        (id === 'donation') ? 'donation' : 'name',
+                                        (id === 'donation')
+                                            ? 'donation' 
+                                            : (id == '5'
+                                                ? 'partner'
+                                                : 'name'
+                                            ),
                                         {},
                                         [['{id}',id]]
                                     )
@@ -260,6 +265,8 @@ export default {
             formData.append('formsIds[2]',this.params?.forms?.[2] ?? '')
             formData.append('formsIds[3]',this.params?.forms?.[3] ?? '')
             formData.append('formsIds[4]',this.params?.forms?.[4] ?? '')
+            formData.append('formsIds[5]',this.params?.forms?.partner ?? '')
+            formData.append('college3to4fieldname',this.params?.college3to4fieldname ?? '')
             const options = {
                 method: 'POST',
                 body: new URLSearchParams(formData),
