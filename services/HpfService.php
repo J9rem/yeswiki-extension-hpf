@@ -1093,6 +1093,9 @@ class HpfService
         $formId = $entry['id_typeannonce'];
         try {
             $paymentTypePropertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,self::TYPE_PAYMENT_FIELDNAME);
+            if (empty($paymentTypePropertyName)){
+                return;
+            }
         } catch (Throwable $th) {
             return ;
         }
