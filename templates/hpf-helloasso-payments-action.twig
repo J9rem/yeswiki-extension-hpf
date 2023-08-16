@@ -42,6 +42,7 @@
         <template #refresh>Rafraîchissement des données</template>
         <template #error>Une erreur est survenue</template>
         <template #refreshingtext>Rafraîchir les données</template>
+        <template #link><a class="newtab" href="{link}">{value}</a></template>
     </hpf-table>
     <spinner-loader v-if="isLoading" class="overlay super-overlay" :height="500"></spinner-loader>
 </div>

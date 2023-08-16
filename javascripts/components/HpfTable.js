@@ -14,9 +14,9 @@ const isVueJS3 = (typeof window.Vue.createApp == "function");
 
 const defaultValues = {}
 for (let index = 1; index <= 12; index++) {
-    defaultValues[`${index}`] = 0
+    defaultValues[`${index}`] = [0,[]]
 }
-defaultValues.other = 0
+defaultValues.other = [0,[]]
 
 const defaultData = {}
 for (let index = 1; index <= 5; index++) {
@@ -95,7 +95,11 @@ export default {
                                 formattedData[col.data] = this.getSum(row)
                                 break
                             default:
-                                formattedData[col.data] = row?.[col.data] ?? ''
+                                if (Array.isArray(row?.[col.data]?.[1])){
+                                    formattedData[col.data] = {v:row?.[col.data]?.[0] ?? '',e:row[col.data][1]}
+                                } else {
+                                    formattedData[col.data] = row?.[col.data]?.[0] ?? ''
+                                }
                                 break
                         }
                     }
@@ -113,7 +117,8 @@ export default {
             this.message = TemplateRenderer.render('HpfPaymentsTable',this,'cachedisplayed',{},[['{date}',data.date]])
             Object.keys(defaultData).forEach((key)=>{
                 Object.keys(defaultValues).forEach((month)=>{
-                    this.payments[key][month] = data?.values?.[key === 'donation' ? 'd' : key]?.[month === 'other' ? 'o' : month] ?? 0
+                    const item = data?.values?.[key === 'donation' ? 'd' : key]?.[month === 'other' ? 'o' : month]
+                    this.payments[key][month] = [item?.v ?? 0,item?.e ?? []]
                 })
             })
         },
@@ -172,7 +177,21 @@ export default {
                             data: key,
                             class: 'sum-activated',
                             title: TemplateRenderer.render('HpfPaymentsTable',this,associations?.[key] ?? key),
-                            footer: ''
+                            footer: '',
+                            render: (data,type,row)=>{
+                                const value = (typeof data === 'object')
+                                    ? (data?.v ?? 0)
+                                    : data
+                                const entries = (typeof data === 'object')
+                                    ? (data?.e ?? [])
+                                    : []
+                                return (type === 'display' && entries.length > 0)
+                                    ? TemplateRenderer.render('HpfPaymentsTable',this,'link',{},[
+                                        ['{link}',wiki.url('?BazaR',{vue:'consulter',query:`id_fiche=${entries.join(',')}`})],
+                                        ['{value}',value]
+                                    ])
+                                    : value
+                            },
                         },
                         // ...width
                     })
@@ -191,7 +210,7 @@ export default {
                             && Number(key) < 13
                         ))
                 })
-                .reduce((sum,[,value])=>sum += value,0)
+                .reduce((sum,[,value])=>sum += value[0],0)
         },
         getUuid(){
             if (this.uuid === null){

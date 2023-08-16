@@ -1065,14 +1065,21 @@ class HpfService
     {
         $defaultPayment = [];
         for ($i=1; $i <= 12; $i++) { 
-            $defaultPayment["$i"] = 0;
+            $defaultPayment["$i"] = [
+                'v' => 0,
+                'e' => []
+            ];
         }
-        $defaultPayment['o'] = 0;
+        $defaultPayment['o'] = [
+            'v' => 0,
+            'e' => []
+        ];
         return [
             "1" => $defaultPayment,
             "2" => $defaultPayment,
             "3" => $defaultPayment,
             "4" => $defaultPayment,
+            "5" => $defaultPayment,
             "d" => $defaultPayment
         ];
     }
@@ -1101,7 +1108,7 @@ class HpfService
                     $fullFieldName = str_replace('{year}',$year,self::PAYED_FIELDNAMES[$fieldName]);
                     try {
                         $propertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,$fullFieldName);
-                        $data[$fieldName][$year]['o'] = floatval($entry[$propertyName] ?? 0);
+                        $data[$fieldName][$year]['o']['v'] = floatval($entry[$propertyName] ?? 0);
                     } catch (Throwable $th) {
                     }
                 }
@@ -1169,10 +1176,10 @@ class HpfService
                                     $paymentYear = $date->format('Y');
                                     $val = floatval($value);
                                     if (array_key_exists($paymentYear,$data[$fieldName])){
-                                        $data[$fieldName][$paymentYear][$month] += $val;
+                                        $data[$fieldName][$paymentYear][$month]['v'] = $data[$fieldName][$paymentYear][$month]['v'] + $val;
                                     }
                                     if (array_key_exists($year,$data[$fieldName])){
-                                        $data[$fieldName][$year]['o'] = max(0,$data[$fieldName][$year]['o']-$val);
+                                        $data[$fieldName][$year]['o']['v'] = max(0,$data[$fieldName][$year]['o']['v']-$val);
                                     }
                                 }
                             }
@@ -1186,7 +1193,10 @@ class HpfService
         foreach($associations as $fieldName => $destinationKey){
             foreach($data[$fieldName] as $year => $values){
                 foreach($values as $month => $value){
-                    $payments[$year][$destinationKey][$month] += $value;
+                    $payments[$year][$destinationKey][$month]['v'] = $payments[$year][$destinationKey][$month]['v'] + $value['v'];
+                    if (!empty($value['v']) && !empty($entry['id_fiche']) && !in_array($entry['id_fiche'],$payments[$year][$destinationKey][$month]['e'])){
+                        $payments[$year][$destinationKey][$month]['e'][] = $entry['id_fiche'];
+                    }
                 }
             }
         }
