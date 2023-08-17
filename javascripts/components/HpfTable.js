@@ -190,23 +190,26 @@ export default {
                                     : []
                                 return (type === 'display' && entries.length > 0)
                                     ? TemplateRenderer.render('HpfPaymentsTable',this,'link',{},[
-                                        ['{link}',wiki.url('?BazaR',{
-                                            vue:'consulter',
-                                            query:`id_fiche=${entries.join(',')}`,
-                                            template:'list',
-                                            id:(row?.id === 'donation'
-                                                ? Object.values(this.params.forms)
-                                                .filter((val)=>val.length > 0)
-                                                .join(',')
-                                                : (
-                                                    this.params.forms?.[row?.id ?? -1]
-                                                    ?? (row?.id == '4'
-                                                        ? this.params.forms?.[3]
-                                                        : (row?.id == '5' ? this.params.forms?.partner : ''))
-                                                    ?? ''
+                                        ['{link}',entries.length === 1
+                                            ? wiki.url(entries[0])
+                                            : wiki.url('?BazaR',{
+                                                vue:'consulter',
+                                                query:`id_fiche=${entries.join(',')}`,
+                                                template:'list',
+                                                id:(row?.id === 'donation'
+                                                    ? Object.values(this.params.forms)
+                                                    .filter((val)=>val.length > 0)
+                                                    .join(',')
+                                                    : (
+                                                        this.params.forms?.[row?.id ?? -1]
+                                                        ?? (row?.id == '4'
+                                                            ? this.params.forms?.[3]
+                                                            : (row?.id == '5' ? this.params.forms?.partner : ''))
+                                                        ?? ''
+                                                    )
                                                 )
-                                            )
-                                        })],
+                                            })
+                                        ],
                                         ['{value}',value]
                                     ])
                                     : value
