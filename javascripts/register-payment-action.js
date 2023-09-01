@@ -98,23 +98,23 @@ let appParams = {
         getQueryForName(data){
             const query = {}
             if ('firstName' in data){
-                query.bf_prenom = data.firstName+'.*'
+                query.bf_prenom = '.*'+data.firstName+'.*'
             }
             if ('name' in data){
-                query.bf_nom = data.name+'.*'
+                query.bf_nom = '.*'+data.name+'.*'
             }
             if ('email' in data){
-                query.bf_mail = data.email+'.*'
+                query.bf_mail = '.*'+data.email+'.*'
             }
             return query
         },
         getQueryForTitle(data){
             const query = {}
             if ('name' in data){
-                query.bf_titre = data.name+'.*'
+                query.bf_titre = '.*'+data.name+'.*'
             }
             if ('email' in data){
-                query.bf_mail = data.email+'.*'
+                query.bf_mail = '.*'+data.email+'.*'
             }
             return query
         },
