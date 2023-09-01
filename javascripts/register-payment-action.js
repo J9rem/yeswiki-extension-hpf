@@ -120,6 +120,9 @@ let appParams = {
         },
         async getResultsForQuery(query){
             const formattedQuery = Object.entries(query).map(([key,value])=>`${key}=${value}`).join('|')
+            if (formattedQuery.length ===0){
+                return {}
+            }
             const id = ''+ this.selectedForm + formattedQuery;
             return await this.waitFor('notSearching')
                 .then(async ()=>{
