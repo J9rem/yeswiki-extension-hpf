@@ -67,7 +67,7 @@ return [
     'HPF_NOT_FOR_EMPTY_TAG' => 'rafraichissement impossible pour un tag vide',
     'HPF_FORBIDEN_FOR_THIS_ENTRY' => 'vous n\'avez ps le droit de modifier cette fiche',
 
-    //actions/HPFHelloAssoPaymentsAction.php
+    // actions/HPFHelloAssoPaymentsAction.php
     'AB_hpf_hpfhelloassopayments_label' => 'Liste des paiements Hello Asso',
     'AB_hpf_hpfhelloassopayments_college1_label' => 'Collège 1',
     'AB_hpf_hpfhelloassopayments_college2_label' => 'Collège 2',
@@ -75,6 +75,13 @@ return [
     'AB_hpf_hpfhelloassopayments_college4_label' => 'Collège 4',
     'AB_hpf_hpfhelloassopayments_college3to4fieldname_label' => 'Nom du champ d\'association du collège 3 vers le collège 4',
     'AB_hpf_hpfhelloassopayments_partner_label' => 'Partenaires',
+
+    // action/HPFRegisterPaymentAction.php
+    'AB_hpf_hpfregisterpayment_label' => 'Enregistrement simplifié d\'un paiement',
+    'AB_hpf_hpfregisterpayment_formsids_label' => 'Formulaires concernés',
+    'AB_hpf_hpfregisterpayment_formsids_hint' => 'entiers séparés par des virgules. Ex.: 16,23,24',
+    'HPF_REGISTER_A_PAYMENT' => 'Enregistrer un paiement',
+    'HPF_REGISTER_PAYMENT_FORM' => 'Formulaire concerné',
 
     // config.yaml
     'EDIT_CONFIG_HINT_HPF[CONTRIBFORMIDS]' => 'Identifiant des formulaires liés au paiement (avec \'bf_mail\' et un champ \'CalcField\'), séparés par des virgules',

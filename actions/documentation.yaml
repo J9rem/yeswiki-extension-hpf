@@ -68,3 +68,11 @@ actions:
         label: _t(AB_hpf_hpfhelloassopayments_partner_label)
         type: number
         min: 1
+  hpfregisterpayment:
+    label: _t(AB_hpf_hpfregisterpayment_label)
+    properties:
+      formsids:
+        label: _t(AB_hpf_hpfregisterpayment_formsids_label)
+        hint: _t(AB_hpf_hpfregisterpayment_formsids_hint)
+        type: text
+        required: true
