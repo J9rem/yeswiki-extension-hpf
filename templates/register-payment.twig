@@ -1,0 +1,161 @@
+{#
+ * This file is part of the YesWiki Extension hpf.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *#}
+
+{{ include_javascript('javascripts/vendor/vue/vue.js') }}
+{{ include_javascript('tools/hpf/javascripts/register-payment-action.js',false,true) }}
+
+<div class="dynamic-hpf-register-payment-action" data-params="{{ params|json_encode }}">
+    <h2>{{ _t('HPF_REGISTER_A_PAYMENT') }}</h2>
+    {# Choix du formulaire #}
+    {% set field = {type:'registerPaymentSelectForm',label:_t('HPF_REGISTER_PAYMENT_FORM')} %}
+    {% set propName = 'registerPaymentSelectForm' %}
+    {% embed "@bazar/layouts/input.twig" %}
+        {% block input %}
+            <select
+                id="{{ propName }}"
+                name="{{ propName }}"
+                class="form-control"
+                v-model="selectedForm"
+            >
+                <option value='' :selected="!selectedForm">{{ _t('BAZ_CHOISIR') }}</option>
+                <option v-for="(formName,formId) in params?.formsids" :value="formId">{{"{{ formId }} - {{ formName }}"}}</option>
+            </select>
+        {% endblock %}
+    {% endembed %}
+    <div v-if="selectedForm?.length > 0">
+        <b><i>Recherche de la fiche</i></b><br/>
+        <div class="col-md-4">
+            {% set field = {type:'test',subType:'text',label:'Nom',hint:'facultatif'} %}
+            {% set propName = 'text' %}
+            {% embed "@bazar/layouts/input.twig" %}
+                {% block input %}
+                    <input
+                        type="text"
+                        class="form-control input-xxlarge"
+                        v-model="searchedName"
+                    >
+                {% endblock %}
+            {% endembed %}
+        </div>
+        <div class="col-md-4">
+            {% set field = {type:'test',subType:'text',label:'Prénom',hint:'facultatif'} %}
+            {% set propName = 'text' %}
+            {% embed "@bazar/layouts/input.twig" %}
+                {% block input %}
+                    <input
+                        type="text"
+                        class="form-control input-xxlarge"
+                        v-model="searchedFirstName"
+                    >
+                {% endblock %}
+            {% endembed %}
+        </div>
+        <div class="col-md-4">
+            {% set field = {type:'test',subType:'email',label:'E-mail',hint:'facultatif'} %}
+            {% set propName = 'text' %}
+            {% embed "@bazar/layouts/input.twig" %}
+                {% block input %}
+                    <input
+                        type="email"
+                        class="form-control input-xxlarge"
+                        v-model="searchedEmail"
+                    >
+                {% endblock %}
+            {% endembed %}
+        </div>
+    </div>
+    <div v-if="searchedEmail.length > 0 || searchedFirstName.length > 0 || searchedName.length > 0">
+        <div v-if="Object.keys(currentResults).length === 0">
+            {{ include('@templates/alert-message.twig',{type:'warning',message:'Aucune fiche ne correpond'}) }}
+        </div>
+        <div v-else>
+            <table class="table prevent-auto-init table-condensed display">
+                <thead>
+                    <tr>
+                        <th>Sélection</th>
+                        <th>Fiche</th>
+                        <th>Titre</th>
+                        <th>Prénom</th>
+                        <th>Nom</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(entry,entryId) in currentResults" @click="selectEntry(entry?.id_fiche)">
+                        <td><input type="checkbox" :checked="selectedEntryId === entry?.id_fiche"><span></span></td>
+                        <td><a :href="wiki.url(entry?.id_fiche)" class="newtab">{{"{{ entry?.id_fiche }}"}}</a></td>
+                        <td>{{"{{ entry?.bf_titre }}"}}</td>
+                        <td>{{"{{ entry?.bf_prenom }}"}}</td>
+                        <td>{{"{{ entry?.bf_nom }}"}}</td>
+                        <td>{{"{{ entry?.bf_mail }}"}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <template v-if="selectedEntryId">
+        <hr/>
+        <div>
+            <h3>Fiche sélectionnée '{{"{{selectedEntryId}}"}}'</h3>
+            {% for fieldName,data in {
+                bf_annees_adhesions_payees:['Années d\'adhésion','bf_adhesion_payee_','Adhésion pour '],
+                bf_annees_adhesions_groupe_payees:['Années d\'adhésion groupe','bf_adhesion_groupe_payee_','Adhésion groupe pour '],
+                bf_annees_dons_payes:['Années dons','bf_dons_payes_','Dons pour ']
+            } %}
+                {% set stringForYears = "extractValue(cacheEntries?.[selectedEntryId],'#{fieldName}')" %}
+                <div v-if="{{stringForYears}}?.length > 0">
+                    <b>{{ data[0] }}</b> : {{"{{#{stringForYears}}}"}}
+                </div>
+                <template v-for="step in 6">
+                    {% set stringForValues = "extractValue(cacheEntries?.[selectedEntryId],`#{data[1]}${2021 + step}`)" %}
+                    <div v-if="{{stringForValues}}?.length > 0">
+                        <b>{{ data[2] }}{{"{{2021 + step}}"}}</b> : {{"{{#{stringForValues}}}"}} €
+                    </div>
+                </template>
+            {% endfor %}
+            <template v-if="Object.keys(extractPayments(cacheEntries?.[selectedEntryId])).length > 0">
+                <hr>
+                <h4>Paiements</h4>
+                <table class="table prevent-auto-init table-condensed display">
+                    <thead>
+                        <tr>
+                            <th>Identifiant</th>
+                            <th>Date</th>
+                            <th>Valeur</th>
+                            <th>Type</th>
+                            <th>Affectation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(payment,paymentId) in extractPayments(cacheEntries?.[selectedEntryId])">
+                            <td>{{"{{ paymentId }}"}}</td>
+                            <td>{{"{{ payment?.date }}"}}</td>
+                            <td>{{"{{ payment?.total ?? 0 }}"}} €</td>
+                            <td>{{"{{ payment?.origin }}"}}</td>
+                            <td>
+                              {% for keyName,title in {
+                                adhesion:'Adhésion',
+                                adhesion_groupe:'Adhésion groupe',
+                                don:'Dons'
+                              } %}
+                                <template v-if="payment?.{{keyName}} && Object.keys(payment?.{{keyName}}).length > 0">
+                                    <span v-for="(valueYear,keyYear) in payment.{{keyName}}">
+                                        {{title}} {{"{{keyYear}}"}} : {{"{{valueYear}}"}} €;
+                                    </span>
+                                </template>
+                              {% endfor %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </template>
+        </div>
+    </template>
+    <spinner-loader v-if="isLoading" class="overlay super-overlay" :height="500"></spinner-loader>
+</div>
