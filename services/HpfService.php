@@ -801,7 +801,7 @@ class HpfService
                 $form = $this->getPaymentForm($formId);
                 $formType = $postNotSanitized['post']['data']['order']['formType'];
                 $formSlug = $postNotSanitized['post']['data']['order']['formSlug'];
-                if ($form['formType'] == $formType && $form['formSlug'] == $formSlug) {
+                if ($formType === 'Donation' || ($form['formType'] == $formType && $form['formSlug'] == $formSlug)) {
                     $payments = new HelloAssoPayments(
                         $this->helloAssoService->convertToPayments(['data'=>[$postNotSanitized['post']['data']]]),
                         []
