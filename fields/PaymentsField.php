@@ -75,10 +75,16 @@ class PaymentsField extends TextField
         foreach($paymentsFormIds as $id){
             $form = $formManager->getOne($id);
             if ($form){
-                $options['origins'][] = [
-                    'id' => self::AVAILABLE_ORIGINS[0].":$id",
-                    'name' => self::AVAILABLE_ORIGINS[0].":$id ({$form['bn_label_nature']})"
-                ];
+                $name = self::AVAILABLE_ORIGINS[0].":$id";
+                $sameIdOption = array_filter($options['origins'],function($opt) use ($name){
+                    return ($opt['id'] ?? '') == $name;
+                });
+                if (empty($sameIdOption)){
+                    $options['origins'][] = [
+                        'id' => $name,
+                        'name' => "$name ({$form['bn_label_nature']})"
+                    ];
+                }
             }
         }
         foreach(self::AVAILABLE_ORIGINS as $name){
