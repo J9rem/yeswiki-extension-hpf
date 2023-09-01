@@ -528,7 +528,7 @@ class HpfService
         $paymentParams = 
         [
             'payment' => $payment,
-            'origin' => "helloasso:$contribFormId"
+            'origin' => $payment->formType === 'Donation' ? 'helloassoDon' : "helloasso:$contribFormId"
         ];
         if (intval($paymentYear) > intval($currentYear)) {
             // error
