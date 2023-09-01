@@ -23,6 +23,7 @@ class PaymentsField extends TextField
 {
     public const AVAILABLE_ORIGINS = [
         'helloasso',
+        'helloassoDon',
         'virement',
         'cheque',
         'structure',

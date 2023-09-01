@@ -1016,6 +1016,8 @@ class HpfService
                     );
                     if (!empty($sameSlugForms)){
                         $data['form'] = $sameSlugForms[0];
+                    } elseif (($data['formType'] ?? '') == 'Donation'){
+                        $data['form'] = 'donation';
                     }
                 }
             }
