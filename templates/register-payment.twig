@@ -22,6 +22,7 @@
                 name="{{ propName }}"
                 class="form-control"
                 v-model="selectedForm"
+                :disabled="refreshing"
             >
                 <option value='' :selected="!selectedForm">{{ _t('BAZ_CHOISIR') }}</option>
                 <option v-for="(formName,formId) in params?.formsids" :value="formId">{{"{{ formId }} - {{ formName }}"}}</option>
@@ -39,6 +40,7 @@
                         type="text"
                         class="form-control input-xxlarge"
                         v-model="searchedName"
+                        :disabled="refreshing"
                     >
                 {% endblock %}
             {% endembed %}
@@ -52,6 +54,7 @@
                         type="text"
                         class="form-control input-xxlarge"
                         v-model="searchedFirstName"
+                        :disabled="refreshing"
                     >
                 {% endblock %}
             {% endembed %}
@@ -65,6 +68,7 @@
                         type="email"
                         class="form-control input-xxlarge"
                         v-model="searchedEmail"
+                        :disabled="refreshing"
                     >
                 {% endblock %}
             {% endembed %}
@@ -87,8 +91,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(entry,entryId) in currentResults" @click="selectEntry(entry?.id_fiche)">
-                        <td><input type="checkbox" :checked="selectedEntryId === entry?.id_fiche"><span></span></td>
+                    <tr v-for="(entry,entryId) in currentResults">
+                        <td @click="selectEntry(entry?.id_fiche)"><input type="checkbox" :checked="selectedEntryId === entry?.id_fiche"><span></span></td>
                         <td><a :href="wiki.url(entry?.id_fiche)" class="newtab">{{"{{ entry?.id_fiche }}"}}</a></td>
                         <td>{{"{{ entry?.bf_titre }}"}}</td>
                         <td>{{"{{ entry?.bf_prenom }}"}}</td>
@@ -125,6 +129,7 @@
                 <table class="table prevent-auto-init table-condensed display">
                     <thead>
                         <tr>
+                            <th></th>
                             <th>Identifiant</th>
                             <th>Date</th>
                             <th>Valeur</th>
@@ -134,6 +139,11 @@
                     </thead>
                     <tbody>
                         <tr v-for="(payment,paymentId) in extractPayments(cacheEntries?.[selectedEntryId])">
+                            <td>
+                                <button class="btn btn-danger btn-sm btn-icon" @click="deletePayment(selectedEntryId,paymentId)">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
                             <td>{{"{{ paymentId }}"}}</td>
                             <td>{{"{{ payment?.date }}"}}</td>
                             <td>{{"{{ payment?.total ?? 0 }}"}} €</td>

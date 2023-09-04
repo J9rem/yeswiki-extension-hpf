@@ -19,6 +19,9 @@ const computedDebounce = (name) => {
             return this.search?.[name] ?? ''
         },
         set(val){
+            if(this.refreshing){
+                return // do nothing
+            }
             if(this.timeout?.[name]){
                 clearTimeout(this.timeout[name])
             }
@@ -47,18 +50,19 @@ let appParams = {
             isLoading: false,
             notSearching: true,
             params: null,
+            refreshing:false,
             search: {
                 email: '',
                 firstName: '',
                 name: ''
             },
             selectedEntryId: '',
+            selectedForm: '',
             timeout: {
                 email: null,
                 firstName: null,
                 name: null
-            },
-            selectedForm: ''
+            }
         }
     },
     computed:{
@@ -70,6 +74,41 @@ let appParams = {
         searchedName: computedDebounce.call(this,'name')
     },
     methods:{
+        deletePayment(entryId,paymentId){
+            if (entryId?.length > 0 && paymentId?.length > 0){
+                this.refreshing = true
+                this.fetchSecured(wiki.url('?api/hpf/helloasso/payment/getToken'),{method:'POST'})
+                    .then(async (token)=>{
+                        let formData = new FormData()
+                        formData.append('anti-csrf-token',token)
+                        return await this.fetchSecured(
+                            wiki.url(`?api/hpf/helloasso/payment/${entryId}/delete/${paymentId}`),
+                            {
+                                method:'POST',
+                                body: new URLSearchParams(formData),
+                                headers: (new Headers()).append('Content-Type','application/x-www-form-urlencoded')
+                            }
+                        )
+                    })
+                    .then((data)=>{
+                        if (data?.status === 'ok'){
+                            const updatedEntry = data?.updatedEntry
+                            if (updatedEntry?.id_fiche?.length > 0){
+                                this.cacheEntries[updatedEntry.id_fiche] = updatedEntry
+                                const saveSelectedEntryId = this.selectedEntryId
+                                this.selectedEntryId = ''
+                                this.$nextTick(()=>{
+                                    this.selectedEntryId = saveSelectedEntryId
+                                })
+                            }
+                        }
+                    })
+                    .catch(this.manageError)
+                    .finally(()=>{
+                        this.refreshing = false
+                    })
+            }
+        },
         extractValue(entry,name){
             if (typeof entry !== 'object' || Object.keys(entry) === 0){
                 return ''
@@ -94,6 +133,15 @@ let appParams = {
                 }
             }
             return {}
+        },
+        async fetchSecured(url,options={}){
+            return await fetch(url,options)
+                .then((response)=>{
+                    if(!response.ok){
+                        throw new Error(`Response badly formatted (${response.status} - ${response.statusText})`)
+                    }
+                    return response.json()
+                })
         },
         getQueryForName(data){
             const query = {}
@@ -130,13 +178,7 @@ let appParams = {
                     return await this.waitForCache(
                             id,
                             async () => {
-                                return await fetch(wiki.url(`?api/forms/${this.selectedForm}/entries&query=${formattedQuery}`))
-                                    .then((response)=>{
-                                        if(!response.ok){
-                                            throw new Error(`Response badly formatted (${response.status - response.statusText})`)
-                                        }
-                                        return response.json()
-                                    })
+                                return await this.fetchSecured(wiki.url(`?api/forms/${this.selectedForm}/entries&query=${formattedQuery}`))
                             }
                         )
                         .finally(()=>{
@@ -170,6 +212,9 @@ let appParams = {
             }
         },
         async searchEntry(){
+            if (this.refreshing){
+                return // do nothing
+            }
             const data = {}
             if (this.search.firstName.length>0){
                 data.firstName = this.search.firstName
@@ -201,7 +246,9 @@ let appParams = {
                 })
         },
         selectEntry(id){
-            this.selectedEntryId = (this.selectedEntryId == id) ? '' : id
+            if (!this.refreshing){
+                this.selectedEntryId = (this.selectedEntryId == id) ? '' : id
+            }
         },
         async waitFor(name){
             if (this?.[name]){

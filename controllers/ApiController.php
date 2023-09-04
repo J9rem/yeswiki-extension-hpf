@@ -12,6 +12,7 @@
 namespace YesWiki\Hpf\Controller;
 
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Core\ApiResponse;
 use YesWiki\Core\Controller\CsrfTokenController;
@@ -109,5 +110,23 @@ class ApiController extends YesWikiController
             : $_POST['college3to4fieldname'];
         list('code'=>$code,'output'=>$output) = $this->getService(HpfService::class)->refreshPaymentCache($formsIds,$college3to4fieldname);
         return new ApiResponse($output,$code);
+    }
+
+    /**
+     * @Route("/api/hpf/helloasso/payment/getToken", methods={"POST"},options={"acl":{"public","@admins"}})
+     */
+    public function getToken()
+    {
+        return new ApiResponse($this->getService(CsrfTokenManager::class)->refreshToken('payment-admin')->getValue(),200);
+    }
+
+    /**
+     * @Route("/api/hpf/helloasso/payment/{entryId}/delete/{paymentId}", methods={"POST"},options={"acl":{"public","@admins"}})
+     */
+    public function deletePaymentInEntry($entryId,$paymentId)
+    {
+        $csrfTokenController = $this->getService(CsrfTokenController::class);
+        $csrfTokenController->checkToken('payment-admin', 'POST', 'anti-csrf-token');
+        return new ApiResponse($this->getService(HpfService::class)->deletePaymentInEntry($entryId,$paymentId),200);
     }
 }

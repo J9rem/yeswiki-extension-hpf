@@ -681,7 +681,7 @@ class HpfService
         $entry['bf_montant_don_ponctuel_libre'] = strval(max(0,$valueToPay-$restToAffect));
     }
 
-    private function updateYear(array $entry, string $name, string $year): array
+    private function updateYear(array $entry, string $name, string $year, bool $append = true): array
     {
         $field = $this->formManager->findFieldFromNameOrPropertyName($name, $entry['id_typeannonce']);
         if (empty($field)) {
@@ -690,8 +690,14 @@ class HpfService
             $propertyName = $field->getPropertyName();
         }
         $values = explode(",", $entry[$propertyName] ?? "");
-        if (!in_array($year, $values)) {
-            $values[] = $year;
+        if ($append){
+            if (!in_array($year, $values)) {
+                $values[] = $year;
+            }
+        } else {
+            $values = array_filter($values,function($v) use($year){
+                return $v != $year;
+            });
         }
         $entry[$propertyName] = implode(",", array_filter($values, function ($value) {
             return !empty($value);
@@ -1283,5 +1289,63 @@ class HpfService
             } catch(Throwable $th){
             }
         }
+    }
+
+    public function deletePaymentInEntry($entryId,$paymentId): array
+    {
+        $entry = $this->entryManager->getOne($entryId);
+        $updatedEntry = $entry;
+        if (empty($entry)){
+            throw new Exception("Not found entry: '$entryId'");
+        }
+        if (empty($entry['id_typeannonce'])
+            || !is_scalar($entry['id_typeannonce'])
+            || intval($entry['id_typeannonce']) < 0
+            || strval($entry['id_typeannonce']) !== strval(intval($entry['id_typeannonce']))){
+            throw new Exception("'$entryId' has not a right 'id_typeannonce'");
+        }
+        $form = $this->formManager->getOne($entry['id_typeannonce']);
+        if (empty($form)){
+            throw new Exception("form '{$entry['id_typeannonce']}' not found");
+        }
+        
+        $contribFormIds = $this->getCurrentPaymentsFormIds();
+        if (!in_array($entry['id_typeannonce'], $contribFormIds)) {
+            throw new Exception("formId should be in \$contribFormIds!");
+        }
+        
+        $formattedPayments = $this->convertStringToPayments($entry[self::PAYMENTS_FIELDNAME] ?? "");
+        if (!empty($formattedPayments[$paymentId])){
+            foreach([
+                'adhesion' => 'membership',
+                'adhesion_groupe' => 'group_membership',
+                'don' => 'donation',
+            ] as $keyPayment => $name){
+                if (!empty($formattedPayments[$paymentId][$keyPayment])){
+                    foreach($formattedPayments[$paymentId][$keyPayment] as $year => $value){
+                        list('field' => $field) = $this->getPayedField($entry['id_typeannonce'], $year, $name);
+                        if (!empty($field) && !empty($field->getPropertyName())){
+                            $propName = $field->getPropertyName();
+                            $updatedEntry[$propName] = strval(max(0,floatval($updatedEntry[$propName] ?? 0) - floatval($value)));
+                            if ($updatedEntry[$propName] === '0'){
+                                $updatedEntry = $this->updateYear($updatedEntry,self::PAYED_FIELDNAMES["years"][$name],$year,false);
+                                $updatedEntry[$propName] = '';
+                            }
+                        }
+                    }
+                }
+            }
+            unset($formattedPayments[$paymentId]);
+            $updatedEntry[self::PAYMENTS_FIELDNAME] = empty($formattedPayments) ? '' : json_encode($formattedPayments);
+            $updatedEntry = $this->updateCalcFields($updatedEntry);
+            $this->updateEntry($updatedEntry);
+            $updatedEntry = $this->entryManager->getOne($entryId, false, null, false, true);
+        }
+        
+
+        return [
+            'status' => 'ok',
+            'updatedEntry' => $updatedEntry
+        ];
     }
 }
