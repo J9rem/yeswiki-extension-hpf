@@ -11,6 +11,7 @@
 
 namespace YesWiki\Hpf\Controller;
 
+use Exception;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use YesWiki\Bazar\Service\EntryManager;
@@ -128,5 +129,40 @@ class ApiController extends YesWikiController
         $csrfTokenController = $this->getService(CsrfTokenController::class);
         $csrfTokenController->checkToken('payment-admin', 'POST', 'anti-csrf-token');
         return new ApiResponse($this->getService(HpfService::class)->deletePaymentInEntry($entryId,$paymentId),200);
+    }
+
+    /**
+     * @Route("/api/hpf/helloasso/payment/{entryId}/add", methods={"POST"},options={"acl":{"public","@admins"}})
+     */
+    public function addPaymentInEntry($entryId)
+    {
+        $csrfTokenController = $this->getService(CsrfTokenController::class);
+        $csrfTokenController->checkToken('payment-admin', 'POST', 'anti-csrf-token');
+        $inputs = [
+            'id',
+            'origin',
+            'date',
+            'total',
+        ];
+        $data = [];
+        foreach($inputs as $input){
+            if(
+                empty($_POST[$input])
+                || !is_string($_POST[$input])
+            ) {
+                throw new Exception("\"\$_POST['$input']\" should be defined !");
+            }
+            $data[$input] = $_POST[$input];
+        }
+        return new ApiResponse(
+            $this->getService(HpfService::class)->addPaymentInEntry(
+                $entryId,
+                $data['date'],
+                $data['total'],
+                $data['origin'],
+                $data['id']
+            ),
+            200
+        );
     }
 }

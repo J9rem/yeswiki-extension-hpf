@@ -40,14 +40,22 @@ const computedDebounce = (name) => {
 }
 
 let appParams = {
-    components: {SpinnerLoader},
+    components: {vuejsDatepicker,SpinnerLoader},
     data(){
         return {
             cacheEntries:{},
             cacheResolveReject:{},
             cacheSearch:{},
             currentResults: {},
+            datePickerLang: vdp_translation_index,
+            datePickerLanguage: null,
             isLoading: false,
+            newPayment:{
+                date:'',
+                total: 0,
+                origin: 'virement',
+                id: ''
+            },
             notSearching: true,
             params: null,
             refreshing:false,
@@ -66,6 +74,20 @@ let appParams = {
         }
     },
     computed:{
+        canAddPayment(){
+            return this.selectedEntryId?.length > 0
+                && Number(this.newPayment.total) > 0
+                && this.newPayment.date?.length > 0
+                && this.newPayment.origin?.length > 0
+                && this.newPayment.id?.length > 0
+                && this.canUseId
+        },
+        canUseId(){
+            return this.newPayment.id?.length > 0
+                && this.selectedEntryId?.length > 0
+                && !Object.keys(this.extractPayments(this.cacheEntries?.[this.selectedEntryId]))
+                    .includes(this.newPayment.id)
+        },
         element(){
             return isVueJS3 ? this.$el.parentNode : this.$el
         },
@@ -74,10 +96,63 @@ let appParams = {
         searchedName: computedDebounce.call(this,'name')
     },
     methods:{
-        deletePayment(entryId,paymentId){
-            if (entryId?.length > 0 && paymentId?.length > 0){
+        async addNewPayment(){
+            if (!this.refreshing && this.canAddPayment){
                 this.refreshing = true
-                this.fetchSecured(wiki.url('?api/hpf/helloasso/payment/getToken'),{method:'POST'})
+                await this.fetchSecured(wiki.url('?api/hpf/helloasso/payment/getToken'),{method:'POST'})
+                    .then(async (token)=>{
+                        let formData = new FormData()
+                        formData.append('anti-csrf-token',token)
+                        formData.append('id',this.newPayment.id)
+                        formData.append('date',this.newPayment.date)
+                        formData.append('origin',this.newPayment.origin)
+                        formData.append('total',this.newPayment.total)
+                        return await this.fetchSecured(
+                            wiki.url(`?api/hpf/helloasso/payment/${this.selectedEntryId}/add`),
+                            {
+                                method:'POST',
+                                body: new URLSearchParams(formData),
+                                headers: (new Headers()).append('Content-Type','application/x-www-form-urlencoded')
+                            }
+                        )
+                    })
+                    .then((data)=>{
+                        if (data?.status === 'ok'){
+                            const updatedEntry = data?.updatedEntry
+                            if (updatedEntry?.id_fiche?.length > 0){
+                                this.cacheEntries[updatedEntry.id_fiche] = updatedEntry
+                                const saveSelectedEntryId = this.selectedEntryId
+                                this.selectedEntryId = ''
+                                this.$nextTick(()=>{
+                                    this.selectedEntryId = saveSelectedEntryId
+                                })
+                            }
+                        }
+                    })
+                    .catch(this.manageError)
+                    .finally(()=>{
+                        this.refreshing = false
+                    })
+            }
+        },
+        customFormatterDate(date){
+          const dd = (new Date(date))
+          let day = dd.getDate()
+          if (day < 10){
+            day = `0${day}`
+          }
+          let month = dd.getMonth()+1
+          if (month < 10){
+            month = `0${month}`
+          }
+          const year = dd.getFullYear()
+          return `${day}/${month}/${year}`
+  
+        },
+        async deletePayment(entryId,paymentId){
+            if (!this.refreshing && entryId?.length > 0 && paymentId?.length > 0){
+                this.refreshing = true
+                await this.fetchSecured(wiki.url('?api/hpf/helloasso/payment/getToken'),{method:'POST'})
                     .then(async (token)=>{
                         let formData = new FormData()
                         formData.append('anti-csrf-token',token)
@@ -286,6 +361,9 @@ let appParams = {
         $(this.element).on('dblclick',function(e) {
             return false
         })
+        this.datePickerLanguage = (wiki.locale in this.datePickerLang)
+          ? this.datePickerLang[wiki.locale]
+          : this.datePickerLang.en
         const rawParams = this.element?.dataset?.params
         if (rawParams){
             try {

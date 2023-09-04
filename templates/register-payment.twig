@@ -8,6 +8,8 @@
  *#}
 
 {{ include_javascript('javascripts/vendor/vue/vue.js') }}
+{{ include_javascript('tools/hpf/javascripts/vendor/vuejs-datepicker/vuejs-datepicker.min.js') }}
+{{ include_javascript('tools/hpf/javascripts/vendor/vuejs-datepicker/translations.min.js') }}
 {{ include_javascript('tools/hpf/javascripts/register-payment-action.js',false,true) }}
 
 <div class="dynamic-hpf-register-payment-action" data-params="{{ params|json_encode }}">
@@ -31,47 +33,49 @@
     {% endembed %}
     <div v-if="selectedForm?.length > 0">
         <b><i>Recherche de la fiche</i></b><br/>
-        <div class="col-md-4">
-            {% set field = {type:'test',subType:'text',label:'Nom',hint:'facultatif'} %}
-            {% set propName = 'text' %}
-            {% embed "@bazar/layouts/input.twig" %}
-                {% block input %}
-                    <input
-                        type="text"
-                        class="form-control input-xxlarge"
-                        v-model="searchedName"
-                        :disabled="refreshing"
-                    >
-                {% endblock %}
-            {% endembed %}
-        </div>
-        <div class="col-md-4">
-            {% set field = {type:'test',subType:'text',label:'Prénom',hint:'facultatif'} %}
-            {% set propName = 'text' %}
-            {% embed "@bazar/layouts/input.twig" %}
-                {% block input %}
-                    <input
-                        type="text"
-                        class="form-control input-xxlarge"
-                        v-model="searchedFirstName"
-                        :disabled="refreshing"
-                    >
-                {% endblock %}
-            {% endembed %}
-        </div>
-        <div class="col-md-4">
-            {% set field = {type:'test',subType:'email',label:'E-mail',hint:'facultatif'} %}
-            {% set propName = 'text' %}
-            {% embed "@bazar/layouts/input.twig" %}
-                {% block input %}
-                    <input
-                        type="email"
-                        class="form-control input-xxlarge"
-                        v-model="searchedEmail"
-                        :disabled="refreshing"
-                    >
-                {% endblock %}
-            {% endembed %}
+        <div class="row-fluid row">
+            <div class="col-md-4">
+                {% set field = {type:'test',subType:'text',label:'Nom',hint:'facultatif'} %}
+                {% set propName = 'text' %}
+                {% embed "@bazar/layouts/input.twig" %}
+                    {% block input %}
+                        <input
+                            type="text"
+                            class="form-control input-xxlarge"
+                            v-model="searchedName"
+                            :disabled="refreshing"
+                        >
+                    {% endblock %}
+                {% endembed %}
+            </div>
+            <div class="col-md-4">
+                {% set field = {type:'test',subType:'text',label:'Prénom',hint:'facultatif'} %}
+                {% set propName = 'text' %}
+                {% embed "@bazar/layouts/input.twig" %}
+                    {% block input %}
+                        <input
+                            type="text"
+                            class="form-control input-xxlarge"
+                            v-model="searchedFirstName"
+                            :disabled="refreshing"
+                        >
+                    {% endblock %}
+                {% endembed %}
+            </div>
+            <div class="col-md-4">
+                {% set field = {type:'test',subType:'email',label:'E-mail',hint:'facultatif'} %}
+                {% set propName = 'text' %}
+                {% embed "@bazar/layouts/input.twig" %}
+                    {% block input %}
+                        <input
+                            type="email"
+                            class="form-control input-xxlarge"
+                            v-model="searchedEmail"
+                            :disabled="refreshing"
+                        >
+                    {% endblock %}
+                {% endembed %}
+            </div>
         </div>
     </div>
     <div v-if="notSearching && (searchedEmail.length > 0 || searchedFirstName.length > 0 || searchedName.length > 0)">
@@ -165,6 +169,107 @@
                     </tbody>
                 </table>
             </template>
+            <hr/>
+            <div><b>Ajouter un paiement</b></div>
+            <div class="row-fluid row">
+                <div class="col-md-3">
+                    {% set field = {type:'test',subType:'text',label:'Valeur (€)'} %}
+                    {% set propName = 'text' %}
+                    {% embed "@bazar/layouts/input.twig" %}
+                        {% block input %}
+                            <input
+                                type="text"
+                                class="form-control input-xxlarge"
+                                v-model="newPayment.total"
+                                form="unknown-id"
+                                pattern="[0-9]+([.,][0-9]{1,2})?"
+                                :disabled="refreshing"
+                            >
+                        {% endblock %}
+                    {% endembed %}
+                </div>
+                <div class="col-md-3">
+                    Date : <vuejs-datepicker 
+                                :format="customFormatterDate" 
+                                :typeable="true" 
+                                :name="`datepicker-payment`" 
+                                :monday-first="true"
+                                :language="datePickerLanguage"
+                                wrapper-class="datepicker-container"
+                                :value="newPayment.date"
+                                @selected="(date)=>{if(date !== null){newPayment.date=customFormatterDate(date)}}">
+                            </vuejs-datepicker> ({{ "{{ customFormatterDate(newPayment.date) }}" }})
+                    </div>
+                <div class="col-md-3">
+                    {# Choix du type #}
+                    {% set field = {type:'registerPaymentSelectType',label:'type'} %}
+                    {% set propName = 'registerPaymentSelectType' %}
+                    {% embed "@bazar/layouts/input.twig" %}
+                        {% block input %}
+                            <select
+                                id="{{ propName }}"
+                                name="{{ propName }}"
+                                class="form-control"
+                                v-model="newPayment.origin"
+                                :disabled="refreshing"
+                            >
+                                <option value='' :selected="!newPayment.origin">{{ _t('BAZ_CHOISIR') }}</option>
+                                <option value="virement">virement</option>
+                                <option value="helloasso">helloasso</option>
+                                <option value="cheque">cheque</option>
+                                <option value="structure">structure</option>
+                                <option value="espece">espece</option>
+                            </select>
+                        {% endblock %}
+                    {% endembed %}
+                </div>
+                <div class="col-md-3">
+                    <button
+                        class="btn btn-sm btn-success btn-icon"
+                        @click="addNewPayment"
+                        :disabled="!canAddPayment">
+                        <i class="fa fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row-fluid row">
+                <div class="col-md-3">
+                    {# année adhésion #}
+                    {% set field = {type:'registerPaymentSelectYear',label:'Année d\'ahésion',hint:'Facultatif uniquement si nécessaire'} %}
+                    {% set propName = 'registerPaymentSelectYear' %}
+                    {% embed "@bazar/layouts/input.twig" %}
+                        {% block input %}
+                            <select
+                                id="{{ propName }}"
+                                name="{{ propName }}"
+                                class="form-control"
+                                v-model="newPayment.year"
+                                :disabled="refreshing"
+                            >
+                                <option value='' :selected="!newPayment.year">{{ _t('BAZ_CHOISIR') }}</option>
+                                <option v-for="idx in 6" :value="2021 + idx">{{"{{2021 + idx}}"}}</option>
+                            </select>
+                        {% endblock %}
+                    {% endembed %}
+                </div>
+                <div class="col-md-3">
+                    {% set field = {type:'test',subType:'text',label:'Id'} %}
+                    {% set propName = 'text' %}
+                    {% embed "@bazar/layouts/input.twig" %}
+                        {% block input %}
+                            <input
+                                type="text"
+                                class="form-control input-xxlarge"
+                                v-model="newPayment.id"
+                                form="unknown-id"
+                                pattern=".+"
+                                :disabled="refreshing"
+                            >
+                        {% endblock %}
+                    {% endembed %}
+                    <div v-if="newPayment.id && !canUseId" class="alert alert-danger">Identifiant déjà utilisé !</div>
+                </div>
+            </div>
         </div>
     </template>
     <spinner-loader v-if="isLoading" class="overlay super-overlay" :height="500"></spinner-loader>
