@@ -70,7 +70,7 @@
             {% endembed %}
         </div>
     </div>
-    <div v-if="searchedEmail.length > 0 || searchedFirstName.length > 0 || searchedName.length > 0">
+    <div v-if="notSearching && (searchedEmail.length > 0 || searchedFirstName.length > 0 || searchedName.length > 0)">
         <div v-if="Object.keys(currentResults).length === 0">
             {{ include('@templates/alert-message.twig',{type:'warning',message:'Aucune fiche ne correpond'}) }}
         </div>
