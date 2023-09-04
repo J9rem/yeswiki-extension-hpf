@@ -1407,4 +1407,12 @@ class HpfService
         ];
 
     }
+
+    public function findHelloAssoPayments(string $date,int $amount): array
+    {
+        return [
+            'status' => 'ok',
+            'amount' => $amount
+        ];
+    }
 }

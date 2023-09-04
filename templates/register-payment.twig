@@ -198,7 +198,7 @@
                                 wrapper-class="datepicker-container"
                                 :value="newPayment.date"
                                 @selected="(date)=>{if(date !== null){newPayment.date=customFormatterDate(date)}}">
-                            </vuejs-datepicker> ({{ "{{ customFormatterDate(newPayment.date) }}" }})
+                            </vuejs-datepicker> ({{ "{{ customFormatterDate(newPayment.date,'fr') }}" }})
                     </div>
                 <div class="col-md-3">
                     {# Choix du type #}
@@ -253,21 +253,26 @@
                     {% endembed %}
                 </div>
                 <div class="col-md-3">
-                    {% set field = {type:'test',subType:'text',label:'Id'} %}
-                    {% set propName = 'text' %}
-                    {% embed "@bazar/layouts/input.twig" %}
-                        {% block input %}
-                            <input
-                                type="text"
-                                class="form-control input-xxlarge"
-                                v-model="newPayment.id"
-                                form="unknown-id"
-                                pattern=".+"
-                                :disabled="refreshing"
-                            >
-                        {% endblock %}
-                    {% endembed %}
-                    <div v-if="newPayment.id && !canUseId" class="alert alert-danger">Identifiant déjà utilisé !</div>
+                    <template v-if="newPayment.origin !== 'helloasso'">
+                        {% set field = {type:'test',subType:'text',label:'Id'} %}
+                        {% set propName = 'text' %}
+                        {% embed "@bazar/layouts/input.twig" %}
+                            {% block input %}
+                                <input
+                                    type="text"
+                                    class="form-control input-xxlarge"
+                                    v-model="newPayment.id"
+                                    form="unknown-id"
+                                    pattern=".+"
+                                    :disabled="refreshing"
+                                >
+                            {% endblock %}
+                        {% endembed %}
+                        <div v-if="newPayment.id && !canUseId" class="alert alert-danger">Identifiant déjà utilisé !</div>
+                    </template>
+                    <template v-else>
+                        <spinner-loader v-if="availableIds === null" class="overlay" :height="10"></spinner-loader>
+                    </template>
                 </div>
             </div>
         </div>

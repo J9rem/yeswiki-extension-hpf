@@ -122,6 +122,16 @@ class ApiController extends YesWikiController
     }
 
     /**
+     * @Route("/api/hpf/helloasso/payment/find/{date}/{amount}", methods={"POST"},options={"acl":{"public","@admins"}})
+     */
+    public function findHelloAssoPayments($date,$amount)
+    {
+        $csrfTokenController = $this->getService(CsrfTokenController::class);
+        $csrfTokenController->checkToken('payment-admin', 'POST', 'anti-csrf-token');
+        return new ApiResponse($this->getService(HpfService::class)->findHelloAssoPayments($date,$amount),200);
+    }
+
+    /**
      * @Route("/api/hpf/helloasso/payment/{entryId}/delete/{paymentId}", methods={"POST"},options={"acl":{"public","@admins"}})
      */
     public function deletePaymentInEntry($entryId,$paymentId)

@@ -54,9 +54,11 @@ let appParams = {
                 date:'',
                 total: 0,
                 origin: 'virement',
-                id: ''
+                id: '',
+                helloassoId: ''
             },
             notSearching: true,
+            notSearchingHelloAsso: true,
             params: null,
             refreshing:false,
             search: {
@@ -74,12 +76,27 @@ let appParams = {
         }
     },
     computed:{
+        availableIds(){
+            const id = this.getCurrentIdForHA.id
+            const cache = this.cacheSearch?.[id]
+            return (!cache) 
+                ? null
+                : []
+        },
         canAddPayment(){
             return this.selectedEntryId?.length > 0
                 && Number(this.newPayment.total) > 0
                 && this.newPayment.date?.length > 0
                 && this.newPayment.origin?.length > 0
-                && this.newPayment.id?.length > 0
+                && (
+                    (
+                        this.newPayment.origin !== 'helloasso'
+                        && this.newPayment.id?.length > 0
+                    ) || (
+                        this.newPayment.origin === 'helloasso'
+                        && this.newPayment.helloassoId?.length > 0
+                    )
+                )
                 && this.canUseId
         },
         canUseId(){
@@ -90,6 +107,26 @@ let appParams = {
         },
         element(){
             return isVueJS3 ? this.$el.parentNode : this.$el
+        },
+        getCurrentIdForHA(){
+            const date = this.convertDateFromFormat(this.newPayment.date)
+            const amount = this.newPayment.total
+            const res = {id:null,formattedDate:''}
+            if (!date || date?.length === 0){
+                return res
+            }
+            const intermDate = new Date(date)
+            if (!intermDate){
+                return res
+            }
+            const formattedDate = intermDate.toJSON()?.slice(0,10)
+            if (!formattedDate){
+                return res
+            }
+            return {
+                id:`getHelloAssoIds${formattedDate}${String(amount)}`,
+                formattedDate
+            }
         },
         searchedEmail: computedDebounce.call(this,'email'),
         searchedFirstName: computedDebounce.call(this,'firstName'),
@@ -104,7 +141,7 @@ let appParams = {
                         let formData = new FormData()
                         formData.append('anti-csrf-token',token)
                         formData.append('id',this.newPayment.id)
-                        formData.append('date',this.newPayment.date)
+                        formData.append('date',this.convertDateFromFormat(this.newPayment.date))
                         formData.append('origin',this.newPayment.origin)
                         formData.append('total',this.newPayment.total)
                         return await this.fetchSecured(
@@ -135,7 +172,10 @@ let appParams = {
                     })
             }
         },
-        customFormatterDate(date){
+        convertDateFromFormat(date){
+            return `${date.slice(6,10)}-${date.slice(0,2)}-${date.slice(3,5)}`
+        },
+        customFormatterDate(date,type = ''){
           const dd = (new Date(date))
           let day = dd.getDate()
           if (day < 10){
@@ -146,8 +186,7 @@ let appParams = {
             month = `0${month}`
           }
           const year = dd.getFullYear()
-          return `${day}/${month}/${year}`
-  
+          return type === 'fr' ? `${day}/${month}/${year}` : `${month}/${day}/${year}`
         },
         async deletePayment(entryId,paymentId){
             if (!this.refreshing && entryId?.length > 0 && paymentId?.length > 0){
@@ -270,6 +309,44 @@ let appParams = {
             }
             return null
         },
+        async refreshHelloAssoIds(){
+            const amount = this.newPayment.total
+            const {id,formattedDate} = this.getCurrentIdForHA
+            if (!id){
+                return
+            }
+            return this.waitFor('notSearchingHelloAsso')
+                .then(async ()=>{
+                    this.notSearchingHelloAsso = false
+                    return await this.waitForCache(
+                        id,
+                        async () => {
+                            return await this.fetchSecured(wiki.url('?api/hpf/helloasso/payment/getToken'),{method:'POST'})
+                            .then(async (token)=>{
+                                let formData = new FormData()
+                                formData.append('anti-csrf-token',token)
+                                return await this.fetchSecured(
+                                    wiki.url(`?api/hpf/helloasso/payment/find/${formattedDate}/${String(Math.round(Number(amount)*100))}`),
+                                    {
+                                        method:'POST',
+                                        body: new URLSearchParams(formData),
+                                        headers: (new Headers()).append('Content-Type','application/x-www-form-urlencoded')
+                                    }
+                                )
+                            })
+                        }
+                    )
+                    .finally(()=>{
+                        this.notSearchingHelloAsso = true
+                    })
+                })
+                .then((data)=>{
+                    if (data?.status === 'ok'){
+                        console.log({data})
+                    }
+                }
+            )
+        },
         registerPromise(id){
             if (!(id in this.cacheResolveReject)){
                 this.cacheResolveReject[id] = []
@@ -346,7 +423,7 @@ let appParams = {
             if (!(id in this.cacheResolveReject)){
                 this.cacheResolveReject[id] = []
                 return await action().then((results)=>{
-                    this.cacheSearch[name] = results
+                    this.$set(this.cacheSearch,name,results)
                     this.resolve(id,results)
                     return results
                 })
@@ -379,6 +456,16 @@ let appParams = {
     watch:{
         notSearching(){
             this.resolve('notSearching')
+        },
+        newPayment:{
+            deep: true,
+            handler(value){
+                if (value.origin === 'helloasso' && value.date?.length > 0 && Number(value.total) > 0){
+                    // refresh
+                    this.refreshHelloAssoIds()
+                        .catch(this.manageError)
+                }
+            }
         },
         search:{
             deep: true,
