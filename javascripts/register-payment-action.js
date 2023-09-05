@@ -97,8 +97,8 @@ let appParams = {
         },
         currentWantedId(){
             return this.newPayment.origin !== 'helloasso'
-                ? this.newPayment.id
-                : this.newPayment.helloassoId
+                ? String(this.newPayment.id)
+                : String(this.newPayment.helloassoId)
         },
         element(){
             return isVueJS3 ? this.$el.parentNode : this.$el
