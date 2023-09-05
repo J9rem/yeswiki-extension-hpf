@@ -1398,9 +1398,27 @@ class HpfService
 
     public function findHelloAssoPayments(string $date,int $amount): array
     {
+        if (empty($date)){
+            throw new Exception('date should not be empty');
+        }
+        $dateObject = new DateTime($date);
+        if (empty($dateObject)){
+            throw new Exception('date should not be a date');
+        }
+        $payments = $this->helloAssoService->getPayments([
+            'from' => $dateObject->format('Y-m-d'),
+            'to' => $dateObject->add(new DateInterval('P1D'))->format('Y-m-d')
+        ]);
+        $payments = empty($payments) ? [] : $payments->getPayments();
+        $paymentsf = array_filter(
+            $payments,
+            function ($p) use ($amount){
+                return intval($p->amount*100) === intval($amount);
+            }
+        );
         return [
             'status' => 'ok',
-            'amount' => $amount
+            'payments' => $paymentsf
         ];
     }
 }

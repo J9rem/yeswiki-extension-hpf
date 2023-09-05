@@ -272,6 +272,28 @@
                     </template>
                     <template v-else>
                         <spinner-loader v-if="availableIds === null" class="overlay" :height="10"></spinner-loader>
+                        <template v-else-if="Object.keys(availableIds).length === 0">
+                            <div class="alert alert-info">Aucun paiment HelloAsso ne correspond.</div>
+                        </template>
+                        <template v-else>
+                            {# Choix de l'id #}
+                            {% set field = {type:'registerPaymentSelectHelloAssoId',label:'type'} %}
+                            {% set propName = 'registerPaymentSelectHelloAssoId' %}
+                            {% embed "@bazar/layouts/input.twig" %}
+                                {% block input %}
+                                    <select
+                                        id="{{ propName }}"
+                                        name="{{ propName }}"
+                                        class="form-control"
+                                        v-model="newPayment.helloassoId"
+                                        :disabled="refreshing"
+                                    >
+                                        <option value='' :selected="!newPayment.helloassoId">{{ _t('BAZ_CHOISIR') }}</option>
+                                        <option v-for="(name,key) in availableIds" value="key">{{"{{name}}"}}</option>
+                                    </select>
+                                {% endblock %}
+                            {% endembed %}
+                        </template>
                     </template>
                 </div>
             </div>

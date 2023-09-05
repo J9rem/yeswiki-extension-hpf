@@ -79,10 +79,7 @@ let appParams = {
     computed:{
         availableIds(){
             const id = this.getCurrentIdForHA.id
-            const cache = this.cacheSearch?.[id]
-            return (!cache) 
-                ? null
-                : []
+            return this.convertPaymentsToOptions(this.cacheSearch?.[id])
         },
         canAddPayment(){
             return this.selectedEntryId?.length > 0
@@ -189,6 +186,11 @@ let appParams = {
           }
           const year = dd.getFullYear()
           return type === 'fr' ? `${day}/${month}/${year}` : `${month}/${day}/${year}`
+        },
+        convertPaymentsToOptions(raw){
+            return Object.fromEntries(Object.values(raw?.payments ?? {}).map((payment)=>{
+                return [payment?.id ?? 'unknown-id',`${payment?.payer?.email} (${payment?.payer?.firstName} ${payment?.payer?.lastName})`]
+            }) ?? [])
         },
         async deletePayment(entryId,paymentId){
             if (!this.refreshing && entryId?.length > 0 && paymentId?.length > 0){
@@ -342,12 +344,6 @@ let appParams = {
                         this.notSearchingHelloAsso = true
                     })
                 })
-                .then((data)=>{
-                    if (data?.status === 'ok'){
-                        console.log({data})
-                    }
-                }
-            )
         },
         registerPromise(id){
             if (!(id in this.cacheResolveReject)){
