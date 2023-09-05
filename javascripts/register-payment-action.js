@@ -19,6 +19,9 @@ const computedDebounce = (name) => {
             return this.search?.[name] ?? ''
         },
         set(val){
+            if(this.refreshing){
+                return // do nothing
+            }
             if(this.timeout?.[name]){
                 clearTimeout(this.timeout[name])
             }
@@ -37,39 +40,193 @@ const computedDebounce = (name) => {
 }
 
 let appParams = {
-    components: {SpinnerLoader},
+    components: {vuejsDatepicker,SpinnerLoader},
     data(){
         return {
             cacheEntries:{},
             cacheResolveReject:{},
             cacheSearch:{},
             currentResults: {},
+            datePickerLang: vdp_translation_index,
+            datePickerLanguage: null,
             isLoading: false,
+            newPayment:{
+                date:'',
+                total: 0,
+                origin: 'virement',
+                id: '',
+                helloassoId: '',
+                year: ''
+            },
             notSearching: true,
+            notSearchingHelloAsso: true,
             params: null,
+            refreshing:false,
             search: {
                 email: '',
                 firstName: '',
                 name: ''
             },
             selectedEntryId: '',
+            selectedForm: '',
             timeout: {
                 email: null,
                 firstName: null,
                 name: null
-            },
-            selectedForm: ''
+            }
         }
     },
     computed:{
+        availableIds(){
+            const id = this.getCurrentIdForHA.id
+            return this.convertPaymentsToOptions(this.cacheSearch?.[id])
+        },
+        canAddPayment(){
+            return this.selectedEntryId?.length > 0
+                && Number(this.newPayment.total) > 0
+                && this.newPayment.date?.length > 0
+                && this.newPayment.origin?.length > 0
+                && (
+                    (
+                        this.newPayment.origin !== 'helloasso'
+                        && this.newPayment.id?.length > 0
+                    ) || (
+                        this.newPayment.origin === 'helloasso'
+                        && this.newPayment.helloassoId?.length > 0
+                    )
+                )
+                && this.canUseId
+        },
+        canUseId(){
+            return this.newPayment.id?.length > 0
+                && this.selectedEntryId?.length > 0
+                && !Object.keys(this.extractPayments(this.cacheEntries?.[this.selectedEntryId]))
+                    .includes(this.newPayment.id)
+        },
         element(){
             return isVueJS3 ? this.$el.parentNode : this.$el
+        },
+        getCurrentIdForHA(){
+            const date = this.convertDateFromFormat(this.newPayment.date)
+            const amount = this.newPayment.total
+            const res = {id:null,formattedDate:''}
+            if (!date || date?.length === 0){
+                return res
+            }
+            const intermDate = new Date(date)
+            if (!intermDate){
+                return res
+            }
+            const formattedDate = intermDate.toJSON()?.slice(0,10)
+            if (!formattedDate){
+                return res
+            }
+            return {
+                id:`getHelloAssoIds${formattedDate}${String(amount)}`,
+                formattedDate
+            }
         },
         searchedEmail: computedDebounce.call(this,'email'),
         searchedFirstName: computedDebounce.call(this,'firstName'),
         searchedName: computedDebounce.call(this,'name')
     },
     methods:{
+        async addNewPayment(){
+            if (!this.refreshing && this.canAddPayment){
+                this.refreshing = true
+                await this.fetchSecured(wiki.url('?api/hpf/helloasso/payment/getToken'),{method:'POST'})
+                    .then(async (token)=>{
+                        let formData = new FormData()
+                        formData.append('anti-csrf-token',token)
+                        formData.append('id',this.newPayment.id)
+                        formData.append('date',this.convertDateFromFormat(this.newPayment.date))
+                        formData.append('origin',this.newPayment.origin)
+                        formData.append('total',this.newPayment.total)
+                        formData.append('year',this.newPayment.year)
+                        return await this.fetchSecured(
+                            wiki.url(`?api/hpf/helloasso/payment/${this.selectedEntryId}/add`),
+                            {
+                                method:'POST',
+                                body: new URLSearchParams(formData),
+                                headers: (new Headers()).append('Content-Type','application/x-www-form-urlencoded')
+                            }
+                        )
+                    })
+                    .then((data)=>{
+                        if (data?.status === 'ok'){
+                            const updatedEntry = data?.updatedEntry
+                            if (updatedEntry?.id_fiche?.length > 0){
+                                this.cacheEntries[updatedEntry.id_fiche] = updatedEntry
+                                const saveSelectedEntryId = this.selectedEntryId
+                                this.selectedEntryId = ''
+                                this.$nextTick(()=>{
+                                    this.selectedEntryId = saveSelectedEntryId
+                                })
+                            }
+                        }
+                    })
+                    .catch(this.manageError)
+                    .finally(()=>{
+                        this.refreshing = false
+                    })
+            }
+        },
+        convertDateFromFormat(date){
+            return `${date.slice(6,10)}-${date.slice(0,2)}-${date.slice(3,5)}`
+        },
+        customFormatterDate(date,type = ''){
+          const dd = (new Date(date))
+          let day = dd.getDate()
+          if (day < 10){
+            day = `0${day}`
+          }
+          let month = dd.getMonth()+1
+          if (month < 10){
+            month = `0${month}`
+          }
+          const year = dd.getFullYear()
+          return type === 'fr' ? `${day}/${month}/${year}` : `${month}/${day}/${year}`
+        },
+        convertPaymentsToOptions(raw){
+            return Object.fromEntries(Object.values(raw?.payments ?? {}).map((payment)=>{
+                return [payment?.id ?? 'unknown-id',`${payment?.payer?.email} (${payment?.payer?.firstName} ${payment?.payer?.lastName})`]
+            }) ?? [])
+        },
+        async deletePayment(entryId,paymentId){
+            if (!this.refreshing && entryId?.length > 0 && paymentId?.length > 0){
+                this.refreshing = true
+                await this.fetchSecured(wiki.url('?api/hpf/helloasso/payment/getToken'),{method:'POST'})
+                    .then(async (token)=>{
+                        let formData = new FormData()
+                        formData.append('anti-csrf-token',token)
+                        return await this.fetchSecured(
+                            wiki.url(`?api/hpf/helloasso/payment/${entryId}/delete/${paymentId}`),
+                            {
+                                method:'POST',
+                                body: new URLSearchParams(formData),
+                                headers: (new Headers()).append('Content-Type','application/x-www-form-urlencoded')
+                            }
+                        )
+                    })
+                    .then((data)=>{
+                        if (data?.status === 'ok'){
+                            const updatedEntry = data?.updatedEntry
+                            if (updatedEntry?.id_fiche?.length > 0){
+                                this.cacheEntries[updatedEntry.id_fiche] = updatedEntry
+                                const saveSelectedEntryId = this.selectedEntryId
+                                this.selectedEntryId = ''
+                                this.$nextTick(()=>{
+                                    this.selectedEntryId = saveSelectedEntryId
+                                })
+                            }
+                        }
+                    })
+                    .catch(this.manageError)
+                    .finally(()=>{
+                        this.refreshing = false
+                    })
+            }
+        },
         extractValue(entry,name){
             if (typeof entry !== 'object' || Object.keys(entry) === 0){
                 return ''
@@ -94,6 +251,15 @@ let appParams = {
                 }
             }
             return {}
+        },
+        async fetchSecured(url,options={}){
+            return await fetch(url,options)
+                .then((response)=>{
+                    if(!response.ok){
+                        throw new Error(`Response badly formatted (${response.status} - ${response.statusText})`)
+                    }
+                    return response.json()
+                })
         },
         getQueryForName(data){
             const query = {}
@@ -130,13 +296,7 @@ let appParams = {
                     return await this.waitForCache(
                             id,
                             async () => {
-                                return await fetch(wiki.url(`?api/forms/${this.selectedForm}/entries&query=${formattedQuery}`))
-                                    .then((response)=>{
-                                        if(!response.ok){
-                                            throw new Error(`Response badly formatted (${response.status - response.statusText})`)
-                                        }
-                                        return response.json()
-                                    })
+                                return await this.fetchSecured(wiki.url(`?api/forms/${this.selectedForm}/entries&query=${formattedQuery}`))
                             }
                         )
                         .finally(()=>{
@@ -152,6 +312,38 @@ let appParams = {
                 console.error(error)
             }
             return null
+        },
+        async refreshHelloAssoIds(){
+            const amount = this.newPayment.total
+            const {id,formattedDate} = this.getCurrentIdForHA
+            if (!id){
+                return
+            }
+            return this.waitFor('notSearchingHelloAsso')
+                .then(async ()=>{
+                    this.notSearchingHelloAsso = false
+                    return await this.waitForCache(
+                        id,
+                        async () => {
+                            return await this.fetchSecured(wiki.url('?api/hpf/helloasso/payment/getToken'),{method:'POST'})
+                            .then(async (token)=>{
+                                let formData = new FormData()
+                                formData.append('anti-csrf-token',token)
+                                return await this.fetchSecured(
+                                    wiki.url(`?api/hpf/helloasso/payment/find/${formattedDate}/${String(Math.round(Number(amount)*100))}`),
+                                    {
+                                        method:'POST',
+                                        body: new URLSearchParams(formData),
+                                        headers: (new Headers()).append('Content-Type','application/x-www-form-urlencoded')
+                                    }
+                                )
+                            })
+                        }
+                    )
+                    .finally(()=>{
+                        this.notSearchingHelloAsso = true
+                    })
+                })
         },
         registerPromise(id){
             if (!(id in this.cacheResolveReject)){
@@ -170,6 +362,9 @@ let appParams = {
             }
         },
         async searchEntry(){
+            if (this.refreshing){
+                return // do nothing
+            }
             const data = {}
             if (this.search.firstName.length>0){
                 data.firstName = this.search.firstName
@@ -201,7 +396,9 @@ let appParams = {
                 })
         },
         selectEntry(id){
-            this.selectedEntryId = (this.selectedEntryId == id) ? '' : id
+            if (!this.refreshing){
+                this.selectedEntryId = (this.selectedEntryId == id) ? '' : id
+            }
         },
         async waitFor(name){
             if (this?.[name]){
@@ -224,7 +421,7 @@ let appParams = {
             if (!(id in this.cacheResolveReject)){
                 this.cacheResolveReject[id] = []
                 return await action().then((results)=>{
-                    this.cacheSearch[name] = results
+                    this.$set(this.cacheSearch,name,results)
                     this.resolve(id,results)
                     return results
                 })
@@ -239,6 +436,9 @@ let appParams = {
         $(this.element).on('dblclick',function(e) {
             return false
         })
+        this.datePickerLanguage = (wiki.locale in this.datePickerLang)
+          ? this.datePickerLang[wiki.locale]
+          : this.datePickerLang.en
         const rawParams = this.element?.dataset?.params
         if (rawParams){
             try {
@@ -254,6 +454,16 @@ let appParams = {
     watch:{
         notSearching(){
             this.resolve('notSearching')
+        },
+        newPayment:{
+            deep: true,
+            handler(value){
+                if (value.origin === 'helloasso' && value.date?.length > 0 && Number(value.total) > 0){
+                    // refresh
+                    this.refreshHelloAssoIds()
+                        .catch(this.manageError)
+                }
+            }
         },
         search:{
             deep: true,

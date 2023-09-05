@@ -11,7 +11,9 @@
 
 namespace YesWiki\Hpf\Controller;
 
+use Exception;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Core\ApiResponse;
 use YesWiki\Core\Controller\CsrfTokenController;
@@ -109,5 +111,78 @@ class ApiController extends YesWikiController
             : $_POST['college3to4fieldname'];
         list('code'=>$code,'output'=>$output) = $this->getService(HpfService::class)->refreshPaymentCache($formsIds,$college3to4fieldname);
         return new ApiResponse($output,$code);
+    }
+
+    /**
+     * @Route("/api/hpf/helloasso/payment/getToken", methods={"POST"},options={"acl":{"public","@admins"}})
+     */
+    public function getToken()
+    {
+        return new ApiResponse($this->getService(CsrfTokenManager::class)->refreshToken('payment-admin')->getValue(),200);
+    }
+
+    /**
+     * @Route("/api/hpf/helloasso/payment/find/{date}/{amount}", methods={"POST"},options={"acl":{"public","@admins"}})
+     */
+    public function findHelloAssoPayments($date,$amount)
+    {
+        $csrfTokenController = $this->getService(CsrfTokenController::class);
+        $csrfTokenController->checkToken('payment-admin', 'POST', 'anti-csrf-token');
+        return new ApiResponse($this->getService(HpfService::class)->findHelloAssoPayments($date,$amount),200);
+    }
+
+    /**
+     * @Route("/api/hpf/helloasso/payment/{entryId}/delete/{paymentId}", methods={"POST"},options={"acl":{"public","@admins"}})
+     */
+    public function deletePaymentInEntry($entryId,$paymentId)
+    {
+        $csrfTokenController = $this->getService(CsrfTokenController::class);
+        $csrfTokenController->checkToken('payment-admin', 'POST', 'anti-csrf-token');
+        return new ApiResponse($this->getService(HpfService::class)->deletePaymentInEntry($entryId,$paymentId),200);
+    }
+
+    /**
+     * @Route("/api/hpf/helloasso/payment/{entryId}/add", methods={"POST"},options={"acl":{"public","@admins"}})
+     */
+    public function addPaymentInEntry($entryId)
+    {
+        $csrfTokenController = $this->getService(CsrfTokenController::class);
+        $csrfTokenController->checkToken('payment-admin', 'POST', 'anti-csrf-token');
+        $inputs = [
+            'id',
+            'origin',
+            'date',
+            'total',
+        ];
+        $data = [];
+        foreach($inputs as $input){
+            if(
+                empty($_POST[$input])
+                || !is_string($_POST[$input])
+            ) {
+                throw new Exception("\"\$_POST['$input']\" should be defined !");
+            }
+            $data[$input] = $_POST[$input];
+        }
+        
+        if(
+            !empty($_POST['year'])
+            && !is_string($_POST['year'])
+        ) {
+            throw new Exception("\"\$_POST['year']\" should be defined !");
+        } else {
+            $data['year'] = $_POST['year'] ?? '';
+        }
+        return new ApiResponse(
+            $this->getService(HpfService::class)->addPaymentInEntry(
+                $entryId,
+                $data['date'],
+                $data['total'],
+                $data['origin'],
+                $data['id'],
+                $data['year']
+            ),
+            200
+        );
     }
 }

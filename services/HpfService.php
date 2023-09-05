@@ -31,8 +31,9 @@ use YesWiki\Core\Service\TripleStore;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Hpf\Field\PaymentsField;
 use YesWiki\Security\Controller\SecurityController;
-use YesWiki\Shop\Entity\Payment;
 use YesWiki\Shop\Entity\Event;
+use YesWiki\Shop\Entity\Payment;
+use YesWiki\Shop\Entity\User;
 use YesWiki\Shop\Entity\HelloAssoPayments;
 use YesWiki\Shop\Service\EventDispatcher;
 use YesWiki\Shop\Service\HelloAssoService;
@@ -499,9 +500,11 @@ class HpfService
      * update entry with payments info
      * @param array $entry
      * @param Payment $payment
+     * @param string $forceOrigin
+     * @param string $forceYear
      * @return array $updatedEntry
      */
-    public function updateEntryWithPayment(array $entry, Payment $payment):array
+    public function updateEntryWithPayment(array $entry, Payment $payment, string $forceOrigin = '',string $forceYear = ''):array
     {
         $contribFormIds = $this->getCurrentPaymentsFormIds();
         if (!in_array($entry['id_typeannonce'], $contribFormIds)) {
@@ -528,62 +531,23 @@ class HpfService
         $paymentParams = 
         [
             'payment' => $payment,
-            'origin' => $payment->formType === 'Donation' ? 'helloassoDon' : "helloasso:$contribFormId"
+            'origin' => !empty($forceOrigin)
+                ? $forceOrigin
+                : (
+                    $payment->formType === 'Donation' ? 'helloassoDon' : "helloasso:$contribFormId"
+                )
         ];
         if (intval($paymentYear) > intval($currentYear)) {
             // error
             return $entry;
-        } elseif (intval($paymentYear) == intval($currentYear)) {
-            list('isOpenedNextYear' => $isOpenedNextYear, 'field' => $field) = $this->getPayedField($contribFormId, $currentYear, "membership");
-            if ($isOpenedNextYear) {
-                // membership for next year
-                list('entry' => $entry, 'restToAffect' => $restToAffect, 'affected'=>$affected) =
-                    $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, strval(intval($paymentYear)+1), "membership");
-                if (!empty($affected)){
-                    $paymentParams['annee_adhesion'] = strval(intval($paymentYear)+1);
-                    $paymentParams['valeur_adhesion'] = strval($affected);
-                }
-            } else {
-                // membership for current year
-                list('entry' => $entry, 'restToAffect' => $restToAffect,'affected'=>$affected) =
-                    $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $paymentYear, "membership");
-                if (!empty($affected)){
-                    $paymentParams['annee_adhesion'] = strval($paymentYear);
-                    $paymentParams['valeur_adhesion'] = strval($affected);
-                }
+        } elseif (!empty($forceYear) || intval($paymentYear) == intval($currentYear)) {
+            $wantedYear = (empty($forceYear) || intval($forceYear) > (intval($currentYear) + 1))
+                ? $paymentYear
+                : $forceYear;
+            $this->manipulatePayment($restToAffect,$contribFormId,'membership','adhesion',$wantedYear,$forceYear,$entry,$paymentParams);
+            $this->manipulatePayment($restToAffect,$contribFormId,'group_membership','adhesion_groupe',$wantedYear,$forceYear,$entry,$paymentParams);
         }
-            if ($restToAffect > 0) {
-                list('isOpenedNextYear' => $isOpenedNextYear, 'field' => $field) = $this->getPayedField($contribFormId, $currentYear, "group_membership");
-                if ($isOpenedNextYear) {
-                    // membership for next year
-                    list('entry' => $entry, 'restToAffect' => $restToAffect,'affected'=>$affected) =
-                        $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, strval(intval($paymentYear)+1), "group_membership");
-                    if (!empty($affected)){
-                        $paymentParams['annee_adhesion_groupe'] = strval(intval($paymentYear)+1);
-                        $paymentParams['valeur_adhesion_groupe'] = strval($affected);
-                    }
-                } else {
-                    // membership for current year
-                    list('entry' => $entry, 'restToAffect' => $restToAffect,'affected'=>$affected) =
-                        $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $paymentYear, "group_membership");
-                    if (!empty($affected)){
-                        $paymentParams['annee_adhesion_groupe'] = strval($paymentYear);
-                        $paymentParams['valeur_adhesion_groupe'] = strval($affected);
-                    }
-                }
-            }
-        }
-
-        if ($restToAffect > 0) {
-            // donation
-            list('isOpenedNextYear' => $isOpenedNextYear, 'field' => $field) = $this->getPayedField($contribFormId, $paymentYear, "donation");
-            list('entry' => $entry, 'restToAffect' => $restToAffect,'affected'=>$affected) = 
-                $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $paymentYear, "donation");
-            if (!empty($affected)){
-                $paymentParams['annee_don'] = strval($paymentYear);
-                $paymentParams['valeur_don'] = strval($affected);
-            }
-        }
+        $this->manipulatePayment($restToAffect,$contribFormId,'donation','don',$paymentYear,'',$entry,$paymentParams);
 
         // update payment in entry
         $entry[self::PAYMENTS_FIELDNAME] = $this->appendFormatPaymentForField(
@@ -596,12 +560,40 @@ class HpfService
         return $entry;
     }
 
-    private function getPayedField(string $contribFormId, string $currentYear, string $name):array
+    private function manipulatePayment(
+        &$restToAffect,
+        string $contribFormId,
+        string $key,
+        string $partKey, 
+        string $wantedYear,
+        string $forceYear,
+        array &$entry,
+        array &$paymentParams,
+    )
     {
-        if ($name != "donation") {
+        if ($restToAffect > 0) {
+            list('isOpenedNextYear' => $isOpenedNextYear, 'field' => $field) = 
+                $this->getPayedField($contribFormId, $wantedYear, $key,!empty($forceYear));
+
+            $aimedYear = $isOpenedNextYear
+                ? strval(intval($wantedYear)+1)
+                : $wantedYear;
+            
+            list('entry' => $entry, 'restToAffect' => $restToAffect,'affected'=>$affected) =
+                $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $aimedYear, $key);
+            if (!empty($affected)){
+                $paymentParams["annee_$partKey"] = strval($aimedYear);
+                $paymentParams["valeur_$partKey"] = strval($affected);
+            }
+        }
+    }
+
+    private function getPayedField(string $contribFormId, string $searchedYear, string $name, bool $forced = false):array
+    {
+        if (!$forced && $name != "donation") {
             $nextYearName = str_replace(
                 "{year}",
-                strval(intval($currentYear) +1),
+                strval(intval($searchedYear) +1),
                 self::PAYED_FIELDNAMES[$name]
             );
             $nextYearField = $this->formManager->findFieldFromNameOrPropertyName($nextYearName, $contribFormId);
@@ -612,16 +604,16 @@ class HpfService
                 ];
             }
         }
-        $currentYearName = str_replace(
+        $searchedYearName = str_replace(
             "{year}",
-            $currentYear,
+            $searchedYear,
             self::PAYED_FIELDNAMES[$name]
         );
-        $currentYearField = $this->formManager->findFieldFromNameOrPropertyName($currentYearName, $contribFormId);
-        if (!empty($currentYearField)) {
+        $searchYearField = $this->formManager->findFieldFromNameOrPropertyName($searchedYearName, $contribFormId);
+        if (!empty($searchYearField)) {
             return [
                 'isOpenedNextYear' => false,
-                'field' => $currentYearField,
+                'field' => $searchYearField,
             ];
         }
         return [
@@ -681,7 +673,7 @@ class HpfService
         $entry['bf_montant_don_ponctuel_libre'] = strval(max(0,$valueToPay-$restToAffect));
     }
 
-    private function updateYear(array $entry, string $name, string $year): array
+    private function updateYear(array $entry, string $name, string $year, bool $append = true): array
     {
         $field = $this->formManager->findFieldFromNameOrPropertyName($name, $entry['id_typeannonce']);
         if (empty($field)) {
@@ -690,8 +682,14 @@ class HpfService
             $propertyName = $field->getPropertyName();
         }
         $values = explode(",", $entry[$propertyName] ?? "");
-        if (!in_array($year, $values)) {
-            $values[] = $year;
+        if ($append){
+            if (!in_array($year, $values)) {
+                $values[] = $year;
+            }
+        } else {
+            $values = array_filter($values,function($v) use($year){
+                return $v != $year;
+            });
         }
         $entry[$propertyName] = implode(",", array_filter($values, function ($value) {
             return !empty($value);
@@ -1283,5 +1281,144 @@ class HpfService
             } catch(Throwable $th){
             }
         }
+    }
+
+    public function deletePaymentInEntry(string $entryId,string $paymentId): array
+    {
+        return $this->addRemoveCommon(
+            $entryId,
+            function ($entry,$form,$formattedPayments,$updatedEntry) use ($paymentId) {
+                $updated = false;
+                if (!empty($formattedPayments[$paymentId])){
+                    foreach([
+                        'adhesion' => 'membership',
+                        'adhesion_groupe' => 'group_membership',
+                        'don' => 'donation',
+                    ] as $keyPayment => $name){
+                        if (!empty($formattedPayments[$paymentId][$keyPayment])){
+                            foreach($formattedPayments[$paymentId][$keyPayment] as $year => $value){
+                                list('field' => $field) = $this->getPayedField($entry['id_typeannonce'], $year, $name, true);
+                                if (!empty($field) && !empty($field->getPropertyName())){
+                                    $propName = $field->getPropertyName();
+                                    $updatedEntry[$propName] = strval(max(0,floatval($updatedEntry[$propName] ?? 0) - floatval($value)));
+                                    if ($updatedEntry[$propName] === '0'){
+                                        $updatedEntry = $this->updateYear($updatedEntry,self::PAYED_FIELDNAMES["years"][$name],$year,false);
+                                        $updatedEntry[$propName] = '';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    unset($formattedPayments[$paymentId]);
+                    $updatedEntry[self::PAYMENTS_FIELDNAME] = empty($formattedPayments) ? '' : json_encode($formattedPayments);
+                    $updated = true;
+                } 
+                return compact(['updated','updatedEntry']);
+            }
+        );
+    }
+
+    public function addPaymentInEntry(
+        string $entryId,
+        string $paymentDate,
+        string $paymentTotal,
+        string $paymentOrigin,
+        string $paymentId,
+        string $paymentYear
+        ): array
+    {
+        $payment = 
+        new Payment([
+            'id' => $paymentId,
+            'amount' => $paymentTotal,
+            'date' => (new DateTime($paymentDate))->format('Y-m-d'),
+            'payer' => new User()
+        ]);
+        return $this->addRemoveCommon(
+            $entryId,
+            function ($entry,$form,$formattedPayments,$updatedEntry)
+                use ($payment,$paymentOrigin,$paymentYear) {
+                $updated = false;
+                if (empty($formattedPayments[$payment->id])){
+                    $updatedEntry = $this->updateEntryWithPayment(
+                        $entry,
+                        $payment,
+                        $paymentOrigin == 'helloasso' ? '' : $paymentOrigin,
+                        (empty($paymentYear) || intval($paymentYear) < 2021) ? '' : strval($paymentYear)
+                    );
+                    $updated = true;
+                } 
+                return compact(['updated','updatedEntry']);
+            }
+        );
+    }
+
+    protected function addRemoveCommon(string $entryId, $callback): array
+    {
+        $entry = $this->entryManager->getOne($entryId);
+        $updatedEntry = $entry;
+        if (empty($entry)){
+            throw new Exception("Not found entry: '$entryId'");
+        }
+        if (empty($entry['id_typeannonce'])
+            || !is_scalar($entry['id_typeannonce'])
+            || intval($entry['id_typeannonce']) < 0
+            || strval($entry['id_typeannonce']) !== strval(intval($entry['id_typeannonce']))){
+            throw new Exception("'$entryId' has not a right 'id_typeannonce'");
+        }
+        $form = $this->formManager->getOne($entry['id_typeannonce']);
+        if (empty($form)){
+            throw new Exception("form '{$entry['id_typeannonce']}' not found");
+        }
+        
+        $contribFormIds = $this->getCurrentPaymentsFormIds();
+        if (!in_array($entry['id_typeannonce'], $contribFormIds)) {
+            throw new Exception("formId should be in \$contribFormIds!");
+        }
+        
+        $formattedPayments = $this->convertStringToPayments($entry[self::PAYMENTS_FIELDNAME] ?? "");
+        if (is_callable($callback)){
+            list(
+                'updatedEntry' => $updatedEntry,
+                'updated'=>$updated,
+                ) = $callback($entry,$form,$formattedPayments,$updatedEntry);
+            if ($updated){
+                $updatedEntry = $this->updateCalcFields($updatedEntry);
+                $this->updateEntry($updatedEntry);
+                $updatedEntry = $this->entryManager->getOne($entryId, false, null, false, true);
+            }
+        }
+
+        return [
+            'status' => 'ok',
+            'updatedEntry' => $updatedEntry
+        ];
+
+    }
+
+    public function findHelloAssoPayments(string $date,int $amount): array
+    {
+        if (empty($date)){
+            throw new Exception('date should not be empty');
+        }
+        $dateObject = new DateTime($date);
+        if (empty($dateObject)){
+            throw new Exception('date should not be a date');
+        }
+        $payments = $this->helloAssoService->getPayments([
+            'from' => $dateObject->format('Y-m-d'),
+            'to' => $dateObject->add(new DateInterval('P1D'))->format('Y-m-d')
+        ]);
+        $payments = empty($payments) ? [] : $payments->getPayments();
+        $paymentsf = array_filter(
+            $payments,
+            function ($p) use ($amount){
+                return intval($p->amount*100) === intval($amount);
+            }
+        );
+        return [
+            'status' => 'ok',
+            'payments' => $paymentsf
+        ];
     }
 }
