@@ -209,7 +209,7 @@ let appParams = {
                         if (data?.status === 'ok'){
                             const updatedEntry = data?.updatedEntry
                             if (updatedEntry?.id_fiche?.length > 0){
-                                this.cacheEntries[updatedEntry.id_fiche] = updatedEntry
+                                this.$set(this.cacheEntriesupdatedEntry.id_fiche,updatedEntry)
                                 const saveSelectedEntryId = this.selectedEntryId
                                 this.selectedEntryId = ''
                                 this.$nextTick(()=>{
