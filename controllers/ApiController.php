@@ -164,13 +164,23 @@ class ApiController extends YesWikiController
             }
             $data[$input] = $_POST[$input];
         }
+        
+        if(
+            !empty($_POST['year'])
+            && !is_string($_POST['year'])
+        ) {
+            throw new Exception("\"\$_POST['year']\" should be defined !");
+        } else {
+            $data['year'] = $_POST['year'] ?? '';
+        }
         return new ApiResponse(
             $this->getService(HpfService::class)->addPaymentInEntry(
                 $entryId,
                 $data['date'],
                 $data['total'],
                 $data['origin'],
-                $data['id']
+                $data['id'],
+                $data['year']
             ),
             200
         );

@@ -55,7 +55,8 @@ let appParams = {
                 total: 0,
                 origin: 'virement',
                 id: '',
-                helloassoId: ''
+                helloassoId: '',
+                year: ''
             },
             notSearching: true,
             notSearchingHelloAsso: true,
@@ -144,6 +145,7 @@ let appParams = {
                         formData.append('date',this.convertDateFromFormat(this.newPayment.date))
                         formData.append('origin',this.newPayment.origin)
                         formData.append('total',this.newPayment.total)
+                        formData.append('year',this.newPayment.year)
                         return await this.fetchSecured(
                             wiki.url(`?api/hpf/helloasso/payment/${this.selectedEntryId}/add`),
                             {
