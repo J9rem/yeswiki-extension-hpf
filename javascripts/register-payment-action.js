@@ -86,22 +86,19 @@ let appParams = {
                 && Number(this.newPayment.total) > 0
                 && this.newPayment.date?.length > 0
                 && this.newPayment.origin?.length > 0
-                && (
-                    (
-                        this.newPayment.origin !== 'helloasso'
-                        && this.newPayment.id?.length > 0
-                    ) || (
-                        this.newPayment.origin === 'helloasso'
-                        && this.newPayment.helloassoId?.length > 0
-                    )
-                )
+                && this.currentWantedId?.length > 0
                 && this.canUseId
         },
         canUseId(){
             return this.newPayment.id?.length > 0
                 && this.selectedEntryId?.length > 0
                 && !Object.keys(this.extractPayments(this.cacheEntries?.[this.selectedEntryId]))
-                    .includes(this.newPayment.id)
+                    .includes(this.currentWantedId)
+        },
+        currentWantedId(){
+            return this.newPayment.origin !== 'helloasso'
+                ? this.newPayment.id
+                : this.newPayment.helloassoId
         },
         element(){
             return isVueJS3 ? this.$el.parentNode : this.$el
@@ -138,7 +135,7 @@ let appParams = {
                     .then(async (token)=>{
                         let formData = new FormData()
                         formData.append('anti-csrf-token',token)
-                        formData.append('id',this.newPayment.id)
+                        formData.append('id',this.currentWantedId)
                         formData.append('date',this.convertDateFromFormat(this.newPayment.date))
                         formData.append('origin',this.newPayment.origin)
                         formData.append('total',this.newPayment.total)
@@ -189,7 +186,7 @@ let appParams = {
         },
         convertPaymentsToOptions(raw){
             return Object.fromEntries(Object.values(raw?.payments ?? {}).map((payment)=>{
-                return [payment?.id ?? 'unknown-id',`${payment?.payer?.email} (${payment?.payer?.firstName} ${payment?.payer?.lastName})`]
+                return [payment?.id ?? 'unknown-id',`${payment?.id} (${payment?.payer?.email} - ${payment?.payer?.firstName} ${payment?.payer?.lastName})`]
             }) ?? [])
         },
         async deletePayment(entryId,paymentId){

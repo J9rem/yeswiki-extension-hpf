@@ -252,7 +252,7 @@
                         {% endblock %}
                     {% endembed %}
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <template v-if="newPayment.origin !== 'helloasso'">
                         {% set field = {type:'test',subType:'text',label:'Id'} %}
                         {% set propName = 'text' %}
@@ -277,7 +277,7 @@
                         </template>
                         <template v-else>
                             {# Choix de l'id #}
-                            {% set field = {type:'registerPaymentSelectHelloAssoId',label:'type'} %}
+                            {% set field = {type:'registerPaymentSelectHelloAssoId',label:'Id',hint:'provenant de HelloAsso'} %}
                             {% set propName = 'registerPaymentSelectHelloAssoId' %}
                             {% embed "@bazar/layouts/input.twig" %}
                                 {% block input %}
