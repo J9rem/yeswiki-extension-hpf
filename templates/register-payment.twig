@@ -289,7 +289,7 @@
                                         :disabled="refreshing"
                                     >
                                         <option value='' :selected="!newPayment.helloassoId">{{ _t('BAZ_CHOISIR') }}</option>
-                                        <option v-for="(name,key) in availableIds" value="key">{{"{{name}}"}}</option>
+                                        <option v-for="(name,key) in availableIds" :value="key">{{"{{name}}"}}</option>
                                     </select>
                                 {% endblock %}
                             {% endembed %}
