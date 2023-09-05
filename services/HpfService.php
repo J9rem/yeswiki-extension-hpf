@@ -568,7 +568,7 @@ class HpfService
         string $wantedYear,
         string $forceYear,
         array &$entry,
-        array &$paymentParams,
+        array &$paymentParams
     )
     {
         if ($restToAffect > 0) {
