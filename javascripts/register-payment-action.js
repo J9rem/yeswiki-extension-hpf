@@ -46,6 +46,7 @@ let appParams = {
             cacheEntries:{},
             cacheResolveReject:{},
             cacheSearch:{},
+            canUseId: false,
             currentResults: {},
             datePickerLang: vdp_translation_index,
             datePickerLanguage: null,
@@ -88,12 +89,6 @@ let appParams = {
                 && this.newPayment.origin?.length > 0
                 && this.currentWantedId?.length > 0
                 && this.canUseId
-        },
-        canUseId(){
-            return this.newPayment.id?.length > 0
-                && this.selectedEntryId?.length > 0
-                && !Object.keys(this.extractPayments(this.cacheEntries?.[this.selectedEntryId]))
-                    .includes(this.currentWantedId)
         },
         currentWantedId(){
             return this.newPayment.origin !== 'helloasso'
@@ -215,6 +210,7 @@ let appParams = {
                                 this.$nextTick(()=>{
                                     this.selectedEntryId = saveSelectedEntryId
                                 })
+                                this.updateCanUseId()
                             }
                         }
                     })
@@ -384,6 +380,7 @@ let appParams = {
                         Object.values(results).forEach((entry)=>{
                             if (entry?.id_fiche?.length > 0 && !(entry.id_fiche in this.cacheEntries)){
                                 this.$set(this.cacheEntries,entry.id_fiche,entry)
+                                this.updateCanUseId()
                             }
                         })
                         this.currentResults = results
@@ -396,6 +393,12 @@ let appParams = {
             if (!this.refreshing){
                 this.selectedEntryId = (this.selectedEntryId == id) ? '' : id
             }
+        },
+        updateCanUseId(){
+            this.canUseId =  this.newPayment.id?.length > 0
+                && this.selectedEntryId?.length > 0
+                && !Object.keys(this.extractPayments(this.cacheEntries?.[this.selectedEntryId]))
+                    .includes(this.currentWantedId)
         },
         async waitFor(name){
             if (this?.[name]){
@@ -449,6 +452,9 @@ let appParams = {
         }
     },
     watch:{
+        selectedEntryId(){
+            this.updateCanUseId()
+        },
         notSearching(){
             this.resolve('notSearching')
         },
@@ -460,6 +466,7 @@ let appParams = {
                     this.refreshHelloAssoIds()
                         .catch(this.manageError)
                 }
+                this.updateCanUseId()
             }
         },
         search:{
