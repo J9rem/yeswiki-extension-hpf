@@ -83,6 +83,7 @@ let appParams = {
             return this.convertPaymentsToOptions(this.cacheSearch?.[id])
         },
         canAddPayment(){
+            this.updateCanUseId()
             return this.selectedEntryId?.length > 0
                 && Number(this.newPayment.total) > 0
                 && this.newPayment.date?.length > 0
@@ -209,6 +210,7 @@ let appParams = {
                                 this.selectedEntryId = ''
                                 this.$nextTick(()=>{
                                     this.selectedEntryId = saveSelectedEntryId
+                                    this.updateCanUseId()
                                 })
                                 this.updateCanUseId()
                             }
@@ -395,10 +397,17 @@ let appParams = {
             }
         },
         updateCanUseId(){
-            this.canUseId =  this.newPayment.id?.length > 0
-                && this.selectedEntryId?.length > 0
-                && !Object.keys(this.extractPayments(this.cacheEntries?.[this.selectedEntryId]))
-                    .includes(this.currentWantedId)
+            if (this.currentWantedId.length > 0
+                && this.selectedEntryId?.length > 0){
+                const paymentsIds = Object.keys(this.extractPayments(this.cacheEntries?.[this.selectedEntryId]))
+                if (paymentsIds.length > 0){
+                    this.canUseId = !(paymentsIds.includes(this.currentWantedId))
+                } else {
+                    this.canUseId = true
+                }
+                return
+            }
+            this.canUseId = false
         },
         async waitFor(name){
             if (this?.[name]){
