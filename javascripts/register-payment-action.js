@@ -153,7 +153,7 @@ let appParams = {
                         if (data?.status === 'ok'){
                             const updatedEntry = data?.updatedEntry
                             if (updatedEntry?.id_fiche?.length > 0){
-                                this.cacheEntries[updatedEntry.id_fiche] = updatedEntry
+                                this.$set(this.cacheEntries,updatedEntry.id_fiche,updatedEntry)
                                 const saveSelectedEntryId = this.selectedEntryId
                                 this.selectedEntryId = ''
                                 this.$nextTick(()=>{
@@ -209,7 +209,7 @@ let appParams = {
                         if (data?.status === 'ok'){
                             const updatedEntry = data?.updatedEntry
                             if (updatedEntry?.id_fiche?.length > 0){
-                                this.$set(this.cacheEntriesupdatedEntry.id_fiche,updatedEntry)
+                                this.$set(this.cacheEntries,updatedEntry.id_fiche,updatedEntry)
                                 const saveSelectedEntryId = this.selectedEntryId
                                 this.selectedEntryId = ''
                                 this.$nextTick(()=>{
@@ -383,7 +383,7 @@ let appParams = {
                     if (this.hasResults(results)){
                         Object.values(results).forEach((entry)=>{
                             if (entry?.id_fiche?.length > 0 && !(entry.id_fiche in this.cacheEntries)){
-                                this.cacheEntries[entry.id_fiche] = entry
+                                this.$set(this.cacheEntries,entry.id_fiche,entry)
                             }
                         })
                         this.currentResults = results
