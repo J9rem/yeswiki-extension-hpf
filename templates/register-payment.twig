@@ -27,7 +27,7 @@
                 :disabled="refreshing"
             >
                 <option value='' :selected="!selectedForm">{{ _t('BAZ_CHOISIR') }}</option>
-                <option v-for="(formName,formId) in params?.formsids" :value="formId">{{"{{ formId }} - {{ formName }}"}}</option>
+                <option v-for="(formName,formId) in params?.formsids" :value="formId">{{"{{ formName }} ({{ formId }})"}}</option>
             </select>
         {% endblock %}
     {% endembed %}
