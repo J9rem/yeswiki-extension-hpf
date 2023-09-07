@@ -44,6 +44,11 @@ let appParams = {
     data(){
         return {
             cacheEntries:{},
+            cacheForId: {
+                type:'',
+                date:'',
+                previous:''
+            },
             cacheResolveReject:{},
             cacheSearch:{},
             canUseId: false,
@@ -168,7 +173,11 @@ let appParams = {
             return `${date.slice(6,10)}-${date.slice(0,2)}-${date.slice(3,5)}`
         },
         customFormatterDate(date,type = ''){
-          const dd = (new Date(date))
+          const dd = (!date || date?.length == 0) ? new Date() : new Date(date)
+          if (Date().toString() === 'Invalid Date'){
+            this.manageError(new Error(`Date (${date}) is not seen as a date !`))
+            return ''
+          }
           let day = dd.getDate()
           if (day < 10){
             day = `0${day}`
@@ -409,6 +418,26 @@ let appParams = {
             }
             this.canUseId = false
         },
+        updatePrefilledId(){
+            if(this.newPayment.origin.length > 0
+                && this.newPayment.origin !== 'helloasso'
+                && this.newPayment.date?.length > 0){
+                if (this.newPayment.id.length === 0
+                    || (
+                        this.newPayment.id === this.cacheForId.previous
+                        && (
+                            this.newPayment.origin !== this.cacheForId.type
+                            || this.newPayment.date !== this.cacheForId.date
+                        )
+                    )){
+                    const newId = `${this.newPayment.origin}-${this.newPayment.date.replace(/\//g,'')}`
+                    this.newPayment.id = newId
+                    this.cacheForId.type = this.newPayment.origin
+                    this.cacheForId.date = this.newPayment.date
+                    this.cacheForId.previous = newId
+                }
+            }
+        },
         async waitFor(name){
             if (this?.[name]){
                 return true
@@ -455,6 +484,7 @@ let appParams = {
                 if (this.params?.formsids && Object.keys(this.params?.formsids).length === 1){
                     this.selectedForm = Object.keys(this.params.formsids)[0]
                 }
+                this.newPayment.date = this.customFormatterDate()
             } catch (error) {
                 console.error(error)
             }
@@ -475,6 +505,7 @@ let appParams = {
                     this.refreshHelloAssoIds()
                         .catch(this.manageError)
                 }
+                this.updatePrefilledId()
                 this.updateCanUseId()
             }
         },

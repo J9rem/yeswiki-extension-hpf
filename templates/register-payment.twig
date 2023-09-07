@@ -198,7 +198,7 @@
                                 wrapper-class="datepicker-container"
                                 :value="newPayment.date"
                                 @selected="(date)=>{if(date !== null){newPayment.date=customFormatterDate(date)}}">
-                            </vuejs-datepicker> ({{ "{{ customFormatterDate(newPayment.date,'fr') }}" }})
+                            </vuejs-datepicker><span v-if="newPayment.date"> ({{ "{{ customFormatterDate(newPayment.date,'fr') }}" }})</span>
                     </div>
                 <div class="col-md-3">
                     {# Choix du type #}
@@ -235,7 +235,7 @@
             <div class="row-fluid row">
                 <div class="col-md-3">
                     {# année adhésion #}
-                    {% set field = {type:'registerPaymentSelectYear',label:'Année d\'ahésion',hint:'Facultatif uniquement si nécessaire'} %}
+                    {% set field = {type:'registerPaymentSelectYear',label:'Forcer l\'année d\'ahésion à',hint:'Facultatif uniquement si nécessaire'} %}
                     {% set propName = 'registerPaymentSelectYear' %}
                     {% embed "@bazar/layouts/input.twig" %}
                         {% block input %}
@@ -251,6 +251,7 @@
                             </select>
                         {% endblock %}
                     {% endembed %}
+                    <small>Ce champ n'est uniquement nécessaire que si le processus automatisé n'a pas trouvé la bonne année d'adhésion pour le paiement. Les dons ne sont pas concernés.</small>
                 </div>
                 <div class="col-md-6">
                     <template v-if="newPayment.origin !== 'helloasso'">
@@ -271,10 +272,14 @@
                         <div v-if="newPayment.id && !canUseId" class="alert alert-danger">Identifiant déjà utilisé !</div>
                     </template>
                     <template v-else>
-                        <spinner-loader v-if="availableIds === null" class="overlay" :height="10"></spinner-loader>
-                        <template v-else-if="Object.keys(availableIds).length === 0">
-                            <div class="alert alert-info">Aucun paiment HelloAsso ne correspond.</div>
-                        </template>
+                        <div v-if="!notSearchingHelloAsso" class="alert alert-info">
+                            Recherche en cours des paiements correspondant sur HelloAsso
+                        </div>
+                        <div
+                            v-else-if="Object.keys(availableIds).length === 0"
+                            class="alert alert-info">
+                            Aucun paiment HelloAsso ne correspond.
+                        </div>
                         <template v-else>
                             {# Choix de l'id #}
                             {% set field = {type:'registerPaymentSelectHelloAssoId',label:'Id',hint:'provenant de HelloAsso'} %}
