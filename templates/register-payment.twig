@@ -27,7 +27,7 @@
                 :disabled="refreshing"
             >
                 <option value='' :selected="!selectedForm">{{ _t('BAZ_CHOISIR') }}</option>
-                <option v-for="(formName,formId) in params?.formsids" :value="formId">{{"{{ formName }} ({{ formId }})"}}</option>
+                <option v-for="[formId,formName] in Object.entries(params?.formsids ?? {}).sort(([,name1],[,name2])=>name1.localeCompare(name2))" :value="formId">{{"{{ formName }} ({{ formId }})"}}</option>
             </select>
         {% endblock %}
     {% endembed %}
