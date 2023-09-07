@@ -154,6 +154,7 @@ let appParams = {
                         if (data?.status === 'ok'){
                             const updatedEntry = data?.updatedEntry
                             if (updatedEntry?.id_fiche?.length > 0){
+                                this.newPayment.total = 0
                                 this.$set(this.cacheEntries,updatedEntry.id_fiche,updatedEntry)
                                 const saveSelectedEntryId = this.selectedEntryId
                                 this.selectedEntryId = ''
@@ -214,6 +215,7 @@ let appParams = {
                         if (data?.status === 'ok'){
                             const updatedEntry = data?.updatedEntry
                             if (updatedEntry?.id_fiche?.length > 0){
+                                this.newPayment.total = 0
                                 this.$set(this.cacheEntries,updatedEntry.id_fiche,updatedEntry)
                                 const saveSelectedEntryId = this.selectedEntryId
                                 this.selectedEntryId = ''
@@ -438,6 +440,14 @@ let appParams = {
                 }
             }
         },
+        updatePrefilledValue(){
+            if(this.selectedEntryId?.length > 0
+                && this.selectedEntryId in this.cacheEntries
+                && this.newPayment.total == 0
+                && this.cacheEntries[this.selectedEntryId]?.bf_calc > 0){
+                this.newPayment.total = String(this.cacheEntries[this.selectedEntryId]?.bf_calc)
+            }
+        },
         async waitFor(name){
             if (this?.[name]){
                 return true
@@ -492,6 +502,7 @@ let appParams = {
     },
     watch:{
         selectedEntryId(){
+            this.updatePrefilledValue()
             this.updateCanUseId()
         },
         notSearching(){
