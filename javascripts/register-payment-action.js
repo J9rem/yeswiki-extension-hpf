@@ -71,7 +71,8 @@ let appParams = {
             search: {
                 email: '',
                 firstName: '',
-                name: ''
+                name: '',
+                amount:''
             },
             selectedEntryId: '',
             selectedForm: '',
@@ -126,7 +127,8 @@ let appParams = {
         },
         searchedEmail: computedDebounce.call(this,'email'),
         searchedFirstName: computedDebounce.call(this,'firstName'),
-        searchedName: computedDebounce.call(this,'name')
+        searchedName: computedDebounce.call(this,'name'),
+        searchedAmount: computedDebounce.call(this,'amount')
     },
     methods:{
         async addNewPayment(){
@@ -278,6 +280,9 @@ let appParams = {
             if ('email' in data){
                 query.bf_mail = '.*'+data.email+'.*'
             }
+            if ('amount' in data){
+                query.bf_calc = data.amount
+            }
             return query
         },
         getQueryForTitle(data){
@@ -287,6 +292,9 @@ let appParams = {
             }
             if ('email' in data){
                 query.bf_mail = '.*'+data.email+'.*'
+            }
+            if ('amount' in data){
+                query.bf_calc = data.amount
             }
             return query
         },
@@ -380,6 +388,9 @@ let appParams = {
             }
             if (this.search.email.length>0){
                 data.email = this.search.email
+            }
+            if (Number(this.search.amount)>0){
+                data.amount = String(this.search.amount)
             }
             await this.getResultsForQuery(this.getQueryForName(data))
                 .then(async (results)=>{
