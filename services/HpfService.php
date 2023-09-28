@@ -1062,6 +1062,32 @@ class HpfService
         return compact(['code','output']);
     }
 
+    public function refreshPaymentsByCatCache(array $formsIds, string $college3to4fieldname): array
+    {
+        $code = 400;
+        $output = [];
+        $payments = [];
+        $currentYear = intval((new DateTime())->format('Y'));
+        // for ($y=2022; $y <= ($currentYear+1) ; $y++) { 
+        //     $payments[strval($y)] = $this->getDefaultPayments();
+        // }
+        // $fieldCache = [];
+        // foreach($formsIds as $college => $formId){
+        //     $entries = $this->entryManager->search([
+        //         'formsIds' => [$formId]
+        //     ]);
+        //     if (!empty($entries)){
+        //         foreach ($entries as $entry) {
+        //             $this->updatePayments($payments,$college,$entry,$fieldCache,$college3to4fieldname);
+        //         }
+        //     }
+        // }
+        $this->registerCache($payments);
+        $output['message'] = 'nok';
+        $output['newtoken'] = $this->csrfTokenManager->refreshToken('refresh-payments-by-cat-cache-token')->getValue();
+        return compact(['code','output']);
+    }
+
     protected function getDefaultPayments():array
     {
         $defaultPayment = [];

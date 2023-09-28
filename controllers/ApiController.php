@@ -114,6 +114,29 @@ class ApiController extends YesWikiController
     }
 
     /**
+     * @Route("/api/hpf/payments-by-cat/refreshcache", methods={"POST"},options={"acl":{"public","@admins"}})
+     */
+    public function refreshPaymentsByCatCache()
+    {
+        $csrfTokenController = $this->getService(CsrfTokenController::class);
+        $csrfTokenController->checkToken('refresh-payments-by-cat-cache-token', 'POST', 'anti-csrf-token');
+        $formsIds = (empty($_POST['formsIds']) || !is_array($_POST['formsIds']))
+            ? []
+            : array_filter($_POST['formsIds'],function($v,$k){
+                return in_array(intval($k),[1,2,3,4,5]) && is_scalar($v) && strval(intval($v)) === strval($v) && intval($v) > 0;
+            },ARRAY_FILTER_USE_BOTH);
+        $college3to4fieldname = (
+                empty($_POST['college3to4fieldname'])
+                || !is_string($_POST['college3to4fieldname'])
+                || !preg_match('/^[a-z0-9_]+$/',$_POST['college3to4fieldname'])
+            )
+            ? ''
+            : $_POST['college3to4fieldname'];
+        list('code'=>$code,'output'=>$output) = $this->getService(HpfService::class)->refreshPaymentsByCatCache($formsIds,$college3to4fieldname);
+        return new ApiResponse($output,$code);
+    }
+
+    /**
      * @Route("/api/hpf/helloasso/payment/getToken", methods={"POST"},options={"acl":{"public","@admins"}})
      */
     public function getToken()

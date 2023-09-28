@@ -76,6 +76,9 @@ return [
     'AB_hpf_hpfhelloassopayments_college3to4fieldname_label' => 'Nom du champ d\'association du collège 3 vers le collège 4',
     'AB_hpf_hpfhelloassopayments_partner_label' => 'Partenaires',
 
+    // actions/HpfpaymentsbycatAction.php
+    'AB_hpf_hpfpaymentsbycat_label' => 'Liste des paiements Hello Asso par catégories',
+
     // action/HPFRegisterPaymentAction.php
     'AB_hpf_hpfregisterpayment_label' => 'Enregistrement simplifié d\'un paiement',
     'AB_hpf_hpfregisterpayment_formsids_label' => 'Formulaires concernés',
