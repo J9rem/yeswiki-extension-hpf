@@ -406,7 +406,7 @@ export default {
             </select>
             <button
               class="btn btn-xs btn-primary"
-              title="refreshingText"
+              :title="refreshingText"
               :disabled="isLoading"
               @click="refresh">
                 <i class="fas fa-sync-alt"></i>
