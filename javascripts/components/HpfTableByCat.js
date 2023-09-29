@@ -124,15 +124,16 @@ export default {
                         } else {
                             switch (col.data) {
                                 case 'name':
+                                    const areaName = isDept
+                                        ? ''
+                                        : TemplateRenderer.render(
+                                            'HpfPaymentsTableByCat',
+                                            this,
+                                            `areaname${id.toLocaleLowerCase()}`,
+                                        )
                                     formattedData[col.data] = {
-                                        display: isDept
-                                            ? ''
-                                            : TemplateRenderer.render(
-                                                'HpfPaymentsTableByCat',
-                                                this,
-                                                `areaname${id.toLocaleLowerCase()}`,
-                                            ),
-                                        sort: isDept ? `${areaAssociatedKey}_${id}` : `${id}_`
+                                        display: areaName,
+                                        sort: isDept ? `${areaAssociatedKey}_${(id < 10 ? '0' : '' ) +id}` : `${id}_00_${areaName}`
                                     }
                                     break
                                 case 'dept':
@@ -148,13 +149,13 @@ export default {
                                             : 'fa-caret-square-down'}"></i></div>`
                                     break
                                 case 'year':
-                                    formattedData[col.data] = this.getSum(row) + ' €'
+                                    formattedData[col.data] = this.getSum(row)
                                     break
                                 default:
                                     if (Array.isArray(row?.[col.data]?.[1])){
-                                        formattedData[col.data] = {v:(row?.[col.data]?.[0] ?? '') + ' €',e:row[col.data][1]}
+                                        formattedData[col.data] = {v:(row?.[col.data]?.[0] ?? ''),e:row[col.data][1]}
                                         formattedData[col.data].toString = ()=>{
-                                            return `${formattedData[col.data].v} €`
+                                            return formattedData[col.data].v
                                         }
                                     } else {
                                         formattedData[col.data] = row?.[col.data]?.[0] ?? ''
@@ -231,7 +232,15 @@ export default {
                     ...{
                         data: 'year',
                         title: TemplateRenderer.render('HpfPaymentsTableByCat',this,'yeartotal'),
-                        footer: `<th>${bigSum} €</th>`,
+                        footer: `<th>${bigSum}</th>`,
+                        render: (data,type,row)=>{
+                            switch (type) {
+                                case 'sort':
+                                    return data
+                                default:
+                                    return data + ' €'
+                            }
+                        }
                     },
                     ...width
                 })
@@ -245,7 +254,7 @@ export default {
                                 {},
                                 [['{id}',key]]
                             ),
-                            footer: this.sums?.[key]?.[0] !== null ? `<th>${this.sums[key][0]} €</th>`: '',
+                            footer: this.sums?.[key]?.[0] !== null ? `<th>${this.sums[key][0]}</th>`: '',
                             render: (data,type,row)=>{
                                 const value = (typeof data === 'object')
                                     ? (data?.v ?? 0)
@@ -277,7 +286,10 @@ export default {
                                         ],
                                         ['{value}',value]
                                     ])
-                                    : value
+                                    : (type === 'display'
+                                        ? `${value} €`
+                                        : value
+                                    )
                             },
                         },
                         // ...width
