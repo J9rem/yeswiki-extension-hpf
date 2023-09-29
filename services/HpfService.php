@@ -72,6 +72,31 @@ class HpfService
     public const HELLOASSO_API_PROPERTY = 'https://www.habitatparticipatif-france.fr/HelloAssoApiLog';
     public const HELLOASSO_HPF_PROPERTY = 'https://www.habitatparticipatif-france.fr/HelloAssoLog';
     public const HELLOASSO_HPF_PAYMENTS_CACHE_PROPERTY = 'https://www.habitatparticipatif-france.fr/PaymentsCache';
+    public const HELLOASSO_HPF_PAYMENTS_BY_CAT_CACHE_PROPERTY = 'https://www.habitatparticipatif-france.fr/PaymentsCacheByCat';
+
+    public const AREAS = [
+        "ARA" => [1,3,7,15,26,38,42,43,63,69,73,74],
+        "BFC" => [21,25,39,58,70,71,89,90],
+        "BRE" => [22,29,35,44,56],
+        "CVL" => [18,28,36,37,41,45],
+        "COR" => [20],
+        "GES" => [8,10,51,52,54,55,57,67,68,88],
+        "HDF" => [2,59,60,62,80],
+        "IDF" => [75,77,78,91,92,93,94,95],
+        "NOR" => [14,27,50,61,76],
+        "NAQ" => [16,17,19,23,24,33,40,47,64,79,86,87],
+        "OCC" => [9,11,12,30,31,32,34,46,48,65,66,81,82],
+        "PDL" => [44,49,53,72,85],
+        "PAC" => [4,5,6,13,83,84],
+        "GP" => [971],
+        "GF" => [973],
+        "RE" => [974],
+        "MQ" => [972],
+        "YT" => [976],
+        "ETR" => [99],
+        "sans" => [0]
+    ];
+    
 
     protected $aclService;
     protected $assetsManager;
@@ -1064,28 +1089,44 @@ class HpfService
 
     public function refreshPaymentsByCatCache(array $formsIds, string $college3to4fieldname): array
     {
-        $code = 400;
+        $code = 200;
         $output = [];
         $payments = [];
         $currentYear = intval((new DateTime())->format('Y'));
-        // for ($y=2022; $y <= ($currentYear+1) ; $y++) { 
-        //     $payments[strval($y)] = $this->getDefaultPayments();
-        // }
-        // $fieldCache = [];
-        // foreach($formsIds as $college => $formId){
-        //     $entries = $this->entryManager->search([
-        //         'formsIds' => [$formId]
-        //     ]);
-        //     if (!empty($entries)){
-        //         foreach ($entries as $entry) {
-        //             $this->updatePayments($payments,$college,$entry,$fieldCache,$college3to4fieldname);
-        //         }
-        //     }
-        // }
-        $this->registerCache($payments);
-        $output['message'] = 'nok';
+        for ($y=2022; $y <= ($currentYear+1) ; $y++) { 
+            $payments[strval($y)] = $this->getDefaultPaymentsByCat();
+        }
+        $fieldCache = [];
+        foreach($formsIds as $college => $formId){
+            $entries = $this->entryManager->search([
+                'formsIds' => [$formId]
+            ]);
+            if (!empty($entries)){
+                foreach ($entries as $entry) {
+                    $this->updatePaymentsByCat($payments,$college,$entry,$fieldCache,$college3to4fieldname);
+                }
+            }
+        }
+        $this->registerCache($payments,true);
+        $output['message'] = 'ok';
         $output['newtoken'] = $this->csrfTokenManager->refreshToken('refresh-payments-by-cat-cache-token')->getValue();
         return compact(['code','output']);
+    }
+
+    protected function getDefaultPaymentsByCat():array
+    {
+        $defaultPayment = [];
+        for ($i=1; $i <= 4; $i++) { 
+            $defaultPayment["$i"] = [0,0];
+        }
+        $defaultPayment['d'] = [0,0];
+        $defaultPayment['p'] = [0,0];
+        return array_map(
+            function ($a) use($defaultPayment){
+                return $defaultPayment;
+            },
+            self::AREAS
+        );
     }
 
     protected function getDefaultPayments():array
@@ -1232,6 +1273,121 @@ class HpfService
         }
     }
 
+    protected function updatePaymentsByCat(array &$payments,string $college, array $entry, array &$fieldCache, string $college3to4fieldname)
+    {
+        if (empty($entry['id_typeannonce'])){
+            return;
+        }
+        $formId = $entry['id_typeannonce'];
+        try {
+            $paymentTypePropertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,self::TYPE_PAYMENT_FIELDNAME);
+            if (empty($paymentTypePropertyName)){
+                return;
+            }
+        } catch (Throwable $th) {
+            return ;
+        }
+        $years = array_keys($payments);
+        $data = [];
+        foreach(['membership','group_membership','donation'] as $fieldName){
+            // init data
+            $data[$fieldName] = array_fill_keys($years, $this->getDefaultPayments()['1']);
+            foreach($years as $year){
+                $fullFieldName = str_replace('{year}',$year,self::PAYED_FIELDNAMES[$fieldName]);
+                try {
+                    $propertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,$fullFieldName);
+                    $data[$fieldName][$year]['sans'][0] = floatval($entry[$propertyName] ?? 0);
+                } catch (Throwable $th) {
+                }
+            }
+        }
+        // update college
+        try {
+            $collegeAdhesionpropertyName = empty($college3to4fieldname)
+                ? ''
+                : $this->getPropertyNameFromFormOrCache($formId,$fieldCache,$college3to4fieldname);
+        } catch (Throwable $th) {
+            $collegeAdhesionpropertyName = '';
+        }
+
+        $updatedCollege = (
+                $college == '3' 
+                && !empty($collegeAdhesionpropertyName)
+                && !empty($entry[$collegeAdhesionpropertyName])
+                && is_scalar($entry[$collegeAdhesionpropertyName])
+                && $entry[$collegeAdhesionpropertyName] == '4'
+            )
+            ? '4'
+            : $college;
+
+        $associations = [
+            'membership'=>$updatedCollege,
+            'group_membership'=>$college == '1' ? '2' : $updatedCollege,
+            'donation'=>'d'
+        ];
+
+        // extract payments
+        try {
+            $propertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,self::PAYMENTS_FIELDNAME);
+        } catch (Throwable $th) {
+            $propertyName = '';
+        }
+        if(!empty($propertyName) && !empty($entry[$propertyName])){
+            $paymentsFromField = $this->convertStringToPayments($entry[$propertyName]);
+            foreach($paymentsFromField as $id => $payment){
+                if (!empty($payment['date'])
+                    && !empty($payment['origin'])
+                    && !empty($payment['total'])
+                    && !empty($payment['origin'])){
+                    $date = new DateTime($payment['date']);
+                    if (!empty($date)){
+                        foreach($associations as $fieldName => $destinationKey){
+                            switch ($fieldName) {
+                                case 'membership':
+                                    $localFieldName = 'adhesion';
+                                    break;
+                                case 'group_membership':
+                                    $localFieldName = 'adhesion_groupe';
+                                    break;
+                                case 'donation':
+                                    $localFieldName = 'don';
+                                    break;
+                                default:
+                                $localFieldName = '';
+                                    break;
+                            }
+                            if(!empty($payment[$localFieldName])){
+                                foreach($payment[$localFieldName] as $year => $value){
+                                    $paymentYear = $date->format('Y');
+                                    $val = floatval($value);
+        //                             if (array_key_exists($paymentYear,$data[$fieldName])){
+        //                                 $data[$fieldName][$paymentYear][$month]['v'] = $data[$fieldName][$paymentYear][$month]['v'] + $val;
+        //                             }
+        //                             if (array_key_exists($year,$data[$fieldName])){
+        //                                 $data[$fieldName][$year]['o']['v'] = max(0,$data[$fieldName][$year]['o']['v']-$val);
+        //                             }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // // append in dedicated date
+        // foreach($associations as $fieldName => $destinationKey){
+        //     foreach($data[$fieldName] as $year => $values){
+        //         foreach($values as $month => $value){
+        //             $payments[$year][$destinationKey][$month]['v'] = $payments[$year][$destinationKey][$month]['v'] + $value['v'];
+        //             if (!empty($value['v']) && !empty($entry['id_fiche']) && !in_array($entry['id_fiche'],$payments[$year][$destinationKey][$month]['e'])){
+        //                 $payments[$year][$destinationKey][$month]['e'][] = $entry['id_fiche'];
+        //             }
+        //         }
+        //     }
+        // }
+    }
+
+
     protected function getPropertyNameFromFormOrCache(string $formId,array &$fieldCache,string $name): string
     {
         if (empty($fieldCache[$formId])){
@@ -1254,12 +1410,15 @@ class HpfService
         return $paymentTypePropertyName;
     }
 
-    protected function registerCache(array $payments)
+    protected function registerCache(array $payments, bool $byCat = false)
     {
         $date = (new DateTime())->format('d-m-Y H:i:s');
+        $prop = $byCat
+            ? self::HELLOASSO_HPF_PAYMENTS_BY_CAT_CACHE_PROPERTY
+            : self::HELLOASSO_HPF_PAYMENTS_CACHE_PROPERTY;
         $previousTriples = $this->tripleStore->getMatching(
             null,
-            self::HELLOASSO_HPF_PAYMENTS_CACHE_PROPERTY,
+            $prop,
             null
         );
         $triples = [];
@@ -1298,7 +1457,7 @@ class HpfService
                 } else {
                     $this->tripleStore->create(
                         $year,
-                        self::HELLOASSO_HPF_PAYMENTS_CACHE_PROPERTY,
+                        $prop,
                         $newValue,
                         '',
                         ''

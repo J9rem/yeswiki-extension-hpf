@@ -36,12 +36,12 @@ const areas = {
 }
 
 const defaultValues = {
-    1:[0,[]],
-    2:[0,[]],
-    3:[0,[]],
-    4:[0,[]],
-    donation:[0,[]],
-    partner:[0,[]]
+    1:[0,0],
+    2:[0,0],
+    3:[0,0],
+    4:[0,0],
+    donation:[0,0],
+    partner:[0,0]
 }
 
 const defaultData = {}
@@ -151,12 +151,12 @@ export default {
                                 case 'year':
                                     formattedData[col.data] = this.getSum(row)
                                     break
+                                case '#year':
+                                    formattedData[col.data] = this.getSumNb(row)
+                                    break
                                 default:
-                                    if (Array.isArray(row?.[col.data]?.[1])){
-                                        formattedData[col.data] = {v:(row?.[col.data]?.[0] ?? ''),e:row[col.data][1]}
-                                        formattedData[col.data].toString = ()=>{
-                                            return formattedData[col.data].v
-                                        }
+                                    if (col.data.slice(0,1) === '#'){
+                                        formattedData[col.data] = row?.[col.data.slice(1)]?.[1] ?? ''
                                     } else {
                                         formattedData[col.data] = row?.[col.data]?.[0] ?? ''
                                     }
@@ -177,9 +177,9 @@ export default {
             this.messageClass = {['alert-success']:true}
             this.message = TemplateRenderer.render('HpfPaymentsTableByCat',this,'cachedisplayed',{},[['{date}',data.date]])
             Object.keys(defaultData).forEach((key)=>{
-                Object.keys(defaultValues).forEach((month)=>{
-                    const item = data?.values?.[key === 'donation' ? 'd' : key]?.[month === 'other' ? 'o' : month]
-                    this.payments[key][month] = [item?.v ?? 0,item?.e ?? []]
+                Object.keys(defaultValues).forEach((college)=>{
+                    const item = data?.values?.[key]?.[college === 'donation' ? 'd' : (college === 'partner' ? 'p' : college)]
+                    this.payments[key][college] = [item?.[0] ?? 0,item?.[1] ?? 0]
                 })
             })
         },
@@ -195,6 +195,28 @@ export default {
                     this.manageError(error)
                     return returnNullOnError ? null : Promise.reject(error)
                 })
+        },
+        getColumnForPayment(key,isNumber=false){
+            return {
+                ...{
+                    data: (isNumber ? '#' :'')+key,
+                    title: !isNumber
+                    ? TemplateRenderer.render('HpfPaymentsTableByCat',this,(key > 0 && key <=4 )
+                        ? 'name'
+                        : key,
+                        {},
+                        [['{id}',key]]
+                    )
+                    :'#',
+                    footer: this.sums?.[key]?.[isNumber ? 1 : 0] !== null ? `<th>${this.sums[key][isNumber ? 1 : 0]}</th>`: '',
+                    render: (data,type,row)=>{
+                        return (type === 'display' && !isNumber)
+                            ? `${data} €`
+                            : data
+                    },
+                },
+                // ...width
+            }
         },
         getColumns(){
             if (this.columns.length == 0){
@@ -228,6 +250,8 @@ export default {
                 })
                 const bigSum = Object.values(this.sums)
                     .reduce((sum,value)=>sum += value?.[0] ?? 0,0)
+                const bigSumNb = Object.values(this.sums)
+                    .reduce((sum,value)=>sum += value?.[1] ?? 0,0)
                 data.columns.push({
                     ...{
                         data: 'year',
@@ -244,56 +268,15 @@ export default {
                     },
                     ...width
                 })
+                data.columns.push({
+                        data: '#year',
+                        title: '#',
+                        footer: `<th>${bigSumNb}</th>`,
+                    }
+                )
                 Object.keys(defaultValues).forEach((key)=>{
-                    data.columns.push({
-                        ...{
-                            data: key,
-                            title: TemplateRenderer.render('HpfPaymentsTableByCat',this,(key > 0 && key <=4 )
-                                ? 'name'
-                                : key,
-                                {},
-                                [['{id}',key]]
-                            ),
-                            footer: this.sums?.[key]?.[0] !== null ? `<th>${this.sums[key][0]}</th>`: '',
-                            render: (data,type,row)=>{
-                                const value = (typeof data === 'object')
-                                    ? (data?.v ?? 0)
-                                    : data
-                                const entries = (typeof data === 'object')
-                                    ? (data?.e ?? [])
-                                    : []
-                                return (type === 'display' && entries.length > 0)
-                                    ? TemplateRenderer.render('HpfPaymentsTableByCat',this,'link',{},[
-                                        ['{link}',entries.length === 1
-                                            ? wiki.url(entries[0])
-                                            : wiki.url('?BazaR',{
-                                                vue:'consulter',
-                                                query:`id_fiche=${entries.join(',')}`,
-                                                template:'list',
-                                                id:(row?.id === 'donation'
-                                                    ? Object.values(this.params.forms)
-                                                    .filter((val)=>val.length > 0)
-                                                    .join(',')
-                                                    : (
-                                                        this.params.forms?.[row?.id ?? -1]
-                                                        ?? (row?.id == '4'
-                                                            ? this.params.forms?.[3]
-                                                            : (row?.id == '5' ? this.params.forms?.partner : ''))
-                                                        ?? ''
-                                                    )
-                                                )
-                                            })
-                                        ],
-                                        ['{value}',value]
-                                    ])
-                                    : (type === 'display'
-                                        ? `${value} €`
-                                        : value
-                                    )
-                            },
-                        },
-                        // ...width
-                    })
+                    data.columns.push(this.getColumnForPayment(key,false))
+                    data.columns.push(this.getColumnForPayment(key,true))
                 })
                 this.columns = data.columns
             }
@@ -303,6 +286,11 @@ export default {
             return Object.entries(row)
                 .filter(([key,])=>!['name','dept','year'].includes(key))
                 .reduce((sum,[,value])=>sum += value[0],0)
+        },
+        getSumNb(row){
+            return Object.entries(row)
+                .filter(([key,])=>!['name','dept','year'].includes(key))
+                .reduce((sum,[,value])=>sum += value[1],0)
         },
         getUuid(){
             if (this.uuid === null){
