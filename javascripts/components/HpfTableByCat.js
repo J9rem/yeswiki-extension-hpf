@@ -54,6 +54,14 @@ Object.keys(areas).forEach((areaCode)=>{
 
 const currentYear = (new Date()).getFullYear()
 
+let toggleHpfTableByCatAreaInternal = (areaCode) => {
+    // do nothing
+}
+
+window.toggleHpfTableByCatArea = (areaCode) => {
+    toggleHpfTableByCatAreaInternal(areaCode)
+}
+
 class NoCacheError extends Error {}
 
 export default {
@@ -65,6 +73,7 @@ export default {
     props: ['isLoading'],
     data: function() {
         return {
+            areasDroppedDown:[],
             cache: {},
             columns: [],
             currentYear,
@@ -101,59 +110,61 @@ export default {
         addRows(){
             Object.entries(this.payments).forEach(([id,row])=>{
                 const formattedData = {}
-                this.columns.forEach((col)=>{
-                    if (!(typeof col.data === 'string')){
-                        formattedData[col.data] = ''
-                    } else {
-                        let sortableKey = `${id}_`
-                        switch (col.data) {
-                            case 'name':
-                                let display = ''
-                                if ((id === 0 || id === '0' || (id > 0 && id < 1000))){
-                                    sortableKey = `${Object.entries(areas)
-                                        .filter(([,v])=>v.includes(Number(id)))
-                                        .map(([k,])=>k)
-                                        ?.[0] ?? 'unknown'
-                                    }_${id}`
-                                } else {
-                                    display = TemplateRenderer.render(
-                                        'HpfPaymentsTableByCat',
-                                        this,
-                                        `areaname${id.toLocaleLowerCase()}`,
-                                    )
-                                }
-                                formattedData[col.data] = {
-                                    display,
-                                    sort: sortableKey
-                                }
-                                break
-                            case 'dept':
-                                formattedData[col.data] = ((id === 0 || id === '0' || (id > 0 && id < 1000)))
-                                    ? TemplateRenderer.render(
-                                        'HpfPaymentsTableByCat',
-                                        this,
-                                        'dep',
-                                        {num:id}
-                                    )
-                                    : ''
-                                break
-                            case 'year':
-                                formattedData[col.data] = this.getSum(row) + ' €'
-                                break
-                            default:
-                                if (Array.isArray(row?.[col.data]?.[1])){
-                                    formattedData[col.data] = {v:(row?.[col.data]?.[0] ?? '') + ' €',e:row[col.data][1]}
-                                    formattedData[col.data].toString = ()=>{
-                                        return `${formattedData[col.data].v} €`
+                const isDept = (id === 0 || id === '0' || (id > 0 && id < 1000))
+                const areaAssociatedKey = isDept
+                ? Object.entries(areas)
+                    .filter(([,v])=>v.includes(Number(id)))
+                    .map(([k,])=>k)
+                    ?.[0] ?? 'unknown'
+                : ''
+                if (!isDept || this.areasDroppedDown.includes(areaAssociatedKey)){
+                    this.columns.forEach((col)=>{
+                        if (!(typeof col.data === 'string')){
+                            formattedData[col.data] = ''
+                        } else {
+                            switch (col.data) {
+                                case 'name':
+                                    formattedData[col.data] = {
+                                        display: isDept
+                                            ? ''
+                                            : TemplateRenderer.render(
+                                                'HpfPaymentsTableByCat',
+                                                this,
+                                                `areaname${id.toLocaleLowerCase()}`,
+                                            ),
+                                        sort: isDept ? `${areaAssociatedKey}_${id}` : `${id}_`
                                     }
-                                } else {
-                                    formattedData[col.data] = row?.[col.data]?.[0] ?? ''
-                                }
-                                break
+                                    break
+                                case 'dept':
+                                    formattedData[col.data] = isDept
+                                        ? TemplateRenderer.render(
+                                            'HpfPaymentsTableByCat',
+                                            this,
+                                            'dep',
+                                            {num:id}
+                                        )
+                                        : `<div class="btn btn-xs btn-primary" onClick="toggleHpfTableByCatArea('${id}')"><i class="fas ${this.areasDroppedDown.includes(id)
+                                            ? 'fa-caret-square-up'
+                                            : 'fa-caret-square-down'}"></i></div>`
+                                    break
+                                case 'year':
+                                    formattedData[col.data] = this.getSum(row) + ' €'
+                                    break
+                                default:
+                                    if (Array.isArray(row?.[col.data]?.[1])){
+                                        formattedData[col.data] = {v:(row?.[col.data]?.[0] ?? '') + ' €',e:row[col.data][1]}
+                                        formattedData[col.data].toString = ()=>{
+                                            return `${formattedData[col.data].v} €`
+                                        }
+                                    } else {
+                                        formattedData[col.data] = row?.[col.data]?.[0] ?? ''
+                                    }
+                                    break
+                            }
                         }
-                    }
-                })
-                this.$set(this.rows,id,formattedData)
+                    })
+                    this.$set(this.rows,id,formattedData)
+                }
             })
         },
         appendMessage(message){
@@ -379,6 +390,19 @@ export default {
                 }
             },5000)
         },
+        async toggleHpfTableByCatArea(areaCode){
+            if (this.areasDroppedDown.includes(areaCode)){
+                const newT = this.areasDroppedDown.filter((e)=>e!=areaCode)
+                this.areasDroppedDown = newT
+            } else {
+                this.areasDroppedDown.push(areaCode)
+            }
+            this.removeRows()
+            this.$nextTick(()=>{
+                this.addRows()
+                this.toggleRefresh = !this.toggleRefresh
+            })
+        },
         updatePayments(){
             this.getColumns()
             this.removeRows()
@@ -429,6 +453,7 @@ export default {
         }
         this.updatePayments() // to force display table
         this.updateYear(this.year).catch(this.manageError)
+        toggleHpfTableByCatAreaInternal = this.toggleHpfTableByCatArea
     },
     watch:{
         payments:{
