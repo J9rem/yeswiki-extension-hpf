@@ -1189,6 +1189,7 @@ class HpfService
             $entry,
             $fieldCache,
             $data,
+            $associations,
             function($paymentOrigin){
                 return substr($paymentOrigin,0,strlen('helloasso')) === 'helloasso';
             },
@@ -1347,6 +1348,7 @@ class HpfService
      * @param array $entry
      * @param array &$fieldCache
      * @param array &$data
+     * @param array $associations
      * @param callable $isRightPayment
      * @param callable $affectValue
      */
@@ -1354,6 +1356,7 @@ class HpfService
         array $entry,
         array &$fieldCache,
         array &$data,
+        array $associations,
         $isRightPayment = null,
         $affectValue = null)
     {
