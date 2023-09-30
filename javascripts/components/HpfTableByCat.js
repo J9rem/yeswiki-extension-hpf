@@ -82,7 +82,6 @@ export default {
             params: null,
             payments: {...defaultData},
             rows: {},
-            sums:{...defaultValues},
             toggleRefresh: false,
             token: '',
             uuid: null,
@@ -122,6 +121,7 @@ export default {
                         if (!(typeof col.data === 'string')){
                             formattedData[col.data] = ''
                         } else {
+                            let currentValue = 0
                             switch (col.data) {
                                 case 'name':
                                     const areaName = isDept
@@ -149,16 +149,32 @@ export default {
                                             : 'fa-caret-square-down'}"></i></div>`
                                     break
                                 case 'year':
-                                    formattedData[col.data] = this.getSum(row)
-                                    break
                                 case '#year':
-                                    formattedData[col.data] = this.getSumNb(row)
+                                    currentValue = col.data.slice(0,1) === '#'
+                                        ? this.getSumNb(row)
+                                        : this.getSum(row)
+                                    formattedData[col.data] = {
+                                        [Symbol.toPrimitive](hint) {
+                                            if (hint === 'number') {
+                                                // for sum
+                                                return isDept ? 0 : Number(currentValue).valueOf();
+                                            }
+                                            return currentValue;
+                                        }
+                                    }
                                     break
                                 default:
-                                    if (col.data.slice(0,1) === '#'){
-                                        formattedData[col.data] = row?.[col.data.slice(1)]?.[1] ?? ''
-                                    } else {
-                                        formattedData[col.data] = row?.[col.data]?.[0] ?? ''
+                                    currentValue = (col.data.slice(0,1) === '#')
+                                            ? row?.[col.data.slice(1)]?.[1] ?? ''
+                                            : row?.[col.data]?.[0] ?? ''
+                                    formattedData[col.data] = {
+                                        [Symbol.toPrimitive](hint) {
+                                            if (hint === 'number') {
+                                                // for sum
+                                                return isDept ? 0 : Number(currentValue).valueOf();
+                                            }
+                                            return currentValue;
+                                        }
                                     }
                                     break
                             }
@@ -200,6 +216,7 @@ export default {
             return {
                 ...{
                     data: (isNumber ? '#' :'')+key,
+                    class: 'sum-activated',
                     title: !isNumber
                     ? TemplateRenderer.render('HpfPaymentsTableByCat',this,(key > 0 && key <=4 )
                         ? 'name'
@@ -208,7 +225,7 @@ export default {
                         [['{id}',key]]
                     )
                     :'#',
-                    footer: this.sums?.[key]?.[isNumber ? 1 : 0] !== null ? `<th>${this.sums[key][isNumber ? 1 : 0]}</th>`: '',
+                    footer: '',
                     render: (data,type,row)=>{
                         return (type === 'display' && !isNumber)
                             ? `${data} €`
@@ -248,15 +265,12 @@ export default {
                     },
                     ...width
                 })
-                const bigSum = Object.values(this.sums)
-                    .reduce((sum,value)=>sum += value?.[0] ?? 0,0)
-                const bigSumNb = Object.values(this.sums)
-                    .reduce((sum,value)=>sum += value?.[1] ?? 0,0)
                 data.columns.push({
                     ...{
                         data: 'year',
+                        class: 'sum-activated',
                         title: TemplateRenderer.render('HpfPaymentsTableByCat',this,'yeartotal'),
-                        footer: `<th>${bigSum}</th>`,
+                        footer: '',
                         render: (data,type,row)=>{
                             switch (type) {
                                 case 'sort':
@@ -270,8 +284,9 @@ export default {
                 })
                 data.columns.push({
                         data: '#year',
+                        class: 'sum-activated',
                         title: '#',
-                        footer: `<th>${bigSumNb}</th>`,
+                        footer: '',
                     }
                 )
                 Object.keys(defaultValues).forEach((key)=>{
