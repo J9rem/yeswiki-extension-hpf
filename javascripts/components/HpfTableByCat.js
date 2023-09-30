@@ -35,13 +35,22 @@ const areas = {
     "sans":[0]
 }
 
+const defaultBasePayment = {
+    virement:[0,0],
+    helloasso:[0,0],
+    cheque:[0,0],
+    especes:[0,0],
+    structure:[0,0],
+    indefini:[0,0]
+}
+
 const defaultValues = {
-    1:[0,0],
-    2:[0,0],
-    3:[0,0],
-    4:[0,0],
-    donation:[0,0],
-    partner:[0,0]
+    1:{...defaultBasePayment},
+    2:{...defaultBasePayment},
+    3:{...defaultBasePayment},
+    4:{...defaultBasePayment},
+    donation:{...defaultBasePayment},
+    partner:{...defaultBasePayment}
 }
 
 const defaultData = {}
@@ -82,6 +91,7 @@ export default {
             params: null,
             payments: {...defaultData},
             rows: {},
+            selectedTypes: ['virement','helloasso','indefini','especes','cheque'],
             toggleRefresh: false,
             token: '',
             uuid: null,
@@ -151,8 +161,8 @@ export default {
                                 case 'year':
                                 case '#year':
                                     currentValue = col.data.slice(0,1) === '#'
-                                        ? this.getSumNb(row)
-                                        : this.getSum(row)
+                                        ? this.getSum(row,1)
+                                        : this.getSum(row,0)
                                     formattedData[col.data] = {
                                         [Symbol.toPrimitive](hint) {
                                             if (hint === 'number') {
@@ -164,9 +174,16 @@ export default {
                                     }
                                     break
                                 default:
-                                    currentValue = (col.data.slice(0,1) === '#')
-                                            ? row?.[col.data.slice(1)]?.[1] ?? ''
-                                            : row?.[col.data]?.[0] ?? ''
+                                    const isNumber = col.data.slice(0,1) === '#'
+                                    const itemData = isNumber
+                                        ? (row?.[col.data.slice(1)] ?? {})
+                                        : (row?.[col.data] ?? {})
+                                    currentValue = Object.entries(itemData)
+                                        .reduce((sum,[k,v])=>{
+                                            return (this.selectedTypes.includes(k))
+                                                ? (sum + (v?.[isNumber ? 1 : 0] ?? 0))
+                                                : sum
+                                        },0)
                                     formattedData[col.data] = {
                                         [Symbol.toPrimitive](hint) {
                                             if (hint === 'number') {
@@ -195,7 +212,20 @@ export default {
             Object.keys(defaultData).forEach((key)=>{
                 Object.keys(defaultValues).forEach((college)=>{
                     const item = data?.values?.[key]?.[college === 'donation' ? 'd' : (college === 'partner' ? 'p' : college)]
-                    this.payments[key][college] = [item?.[0] ?? 0,item?.[1] ?? 0]
+                    this.payments[key][college] = {};
+                    [
+                        ['v','virement'],
+                        ['h','helloasso'],
+                        ['c','cheque'],
+                        ['e','especes'],
+                        ['s','structure'],
+                        ['i','indefini']
+                    ].forEach(([distKey,localKey])=>{
+                        this.payments[key][college][localKey] = []
+                        for (let index = 0; index <= 1; index++) {
+                            this.payments[key][college][localKey].push(item?.[distKey]?.[index] ?? 0)
+                        }
+                    })
                 })
             })
         },
@@ -297,15 +327,16 @@ export default {
             }
             return this.columns
         },
-        getSum(row){
+        getSum(row,idx = 0){
             return Object.entries(row)
                 .filter(([key,])=>!['name','dept','year'].includes(key))
-                .reduce((sum,[,value])=>sum += value[0],0)
-        },
-        getSumNb(row){
-            return Object.entries(row)
-                .filter(([key,])=>!['name','dept','year'].includes(key))
-                .reduce((sum,[,value])=>sum += value[1],0)
+                .reduce((sum,[,value])=>{
+                    return sum + Object.keys(value)
+                        .reduce((accumulator,k)=>{
+                            return accumulator+(this.selectedTypes.includes(k) ? (value[k]?.[idx] ?? 0) : 0)
+                        },0)
+                }
+                ,0)
         },
         getUuid(){
             if (this.uuid === null){
@@ -412,11 +443,17 @@ export default {
             } else {
                 this.areasDroppedDown.push(areaCode)
             }
-            this.removeRows()
-            this.$nextTick(()=>{
-                this.addRows()
-                this.toggleRefresh = !this.toggleRefresh
-            })
+            this.updatePayments()
+        },
+        togglePaymentType(type){
+            if (this.selectedTypes.includes(type)){
+                if (this.selectedTypes.length > 1){
+                    this.selectedTypes = this.selectedTypes.filter((e)=>e!==type)
+                }
+            } else {
+                this.selectedTypes.push(type)
+            }
+            this.updatePayments()
         },
         updatePayments(){
             this.getColumns()
@@ -502,6 +539,32 @@ export default {
         <div :class="{...{alert:true},...(message ? messageClass : {['alert-info']:true})}">
             <span v-if="message" v-html="message"></span>
             <br v-else>
+        </div>
+
+        <div class="input-group">
+            <label class="control-label col-sm-3">Types de paiement</label>
+            <div class="controls col-sm-9">
+                <div class="bazar-checkbox-cols group-checkbox-typePaiements">
+                    <div class="checkbox" v-for="(name,type) in {
+                                virement:'Virement',
+                                helloasso: 'Hello Asso',
+                                cheque:'Chèque',
+                                especes: 'Espèces',
+                                structure:'Structure',
+                                indefini:'Indéfini'
+                            }">
+                        <label :for="\`typePaiements[\${type}]\`" @click.prevent.stop="togglePaymentType(type)">
+                            <input 
+                                type="checkbox"
+                                :id="\`typePaiements[\${type}]\`"
+                                :checked="selectedTypes.includes(type)"
+                                @input.prevent.stop="togglePaymentType(type)"
+                                >
+                            <span>{{ name }}</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
         </div>
         <dyn-table :columns="columns" :rows="rows" :forceRefresh="toggleRefresh" :uuid="getUuid()" :forceDisplayTotal="true">
             <template #dom>&lt;'row'&lt;'col-sm-12'tr>>&lt;'row'&lt;'col-sm-6'i>&lt;'col-sm-6'&lt;'pull-right'B>>></template>

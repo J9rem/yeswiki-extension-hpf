@@ -97,6 +97,14 @@ class HpfService
         "sans" => [0]
     ];
     
+    protected const DEFAULT_BASE_PAYMENT = [
+        'v' => [0,0],
+        'h' => [0,0],
+        'c' => [0,0],
+        'e' => [0,0],
+        's' => [0,0],
+        'i' => [0,0]
+    ];
 
     protected $aclService;
     protected $assetsManager;
@@ -1117,16 +1125,19 @@ class HpfService
     {
         $defaultPayment = [];
         for ($i=1; $i <= 4; $i++) { 
-            $defaultPayment["$i"] = [0,0];
+            $defaultPayment["$i"] = self::DEFAULT_BASE_PAYMENT;
         }
-        $defaultPayment['d'] = [0,0];
-        $defaultPayment['p'] = [0,0];
-        return array_map(
-            function ($a) use($defaultPayment){
-                return $defaultPayment;
-            },
-            self::AREAS
-        );
+        $defaultPayment['d'] = self::DEFAULT_BASE_PAYMENT;
+        $defaultPayment['p'] = self::DEFAULT_BASE_PAYMENT;
+
+        $defaultPayments = [];
+        foreach (self::AREAS as $areaCode => $depts) {
+            $defaultPayments[$areaCode] = $defaultPayment;
+            foreach($depts as $dept){
+                $defaultPayments[$dept] = $defaultPayment;
+            }
+        }
+        return $defaultPayments;
     }
 
     protected function getDefaultPayments():array
@@ -1296,7 +1307,8 @@ class HpfService
                 $fullFieldName = str_replace('{year}',$year,self::PAYED_FIELDNAMES[$fieldName]);
                 try {
                     $propertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,$fullFieldName);
-                    $data[$fieldName][$year]['sans'][0] = floatval($entry[$propertyName] ?? 0);
+                    $data[$fieldName][$year]['sans']['i'][0] = floatval($entry[$propertyName] ?? 0);
+                    $data[$fieldName][$year]['sans']['i'][1] = ($data[$fieldName][$year]['sans']['i'][0] == 0) ? 0 : 1;
                 } catch (Throwable $th) {
                 }
             }
