@@ -1165,111 +1165,45 @@ class HpfService
 
     protected function updatePayments(array &$payments,string $college, array $entry, array &$fieldCache, string $college3to4fieldname)
     {
-        // check is $entry id CB
         if (empty($entry['id_typeannonce'])){
             return;
         }
-        $formId = $entry['id_typeannonce'];
         try {
-            $paymentTypePropertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,self::TYPE_PAYMENT_FIELDNAME);
-            if (empty($paymentTypePropertyName)){
-                return;
-            }
+            $isCb = $this->checkIfIsCB($entry,$fieldCache);
         } catch (Throwable $th) {
             return ;
         }
-        $isCb = (!empty($entry[$paymentTypePropertyName]) && $entry[$paymentTypePropertyName] == self::CB_TYPE_PAYMENT_FIELDVALUE);
-        $years = array_keys($payments);
-        $data = [];
-        foreach(['membership','group_membership','donation'] as $fieldName){
-            // init data
-            $data[$fieldName] = array_fill_keys($years, $this->getDefaultPayments()['1']);
-            // if CB, extract membership by years and type
-            if ($isCb){
-                foreach($years as $year){
-                    $fullFieldName = str_replace('{year}',$year,self::PAYED_FIELDNAMES[$fieldName]);
-                    try {
-                        $propertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,$fullFieldName);
-                        $data[$fieldName][$year]['o']['v'] = floatval($entry[$propertyName] ?? 0);
-                    } catch (Throwable $th) {
-                    }
+        $data = $this->getFirstData(
+            $entry,
+            $payments,
+            function($subpartData,$value){
+                $subpartData['o']['v'] = $value;
+                return $subpartData;
+            },
+            $isCb
+        );
+
+        $associations = $this->getAssociations($entry, $fieldCache, $college, $college3to4fieldname);
+
+        $this->extractPayments(
+            $entry,
+            $fieldCache,
+            $data,
+            function($paymentOrigin){
+                return substr($paymentOrigin,0,strlen('helloasso')) === 'helloasso';
+            },
+            function($subPartData,$date,$year,$value){
+                $month = strval(intval($date->format('m')));
+                $paymentYear = $date->format('Y');
+                if (array_key_exists($paymentYear,$subPartData)){
+                    $subPartData[$paymentYear][$month]['v'] = $subPartData[$paymentYear][$month]['v'] + $value;
                 }
-            }
-        }
-        // update college
-        try {
-            $collegeAdhesionpropertyName = empty($college3to4fieldname)
-                ? ''
-                : $this->getPropertyNameFromFormOrCache($formId,$fieldCache,$college3to4fieldname);
-        } catch (Throwable $th) {
-            $collegeAdhesionpropertyName = '';
-        }
-
-        $updatedCollege = (
-                $college == '3' 
-                && !empty($collegeAdhesionpropertyName)
-                && !empty($entry[$collegeAdhesionpropertyName])
-                && is_scalar($entry[$collegeAdhesionpropertyName])
-                && $entry[$collegeAdhesionpropertyName] == '4'
-            )
-            ? '4'
-            : $college;
-
-        $associations = [
-            'membership'=>$updatedCollege,
-            'group_membership'=>$college == '1' ? '2' : $updatedCollege,
-            'donation'=>'d'
-        ];
-
-        // extract payments
-        try {
-            $propertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,self::PAYMENTS_FIELDNAME);
-        } catch (Throwable $th) {
-            $propertyName = '';
-        }
-        if(!empty($propertyName) && !empty($entry[$propertyName])){
-            $paymentsFromField = $this->convertStringToPayments($entry[$propertyName]);
-            foreach($paymentsFromField as $id => $payment){
-                if (!empty($payment['date'])
-                    && !empty($payment['origin'])
-                    && !empty($payment['total'])
-                    && !empty($payment['origin'])
-                    && substr($payment['origin'],0,strlen('helloasso')) === 'helloasso'){
-                    $date = new DateTime($payment['date']);
-                    if (!empty($date)){
-                        foreach($associations as $fieldName => $destinationKey){
-                            switch ($fieldName) {
-                                case 'membership':
-                                    $localFieldName = 'adhesion';
-                                    break;
-                                case 'group_membership':
-                                    $localFieldName = 'adhesion_groupe';
-                                    break;
-                                case 'donation':
-                                    $localFieldName = 'don';
-                                    break;
-                                default:
-                                $localFieldName = '';
-                                    break;
-                            }
-                            if(!empty($payment[$localFieldName])){
-                                foreach($payment[$localFieldName] as $year => $value){
-                                    $month = strval(intval($date->format('m')));
-                                    $paymentYear = $date->format('Y');
-                                    $val = floatval($value);
-                                    if (array_key_exists($paymentYear,$data[$fieldName])){
-                                        $data[$fieldName][$paymentYear][$month]['v'] = $data[$fieldName][$paymentYear][$month]['v'] + $val;
-                                    }
-                                    if (array_key_exists($year,$data[$fieldName])){
-                                        $data[$fieldName][$year]['o']['v'] = max(0,$data[$fieldName][$year]['o']['v']-$val);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                if (array_key_exists($year,$subPartData)){
+                    $subPartData[$year]['o']['v'] = max(0,$subPartData[$year]['o']['v']-$value);
                 }
+                return $subPartData;
             }
-        }
+        );
         
         // append in dedicated date
         foreach($associations as $fieldName => $destinationKey){
@@ -1289,35 +1223,104 @@ class HpfService
         if (empty($entry['id_typeannonce'])){
             return;
         }
-        $formId = $entry['id_typeannonce'];
-        try {
-            $paymentTypePropertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,self::TYPE_PAYMENT_FIELDNAME);
-            if (empty($paymentTypePropertyName)){
-                return;
+        $data = $this->getFirstData(
+            $entry,
+            $payments,
+            function($subpartData,$value){
+                $subpartData['sans']['i'][0] = $value;
+                $subpartData['sans']['i'][1] = ($value == 0) ? 0 : 1;
+                return $subpartData;
+            },
+            true
+        );
+
+        $associations = array_map(
+            function($assoc){
+                return $assoc === 'partner' ? 'p' : $assoc;
+            },
+            $this->getAssociations($entry, $fieldCache, $college, $college3to4fieldname)
+        );
+
+        // append in dedicated area
+        foreach($associations as $fieldName => $destinationKey){
+            foreach($data[$fieldName] as $year => $values){
+                foreach($values as $zoneCode => $value){
+                    $type = ($fieldName === 'donation')
+                        ? 'd'
+                        : $destinationKey;
+                    foreach($value as $paymentType => $v){
+                        $payments[$year][$zoneCode][$type][$paymentType][0] = $payments[$year][$zoneCode][$type][$paymentType][0] + $v[0];
+                        $payments[$year][$zoneCode][$type][$paymentType][1] = $payments[$year][$zoneCode][$type][$paymentType][1] + $v[1];
+                    }
+                }
             }
-        } catch (Throwable $th) {
-            return ;
         }
+    }
+
+
+    /**
+     * check if entry is payed by CB
+     * @param array $entry
+     * @param array &$fieldCache
+     * @return bool
+     * @throws Exception if payment field not found
+     */
+    protected function checkIfIsCB(array $entry, array &$fieldCache): bool
+    {
+        $paymentTypePropertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'],$fieldCache,self::TYPE_PAYMENT_FIELDNAME);
+        if (empty($paymentTypePropertyName)){
+            throw new Exception('PaymentTypeFiel not found');
+        }
+        return (!empty($entry[$paymentTypePropertyName]) && $entry[$paymentTypePropertyName] == self::CB_TYPE_PAYMENT_FIELDVALUE);
+    }
+
+    /**
+     * extract first data from entry
+     * @param array $entry
+     * @param array $payments
+     * @param callable $setdata
+     * @param bool $shouldExtractData
+     * @return array
+     */
+    protected function getFirstData(array $entry, array $payments, $setdata, bool $shouldExtractData = true): array
+    {
         $years = array_keys($payments);
+
         $data = [];
         foreach(['membership','group_membership','donation'] as $fieldName){
             // init data
             $data[$fieldName] = array_fill_keys($years, $this->getDefaultPayments()['1']);
-            foreach($years as $year){
-                $fullFieldName = str_replace('{year}',$year,self::PAYED_FIELDNAMES[$fieldName]);
-                try {
-                    $propertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,$fullFieldName);
-                    $data[$fieldName][$year]['sans']['i'][0] = floatval($entry[$propertyName] ?? 0);
-                    $data[$fieldName][$year]['sans']['i'][1] = ($data[$fieldName][$year]['sans']['i'][0] == 0) ? 0 : 1;
-                } catch (Throwable $th) {
+            if ($shouldExtractData){
+                foreach($years as $year){
+                    $fullFieldName = str_replace('{year}',$year,self::PAYED_FIELDNAMES[$fieldName]);
+                    try {
+                        $propertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,$fullFieldName);
+                        if (is_callable($shouldExtractData)){
+                            $data[$fieldName][$year] = $shouldExtractData($data[$fieldName][$year],floatval($entry[$propertyName] ?? 0));
+                        }
+                    } catch (Throwable $th) {
+                    }
                 }
             }
         }
+        return $data;
+    }
+
+    /**
+     * get Associations to right college
+     * @param array $entry
+     * @param array &$fieldCache
+     * @param string $college
+     * @param string $college3to4fieldname
+     * @return array
+     */
+    protected function getAssociations(array $entry, array &$fieldCache, string $college, string $college3to4fieldname):array
+    {
         // update college
         try {
             $collegeAdhesionpropertyName = empty($college3to4fieldname)
                 ? ''
-                : $this->getPropertyNameFromFormOrCache($formId,$fieldCache,$college3to4fieldname);
+                : $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'],$fieldCache,$college3to4fieldname);
         } catch (Throwable $th) {
             $collegeAdhesionpropertyName = '';
         }
@@ -1332,15 +1335,31 @@ class HpfService
             ? '4'
             : $college;
 
-        $associations = [
+        return [
             'membership'=>$updatedCollege,
             'group_membership'=>$college == '1' ? '2' : $updatedCollege,
             'donation'=>'d'
         ];
+    }
 
+    /**
+     * extract payments
+     * @param array $entry
+     * @param array &$fieldCache
+     * @param array &$data
+     * @param callable $isRightPayment
+     * @param callable $affectValue
+     */
+    protected function extractPayments(
+        array $entry,
+        array &$fieldCache,
+        array &$data,
+        $isRightPayment = null,
+        $affectValue = null)
+    {
         // extract payments
         try {
-            $propertyName = $this->getPropertyNameFromFormOrCache($formId,$fieldCache,self::PAYMENTS_FIELDNAME);
+            $propertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'],$fieldCache,self::PAYMENTS_FIELDNAME);
         } catch (Throwable $th) {
             $propertyName = '';
         }
@@ -1348,9 +1367,13 @@ class HpfService
             $paymentsFromField = $this->convertStringToPayments($entry[$propertyName]);
             foreach($paymentsFromField as $id => $payment){
                 if (!empty($payment['date'])
-                    && !empty($payment['origin'])
                     && !empty($payment['total'])
-                    && !empty($payment['origin'])){
+                    && !empty($payment['origin'])
+                    && (
+                        is_null($isRightPayment)
+                        || !is_callable($isRightPayment)
+                        || $isRightPayment($payment['origin'])
+                    )){
                     $date = new DateTime($payment['date']);
                     if (!empty($date)){
                         foreach($associations as $fieldName => $destinationKey){
@@ -1370,14 +1393,14 @@ class HpfService
                             }
                             if(!empty($payment[$localFieldName])){
                                 foreach($payment[$localFieldName] as $year => $value){
-                                    $paymentYear = $date->format('Y');
-                                    $val = floatval($value);
-        //                             if (array_key_exists($paymentYear,$data[$fieldName])){
-        //                                 $data[$fieldName][$paymentYear][$month]['v'] = $data[$fieldName][$paymentYear][$month]['v'] + $val;
-        //                             }
-        //                             if (array_key_exists($year,$data[$fieldName])){
-        //                                 $data[$fieldName][$year]['o']['v'] = max(0,$data[$fieldName][$year]['o']['v']-$val);
-        //                             }
+                                    if (is_callable($affectValue)){
+                                        $data[$fieldName] = $affectValue(
+                                            $data[$fieldName],
+                                            $date,
+                                            $year,
+                                            floatval($value)
+                                        );
+                                    }
                                 }
                             }
                         }
@@ -1385,20 +1408,8 @@ class HpfService
                 }
             }
         }
-        
-        // // append in dedicated date
-        // foreach($associations as $fieldName => $destinationKey){
-        //     foreach($data[$fieldName] as $year => $values){
-        //         foreach($values as $month => $value){
-        //             $payments[$year][$destinationKey][$month]['v'] = $payments[$year][$destinationKey][$month]['v'] + $value['v'];
-        //             if (!empty($value['v']) && !empty($entry['id_fiche']) && !in_array($entry['id_fiche'],$payments[$year][$destinationKey][$month]['e'])){
-        //                 $payments[$year][$destinationKey][$month]['e'][] = $entry['id_fiche'];
-        //             }
-        //         }
-        //     }
-        // }
-    }
 
+    }
 
     protected function getPropertyNameFromFormOrCache(string $formId,array &$fieldCache,string $name): string
     {
