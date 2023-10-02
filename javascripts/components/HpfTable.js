@@ -406,7 +406,7 @@ export default {
             </select>
             <button
               class="btn btn-xs btn-primary"
-              title="refreshingText"
+              :title="refreshingText"
               :disabled="isLoading"
               @click="refresh">
                 <i class="fas fa-sync-alt"></i>
@@ -416,7 +416,7 @@ export default {
             <span v-if="message" v-html="message"></span>
             <br v-else>
         </div>
-        <dyn-table :columns="columns" :rows="rows" :forceRefresh="toggleRefresh">
+        <dyn-table :columns="columns" :rows="rows" :forceRefresh="toggleRefresh" :uuid="getUuid()">
             <template #dom>&lt;'row'&lt;'col-sm-12'tr>>&lt;'row'&lt;'col-sm-6'i>&lt;'col-sm-6'&lt;'pull-right'B>>></template>
             <template #sumtranslate>{{ sumtranslate }}</template>
         </dyn-table>

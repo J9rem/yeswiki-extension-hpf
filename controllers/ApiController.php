@@ -95,8 +95,21 @@ class ApiController extends YesWikiController
      */
     public function refreshPaymentCache()
     {
+        return $this->callRefreshPaymentCommon('refresh-payment-cache-token',false);
+    }
+
+    /**
+     * @Route("/api/hpf/payments-by-cat/refreshcache", methods={"POST"},options={"acl":{"public","@admins"}})
+     */
+    public function refreshPaymentsByCatCache()
+    {
+        return $this->callRefreshPaymentCommon('refresh-payments-by-cat-cache-token',true);
+    }
+
+    protected function callRefreshPaymentCommon(string $tokenKeyname,bool $byCat = false)
+    {
         $csrfTokenController = $this->getService(CsrfTokenController::class);
-        $csrfTokenController->checkToken('refresh-payment-cache-token', 'POST', 'anti-csrf-token');
+        $csrfTokenController->checkToken($tokenKeyname, 'POST', 'anti-csrf-token');
         $formsIds = (empty($_POST['formsIds']) || !is_array($_POST['formsIds']))
             ? []
             : array_filter($_POST['formsIds'],function($v,$k){
@@ -109,7 +122,7 @@ class ApiController extends YesWikiController
             )
             ? ''
             : $_POST['college3to4fieldname'];
-        list('code'=>$code,'output'=>$output) = $this->getService(HpfService::class)->refreshPaymentCache($formsIds,$college3to4fieldname);
+        list('code'=>$code,'output'=>$output) = $this->getService(HpfService::class)->refreshPaymentCache($formsIds,$college3to4fieldname,$byCat);
         return new ApiResponse($output,$code);
     }
 

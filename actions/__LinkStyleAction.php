@@ -17,16 +17,13 @@ class __LinkstyleAction extends YesWikiAction
 {
     public function run()
     {
-        $path = (!is_file('tools/bazar/presentation/javascripts/components/DynTable.js'))
-            ? 'hpf/javascripts/components'
-            : 'bazar/presentation/javascripts/components';
         $baseUrl = $this->wiki->getBaseUrl();
         return <<<HTML
         <script type="importmap">
             {
                 "imports":{
-                    "DynTable": "$baseUrl/tools/$path/DynTable.js",
-                    "TemplateRenderer": "$baseUrl/tools/$path/TemplateRenderer.js"
+                    "DynTable": "$baseUrl/tools/bazar/presentation/javascripts/components/DynTable.js",
+                    "TemplateRenderer": "$baseUrl/tools/bazar/presentation/javascripts/components/TemplateRenderer.js"
                 }
             }
         </script>

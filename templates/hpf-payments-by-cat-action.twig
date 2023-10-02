@@ -1,0 +1,165 @@
+{#
+ * This file is part of the YesWiki Extension hpf.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *#}
+
+{{ include_css('styles/vendor/datatables-full/dataTables.bootstrap.min.css') }}
+{{ include_css('tools/bazar/presentation/styles/tableau.css') }}
+{{ include_javascript('javascripts/vendor/vue/vue.js') }}
+{{ include_javascript('javascripts/vendor/datatables-full/jquery.dataTables.min.js') }} 
+{{ include_javascript('tools/hpf/javascripts/payments-by-cat-action.js',false,true) }}
+
+<div class="dynamic-hpf-payments-by-cat-action">
+    <hpf-table-by-cat data-params="{{ params|json_encode }}" v-model="isLoading">
+        <template #area>Zone</template>
+        <template #areanameara>Auvergne-Rhône-Alpes</template>
+        <template #areanamebfc>Bourgogne-Franche-Comté</template>
+        <template #areanamebre>Bretagne</template>
+        <template #areanamecvl>Centre-Val de Loire</template>
+        <template #areanamecor>Corse</template>
+        <template #areanameges>Grand Est</template>
+        <template #areanamehdf>Hauts-de-France</template>
+        <template #areanameidf>Île-de-France</template>
+        <template #areanamenor>Normandie</template>
+        <template #areanamenaq>Nouvelle-Aquitaine</template>
+        <template #areanameocc>Occitanie</template>
+        <template #areanamepdl>Pays de la Loire</template>
+        <template #areanamepac>Provence-Alpes-Côte d'Azur</template>
+        <template #areanamegp>Guadeloupe</template>
+        <template #areanamegf>Guyane</template>
+        <template #areanamere>La Réunion</template>
+        <template #areanamemq>Martinique</template>
+        <template #areanameyt>Mayotte</template>
+        <template #areanameetr>Hors France</template>
+        <template #areanamesans>Pas de région précise</template>
+        <template #dept>Départements</template>
+        <template #dep="{num}">
+            <template v-if="num==0">Pas de département précis</template>
+            <template v-if="num==1">Ain</template>
+            <template v-if="num==2">Aisne</template>
+            <template v-if="num==3">Allier</template>
+            <template v-if="num==4">Alpes-de-Haute-Provence</template>
+            <template v-if="num==5">Hautes-Alpes</template>
+            <template v-if="num==6">Alpes-Maritimes</template>
+            <template v-if="num==7">Ardèche</template>
+            <template v-if="num==8">Ardennes</template>
+            <template v-if="num==9">Ariège</template>
+            <template v-if="num==10">Aube</template>
+            <template v-if="num==11">Aude</template>
+            <template v-if="num==12">Aveyron</template>
+            <template v-if="num==13">Bouches-du-Rhône</template>
+            <template v-if="num==14">Calvados</template>
+            <template v-if="num==15">Cantal</template>
+            <template v-if="num==16">Charente</template>
+            <template v-if="num==17">Charente-Maritime</template>
+            <template v-if="num==18">Cher</template>
+            <template v-if="num==19">Corrèze</template>
+            <template v-if="num==20">Corse</template>
+            <template v-if="num==21">Côte-d'Or</template>
+            <template v-if="num==22">Côtes-d'Armor</template>
+            <template v-if="num==23">Creuse</template>
+            <template v-if="num==24">Dordogne</template>
+            <template v-if="num==25">Doubs</template>
+            <template v-if="num==26">Drôme</template>
+            <template v-if="num==27">Eure</template>
+            <template v-if="num==28">Eure-et-Loir</template>
+            <template v-if="num==29">Finistère</template>
+            <template v-if="num==30">Gard</template>
+            <template v-if="num==31">Haute-Garonne</template>
+            <template v-if="num==32">Gers</template>
+            <template v-if="num==33">Gironde</template>
+            <template v-if="num==34">Hérault</template>
+            <template v-if="num==35">Ille-et-Vilaine</template>
+            <template v-if="num==36">Indre</template>
+            <template v-if="num==37">Indre-et-Loire</template>
+            <template v-if="num==38">Isère</template>
+            <template v-if="num==39">Jura</template>
+            <template v-if="num==40">Landes</template>
+            <template v-if="num==41">Loir-et-Cher</template>
+            <template v-if="num==42">Loire</template>
+            <template v-if="num==43">Haute-Loire</template>
+            <template v-if="num==44">Loire-Atlantique</template>
+            <template v-if="num==45">Loiret</template>
+            <template v-if="num==46">Lot</template>
+            <template v-if="num==47">Lot-et-Garonne</template>
+            <template v-if="num==48">Lozère</template>
+            <template v-if="num==49">Maine-et-Loire</template>
+            <template v-if="num==50">Manche</template>
+            <template v-if="num==51">Marne</template>
+            <template v-if="num==52">Haute-Marne</template>
+            <template v-if="num==53">Mayenne</template>
+            <template v-if="num==54">Meurthe-et-Moselle</template>
+            <template v-if="num==55">Meuse</template>
+            <template v-if="num==56">Morbihan</template>
+            <template v-if="num==57">Moselle</template>
+            <template v-if="num==58">Nièvre</template>
+            <template v-if="num==59">Nord</template>
+            <template v-if="num==60">Oise</template>
+            <template v-if="num==61">Orne</template>
+            <template v-if="num==62">Pas-de-Calais</template>
+            <template v-if="num==63">Puy-de-Dôme</template>
+            <template v-if="num==64">Pyrénées-Atlantiques</template>
+            <template v-if="num==65">Hautes-Pyrénnées</template>
+            <template v-if="num==66">Pyrénées-Orientales</template>
+            <template v-if="num==67">Bas-Rhin</template>
+            <template v-if="num==68">Haut-Rhin</template>
+            <template v-if="num==69">Rhône</template>
+            <template v-if="num==70">Haute-Saône</template>
+            <template v-if="num==71">Saône-et-Loire</template>
+            <template v-if="num==72">Sarthe</template>
+            <template v-if="num==73">Savoie</template>
+            <template v-if="num==74">Haute-Savoie</template>
+            <template v-if="num==75">Paris</template>
+            <template v-if="num==76">Seine-Maritime</template>
+            <template v-if="num==77">Seine-et-Marne</template>
+            <template v-if="num==78">Yvelines</template>
+            <template v-if="num==79">Deux-Sèvres</template>
+            <template v-if="num==80">Somme</template>
+            <template v-if="num==81">Tarn</template>
+            <template v-if="num==82">Tarn-et-Garonne</template>
+            <template v-if="num==83">Var</template>
+            <template v-if="num==84">Vaucluse</template>
+            <template v-if="num==85">Vendée</template>
+            <template v-if="num==86">Vienne</template>
+            <template v-if="num==87">Haute-Vienne</template>
+            <template v-if="num==88">Vosges</template>
+            <template v-if="num==89">Yonne</template>
+            <template v-if="num==90">Territoire-de-Belfort</template>
+            <template v-if="num==91">Essonne</template>
+            <template v-if="num==92">Hauts-de-Seine</template>
+            <template v-if="num==93">Seine-Saint-Denis</template>
+            <template v-if="num==94">Val-de-Marne</template>
+            <template v-if="num==95">Val-d'Oise</template>
+            <template v-if="num==99">Étranger</template>
+            <template v-if="num==971">Guadeloupe</template>
+            <template v-if="num==972">Martinique</template>
+            <template v-if="num==973">Guyane</template>
+            <template v-if="num==974">Réunion</template>
+            <template v-if="num==975">St-Pierre-et-Miquelon</template>
+            <template v-if="num==976">Mayotte</template>
+            <template v-if="num==980">Monaco</template>
+            <template v-if="num==986">Wallis-et-Futuna</template>
+            <template v-if="num==987">Polynésie-Francaise</template>
+            <template v-if="num==988">Nouvelle-Calédonie</template>
+        </template>
+        <template #name>Collège {id}</template>
+        <template #partner>{{ _t('AB_hpf_hpfhelloassopayments_partner_label') }}</template>
+        <template #donation>Dons</template>
+        <template #yeartotal>Total année</template>
+        <template #sumtranslate>{{ _t('SUM') }}</template>
+        <template #selectyear>Choisir l'année</template>
+        <template #title="{year}">Liste des paiements Hello Asso pour {{"{{ year }}"}}</template>
+        <template #gettingcache>Recherche du cache pour l'année {year}</template>
+        <template #cachedisplayed>Données affichées (mise à jour du {date})</template>
+        <template #nocache>Pas de cache pour l'année {year}</template>
+        <template #refresh>Rafraîchissement des données</template>
+        <template #error>Une erreur est survenue</template>
+        <template #refreshingtext>Rafraîchir les données</template>
+        <template #link><a class="newtab" href="{link}">{value}</a></template>
+    </hpf-table-by-cat>
+    <spinner-loader v-if="isLoading" class="overlay super-overlay" :height="500"></spinner-loader>
+</div>
