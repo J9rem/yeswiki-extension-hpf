@@ -96,6 +96,11 @@ class HpfService
         "ETR" => [99],
         "sans" => [0]
     ];
+
+    public const AREA_FIELDNAMES = [
+        "membership" => ['bf_region_adhesion','bf_departement_adhesion'],
+        "group_membership" => ['bf_region_adhesion_groupe','bf_departement_adhesion_groupe']
+    ];
     
     protected const DEFAULT_BASE_PAYMENT = [
         'v' => [0,0],
@@ -1185,7 +1190,7 @@ class HpfService
             function($paymentOrigin){
                 return substr($paymentOrigin,0,strlen('helloasso')) === 'helloasso';
             },
-            function($subPartData,$date,$year,$paymentOrigin,$value){
+            function($subPartData,$date,$year,$paymentOrigin,$value,$fieldName){
                 $month = strval(intval($date->format('m')));
                 $paymentYear = $date->format('Y');
                 if (array_key_exists($paymentYear,$subPartData)){
@@ -1230,23 +1235,60 @@ class HpfService
             $this->getAssociations($entry, $fieldCache, $college, $college3to4fieldname)
         );
 
-        // TODO get AREA and use it
+        $areaData = $this->prepareAreaData($entry,$fieldCache);
 
         $data = $this->getFirstData(
             $entry,
             $fieldCache, 
             $payments,
             $this->getDefaultPaymentsByCat(),
-            function($subpartData,$value,$fieldName) use ($college,$associations,$keyForPaymentType){
+            function($subpartData,$value,$fieldName) use ($college,$associations,$keyForPaymentType,$areaData){
                 $type = $this->getTypeForCat($fieldName,$college,$associations[$fieldName]);
-                $subpartData['sans'][$type][$keyForPaymentType][0] = $value;
-                $subpartData['sans'][$type][$keyForPaymentType][1] = ($value == 0) ? 0 : 1;
+                if (!isset($subpartData['default'])){
+                    $subpartData['default'] = $this->getDefaultPaymentsByCat()['sans'];
+                }
+                $subpartData['default'][$type][$keyForPaymentType][0] = $value;
+                $subpartData['default'][$type][$keyForPaymentType][1] = ($value == 0) ? 0 : 1;
                 return $subpartData;
             },
             true
         );
-
-        // TODO extract payments
+ 
+        $this->extractPayments(
+            $entry,
+            $fieldCache,
+            $data,
+            $associations,
+            function($paymentOrigin){
+                return true;
+            },
+            function($subPartData,$date,$year,$paymentOrigin,$value,$fieldName)
+                use ($associations,$college,$keyForPaymentType){
+                if (!isset($subpartData['default'])){
+                    $subpartData['default'] = $this->getDefaultPaymentsByCat()['sans'];
+                }
+                $paymentYear = $date->format('Y');
+                $type = $this->getTypeForCat($fieldName,$college,$associations[$fieldName]);
+                $paymentType = $this->formatPaymentType($paymentOrigin);
+                if ($value != 0){
+                    // remove previous registered from default
+                    if (array_key_exists($year,$subPartData)){
+                        $subPartData[$year]['default'][$type][$keyForPaymentType][0] = max($subPartData[$year]['default'][$type][$keyForPaymentType][0] - $value,0);
+                        $subPartData[$year]['default'][$type][$keyForPaymentType][1] = max($subPartData[$year]['default'][$type][$keyForPaymentType][1] - 1,0);
+                    }
+                    if (array_key_exists($paymentYear,$subPartData)){
+                        // register on right payment type
+                        $subPartData[$paymentYear]['default'][$type][$paymentType][0] = $subPartData[$paymentYear]['default'][$type][$paymentType][0] + $value;
+                        $subPartData[$paymentYear]['default'][$type][$paymentType][1] = $subPartData[$paymentYear]['default'][$type][$paymentType][1] + 1;
+                        if ($paymentType != $keyForPaymentType){
+                            $subPartData[$paymentYear]['default'][$type][$keyForPaymentType][0] = max($subPartData[$paymentYear]['default'][$type][$keyForPaymentType][0] - $value,0);
+                            $subPartData[$paymentYear]['default'][$type][$keyForPaymentType][1] = max($subPartData[$paymentYear]['default'][$type][$keyForPaymentType][1] - 1,0);
+                        }
+                    }
+                }
+                return $subPartData;
+            }
+        );
 
         // append in dedicated area
         foreach($associations as $fieldName => $destinationKey){
@@ -1255,13 +1297,103 @@ class HpfService
                     $type = $this->getTypeForCat($fieldName,$college, $destinationKey);
                     if (isset($value[$type])){
                         foreach($value[$type] as $paymentType => $v){
-                            $payments[$year][$zoneCode][$type][$paymentType][0] = $payments[$year][$zoneCode][$type][$paymentType][0] + $v[0];
-                            $payments[$year][$zoneCode][$type][$paymentType][1] = $payments[$year][$zoneCode][$type][$paymentType][1] + $v[1];
+                            $localZoneCode = ($zoneCode !== 'default') ? $zoneCode : $areaData[$fieldName]['area'];
+                            $payments[$year][$localZoneCode][$type][$paymentType][0] = $payments[$year][$localZoneCode][$type][$paymentType][0] + $v[0];
+                            $payments[$year][$localZoneCode][$type][$paymentType][1] = $payments[$year][$localZoneCode][$type][$paymentType][1] + $v[1];
+                            if($zoneCode === 'default' && $areaData[$fieldName]['dept'] !== ''){
+                                $localZoneCode = $areaData[$fieldName]['dept'];
+                                $payments[$year][$localZoneCode][$type][$paymentType][0] = $payments[$year][$localZoneCode][$type][$paymentType][0] + $v[0];
+                                $payments[$year][$localZoneCode][$type][$paymentType][1] = $payments[$year][$localZoneCode][$type][$paymentType][1] + $v[1];
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    
+    /**
+     * prepare area data
+     * @param array $entry
+     * @param array &$fieldCache
+     * @return array [$fieldname => [string $area,string $dept]]
+     */
+    protected function prepareAreaData(array $entry, array &$fieldCache): array
+    {
+        $keys = ['membership','group_membership','donation'];
+        return array_combine(
+            ['membership','group_membership','donation'],
+            array_map(
+                function($fieldname) use($entry,&$fieldCache){
+                    return $this->extractArea($entry,$fieldCache,$fieldname);
+                },
+                ['membership','group_membership','donation']
+            )
+        );
+    }
+    /**
+     * extract area
+     * @param array $entry
+     * @param array &$fieldCache
+     * @param string $fieldName
+     * @return array [string $area,string $dept]
+     */
+    protected function extractArea(array $entry, array &$fieldCache, string $fieldName): array
+    {
+        $area = 'sans';
+        $dept = 0;
+        if (in_array($fieldName,['donation','membership','group_membership'],true)){
+
+            // special case 'donation'            
+            if ($fieldName === 'donation'){
+                $data = $this->extractArea($entry, $fieldCache, 'membership');
+                if (!empty($data['area']) && $data['area'] !== 'sans'){
+                    return $data;
+                }
+                // backup on group
+                return $this->extractArea($entry, $fieldCache, 'group_membership');
+            }
+
+            $defaultPayments = $this->getDefaultPaymentsByCat();
+            
+            $areaFieldName = self::AREA_FIELDNAMES[$fieldName][0];
+            $deptFieldName = self::AREA_FIELDNAMES[$fieldName][1];
+            $deptPropertyName = '';
+            try {
+                $deptPropertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'],$fieldCache,$deptFieldName);
+            } catch (Throwable $th) {
+            }
+            if (!empty($deptPropertyName)
+                && substr($deptPropertyName,0,10) === 'listeListe'
+                && isset($entry[$deptPropertyName])
+                && array_key_exists($entry[$deptPropertyName],$defaultPayments)){
+                $dept = $entry[$deptPropertyName];
+                foreach (self::AREAS as $areaCode => $depts) {
+                    if ($area === 'sans' && in_array($dept,$depts)){
+                        $area = $areaCode;
+                    }
+                }
+                if ($area === 'sans'){
+                    $dept = 0;
+                }
+            } else {
+                $areaPropertyName = '';
+                try {
+                    $areaPropertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'],$fieldCache,$areaFieldName);
+                } catch (Throwable $th) {
+                }
+                if (!empty($areaPropertyName)
+                    && substr($areaPropertyName,0,10) === 'listeListe'
+                    && isset($entry[$areaPropertyName])
+                    && array_key_exists($entry[$areaPropertyName],$defaultPayments)){
+                    $area = $entry[$areaPropertyName];
+                    $dept = '';
+                }
+            }
+
+        }
+        return compact(['area','dept']);
     }
 
     /**
@@ -1291,6 +1423,16 @@ class HpfService
     protected function getdefaultPaymentType(array $entry, array &$fieldCache): string
     {
         $paymentType = $this->extractPaymentType($entry,$fieldCache);
+        return $this->formatPaymentType($paymentType);
+    }
+
+    /**
+     * format Payment Type
+     * @param string $paymentType
+     * @return string
+     */
+    protected function formatPaymentType(string $paymentType): string
+    {
         $keyForPaymentType = 'i';
         foreach (self::PAYMENT_TYPE_ASSOCIATION as $searchRegExp => $newKey) {
             if ($keyForPaymentType === 'i' && preg_match($searchRegExp,$paymentType)){
@@ -1299,7 +1441,6 @@ class HpfService
         }
         return $keyForPaymentType;
     }
-
 
     /**
      * check if entry is payed by CB
@@ -1460,7 +1601,8 @@ class HpfService
                                             $date,
                                             $year,
                                             $payment['origin'],
-                                            floatval($value)
+                                            floatval($value),
+                                            $fieldName
                                         );
                                     }
                                 }
