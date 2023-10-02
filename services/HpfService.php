@@ -112,9 +112,10 @@ class HpfService
     ];
 
     protected const PAYMENT_TYPE_ASSOCIATION = [
-        '/^cd$/' => 'h',
+        '/^cb$/' => 'h',
         '/^virement$/' => 'v',
         '/^cheque$/' => 'c',
+        '/^helloasso.*$/' => 'h',
         '/.*/' => 'i',
     ];
 
