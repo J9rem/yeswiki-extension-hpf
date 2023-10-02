@@ -143,7 +143,7 @@ export default {
                                         )
                                     formattedData[col.data] = {
                                         display: areaName,
-                                        sort: isDept ? `${areaAssociatedKey}_${(id < 10 ? '0' : '' ) +id}` : `${id}_00_${areaName}`
+                                        sort: isDept ? `${areaAssociatedKey}_${(id < 10 ? '0' : '' ) +id}` : `${id}-${areaName}`
                                     }
                                     break
                                 case 'dept':
