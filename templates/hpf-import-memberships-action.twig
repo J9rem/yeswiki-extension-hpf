@@ -1,0 +1,49 @@
+{#
+ * This file is part of the YesWiki Extension hpf.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *#}
+
+<h2>{{ _t('HPF_IMPORT_MEMBERSHIPS_TITLE') }}</h2>
+
+{% if error is not empty %}
+  {{ include('@templates/alert-message.twig',{type:'danger',message:error})|raw }}
+{% endif %}
+
+{% if data is empty %}
+    <form method="post" enctype="multipart/form-data">
+        <div class="control-group form-group input-file">
+            <label class="control-label col-sm-3">
+                <span class="symbole_obligatoire"></span>
+                {{ _t('HPF_IMPORT_MEMBERSHIPS_LABEL') }}
+            </label>
+            <div class="controls col-sm-9">
+                <div class="input-group">
+                    <input
+                        type="file"
+                        id="file"
+                        name="file"
+                        class="form-control"
+                        accept=".csv,.xls,.xlsx,.ods"
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="form-actions form-group">
+            <div class="col-sm-9 col-sm-offset-3">
+                <button type="submit" class="btn btn-primary">{{ _t('BAZ_VALIDER') }}</button>
+            </div>
+        </div>
+    </form>
+{% else %}
+    <b>{{ _t('HPF_IMPORT_DATA_FROM',{file:fileName}) }}</b><a 
+        class="btn btn-xs btn-info btn-icon"
+        href="{{ url({params:{}}) }}"
+        title="{{ _t('HPF_IMPORT_OTHER_FILE') }}"
+    ><i class="fas fa-file-signature"></i></a><br/>
+   Data:<br/>
+   {{ data|map(e=>(e is iterable) ? e|json_encode : '')|join("<br>")|raw }}
+{% endif %}

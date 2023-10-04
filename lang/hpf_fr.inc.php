@@ -96,6 +96,15 @@ return [
     'HPF_REGISTER_A_PAYMENT' => 'Enregistrer un paiement',
     'HPF_REGISTER_PAYMENT_FORM' => 'Formulaire concerné',
 
+    
+    // action/HPFRegisterPaymentAction.php
+    'HPF_IMPORT_BAD_ERROR_FORMAT' => 'Le format du fichier fournit n\'est pas bon. Il devrait être ".ods", ".csv", ".xls" ou ".xlsx" !',
+    'HPF_IMPORT_DATA_FROM' => 'Données extraites de \'%{file}\' :',
+    'HPF_IMPORT_MEMBERSHIPS_LABEL' => 'Fichier à importer',
+    'HPF_IMPORT_MEMBERSHIPS_TITLE' => 'Import de listes d\'adhésions',
+    'HPF_IMPORT_OTHER_FILE' => 'Importer un autre fichier',
+    'AB_hpf_hpfimportmembership_label' => 'Import de listes d\'adhésions',
+
     // config.yaml
     // Feature UUID : hpf-payment-status-action
     'EDIT_CONFIG_HINT_HPF[CONTRIBFORMIDS]' => 'Identifiant des formulaires liés au paiement (avec \'bf_mail\' et un champ \'CalcField\'), séparés par des virgules',
