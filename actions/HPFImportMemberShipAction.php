@@ -14,10 +14,13 @@ namespace YesWiki\Hpf;
 use Exception;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Core\YesWikiAction;
+use YesWiki\Hpf\Entity\ColumnsDef;
 
 class HPFImportMemberShipAction extends YesWikiAction
 {
+    protected $entryManager;
 
     public function formatArguments($arg)
     {
@@ -43,6 +46,10 @@ class HPFImportMemberShipAction extends YesWikiAction
                 'type' => 'danger'
             ]);
         }
+
+        // get Services
+        $this->entryManager = $this->getService(EntryManager::class);
+
         $data = [];
         $error = '';
         $fileName = '';
@@ -50,8 +57,10 @@ class HPFImportMemberShipAction extends YesWikiAction
             try {
                 $fileName = $_FILES['file']['name'];
                 $type = $this->getType($fileName);
-                $contents = $this->getContents($_FILES['file']);
-                $data = $this->extractValues($fileName,$type,$contents);
+                $data = $this->extractValues($fileName,$type);
+                $data = $this->cleanEmptyLines($data);
+                $data = $this->extractData($data);
+                $data = $this->appendCalculatedProps($data);
             } catch (Exception $th) {
                 $error = $th->getMessage();
             }
@@ -85,44 +94,12 @@ class HPFImportMemberShipAction extends YesWikiAction
     }
 
     /**
-     * test if file seems to be the right type
-     * @param string $type
-     * @return bool
-     */
-    protected function isSimilarToWantedType(string $type): bool
-    {
-        return !empty($type) && in_array(
-            $type,
-            [
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'application/vnd.ms-excel',
-                'application/vnd.ms-excel.sheet.macroEnabled.12'
-            ]
-            );
-    }
-
-    /**
-     * get content
-     * @param array $params
-     * @return string
-     * @throws Exception
-     */
-    protected function getContents(array $params): string
-    {
-        if (empty($params['tmp_name']) || !is_file($params['tmp_name'])){
-            throw new Exception("Error when importing file (tmp file is missing)");
-        }
-        return file_get_contents($params['tmp_name']);
-    }
-
-    /**
      * extract values from file
      * @param string $filename
      * @param string $type
-     * @param string $content
      * @return array $data
      */
-    protected function extractValues(string $filename, string $type, string $contents): array
+    protected function extractValues(string $filename, string $type): array
     {
         switch ($type) {
             case 'csv':
@@ -138,53 +115,6 @@ class HPFImportMemberShipAction extends YesWikiAction
                 }
                 throw new Exception('"type" should not be empty !');
         }
-    }
-
-    /**
-     * check if coma separated
-     * @param array $lines
-     * @return bool
-     */
-    protected function isComaSeparated(array $lines): bool
-    {
-        for ($i=0; $i < count($lines); $i++) { 
-            if (substr($lines[$i],0,1) == ','){
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * convert content as lines
-     * @param string $contents
-     * @return array
-     */
-    protected function convertContensAsLines(string $contents): array
-    {
-        $lines = explode("\n",$contents);
-        return array_map(
-            function($line){
-                return preg_replace('/\\r$/','',$line);
-            },
-            $lines
-        );
-    }
-
-    /**
-     * extract csv
-     * @param array $lines
-     * @param string $separator
-     * @return array
-     */
-    protected function extractCsv(array $lines,string $separator): array
-    {
-        return array_map(
-            function($line) use($separator){
-                return str_getcsv($line,$separator);
-            },
-            $lines
-        );
     }
 
     /**
@@ -240,5 +170,144 @@ class HPFImportMemberShipAction extends YesWikiAction
             }
         }
         return $data;
+    }
+
+    /**
+     * remove lines with 3 empty celle on five first columns of eah rox
+     * @param array $rows
+     * @return array
+     */
+    protected function cleanEmptyLines(array $rows): array
+    {
+        $results = [];
+        foreach ($rows as $row) {
+            if (count($row) > 3){
+                $nbEmptyCells = 0;
+                for ($i=0; $i < 5; $i++) { 
+                    if ($i < count($row) && empty($row[$i])){
+                        $nbEmptyCells += 1;
+                    }
+                }
+                if ($nbEmptyCells < 3){
+                    $results[] = $row;
+                }
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * detect columns from first line
+     * @param array $data
+     * @return ColumnsDef
+     * @throws Exception if not formatted as waited data
+     */
+    protected function detectColumns(array $data): ColumnsDef
+    {
+        $firstLine = $data[0];
+        $availableIdx = array_keys($firstLine);
+
+        $colDefs = new ColumnsDef();
+        foreach (ColumnsDef::COLUMNS_SEARCH as $key => $colDef) {
+            foreach ($availableIdx as $idx) {
+                if (!isset($colDefs[$key]) && preg_match($colDef['search'],$firstLine[$idx])){
+                    $colDefs[$key] = intval($idx);
+                    $availableIdx = array_filter(
+                        $availableIdx,
+                        function ($i) use ($idx){
+                            return $i != $idx;
+                        }
+                    );
+                }
+            }
+        }
+        if (empty($colDefs)){
+            throw new Exception('Not possible to detec columns !');
+        }
+        return $colDefs;
+    }
+
+    /**
+     * extract data
+     * @param array $rows
+     * @return array
+     * @throws Exception if not formatted as waited data
+     */
+    protected function extractData(array $rows): array
+    {
+        $extracted = [];
+        $colDef = $this->detectColumns($rows);
+        foreach ($rows as $key => $row) {
+            // not first line
+            if ($key > 0){
+                $extractedLine = [];
+                foreach ($colDef as $key => $idx) {
+                    $colDefFilter = ColumnsDef::COLUMNS_SEARCH[$key]['filter'] ?? '';
+                    $match = [];
+                    $extractedLine[$key] = (
+                        isset($row[$idx])
+                        && (
+                            empty($colDefFilter)
+                            || preg_match($colDefFilter,strval($row[$idx]),$match)
+                        )
+                    )
+                    ? ($match[1] ?? $row[$idx])
+                    : '';
+                    $colDefPostAction = ColumnsDef::COLUMNS_SEARCH[$key]['post'] ?? '';
+                    if (!empty($colDefPostAction)){
+                        $extractedLine[$key] = call_user_func($colDefPostAction,$extractedLine[$key]);
+                    }
+                }
+                $extracted[] = $extractedLine;
+            }
+        }
+        return $extracted;
+    }
+
+    /**
+     * append calculated props
+     * @param array $data
+     * @return array 
+     */
+    protected function appendCalculatedProps(array $data): array
+    {
+        foreach ($data as $key => $newValue){
+            $data[$key]['isGroup'] = !empty($newValue['comment']) && preg_match('/^\\s*groupe?s?.*\\s*$/i',$newValue['comment']);
+            $data[$key]['associatedEntry'] = $this->searchEntry($newValue, ['email'], $data[$key]['isGroup']);
+            if (empty($data[$key]['associatedEntry'])){
+                $data[$key]['associatedEntry'] = $this->searchEntry($newValue, ['name','firstname'], $data[$key]['isGroup']);
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * search entry
+     * @param array $newValue
+     * @param array $searchOn
+     * @param bool $isGroup
+     * @return array $entry
+     */
+    protected function searchEntry(array $newValue, array $searchOn, bool $isGroup): array
+    {
+        $formId = $isGroup ? $this->arguments['college2'] : $this->arguments['college1'];
+        if (empty($formId) || empty($newValue) || empty($searchOn)){
+            return [];
+        }
+        $queries = [];
+        foreach ($searchOn as $type) {
+            if (!isset($newValue[$type]) || !isset(ColumnsDef::COLUMNS_SEARCH[$type]['prop'])){
+                return [];
+            }
+            $queries[ColumnsDef::COLUMNS_SEARCH[$type]['prop']] = $newValue[$type];
+        }
+
+        $entries = $this->entryManager->search([
+            'formsIds' => [
+                $formId
+            ],
+            'queries' => $queries
+        ]);
+        return count($entries) > 0 ? $entries[array_key_first($entries)]: [];
     }
 }
