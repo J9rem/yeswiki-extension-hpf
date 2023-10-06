@@ -39,11 +39,21 @@
         </div>
     </form>
 {% else %}
+    {{ include_css('styles/vendor/datatables-full/dataTables.bootstrap.min.css') }}
+    {{ include_css('tools/bazar/presentation/styles/tableau.css') }}
+    {{ include_javascript('javascripts/vendor/vue/vue.js') }}
+    {{ include_javascript('javascripts/vendor/datatables-full/jquery.dataTables.min.js') }} 
+    {{ include_javascript('tools/hpf/javascripts/hpf-import-memberships-action.js',false,true) }}
+
     <b>{{ _t('HPF_IMPORT_DATA_FROM',{file:fileName}) }}</b><a 
         class="btn btn-xs btn-info btn-icon"
         href="{{ url({params:{}}) }}"
         title="{{ _t('HPF_IMPORT_OTHER_FILE') }}"
     ><i class="fas fa-file-signature"></i></a><br/>
-   Data:<br/>
-   {{ data|map(e=>(e is iterable) ? e|json_encode : '')|join("<br>")|raw }}
+    
+    <div class="dynamic-hpf-import-memberships-action">
+        <hpf-import-table data-values="{{ data|json_encode }}" v-model="isLoading">
+        </hpf-import-table>
+        <spinner-loader v-if="isLoading" class="overlay super-overlay" :height="500"></spinner-loader>
+    </div>
 {% endif %}
