@@ -273,9 +273,9 @@ class HPFImportMemberShipAction extends YesWikiAction
     {
         foreach ($data as $key => $newValue){
             $data[$key]['isGroup'] = !empty($newValue['comment']) && preg_match('/^\\s*groupe?s?.*\\s*$/i',$newValue['comment']);
-            $data[$key]['associatedEntry'] = $this->searchEntry($newValue, ['email'], $data[$key]['isGroup']);
-            if (empty($data[$key]['associatedEntry'])){
-                $data[$key]['associatedEntry'] = $this->searchEntry($newValue, ['name','firstname'], $data[$key]['isGroup']);
+            $data[$key]['associatedEntryId'] = $this->searchEntryId($newValue, ['email'], $data[$key]['isGroup']);
+            if (empty($data[$key]['associatedEntryId'])){
+                $data[$key]['associatedEntryId'] = $this->searchEntryId($newValue, ['name','firstname'], $data[$key]['isGroup']);
             }
         }
         return $data;
@@ -286,18 +286,18 @@ class HPFImportMemberShipAction extends YesWikiAction
      * @param array $newValue
      * @param array $searchOn
      * @param bool $isGroup
-     * @return array $entry
+     * @return string $entryId
      */
-    protected function searchEntry(array $newValue, array $searchOn, bool $isGroup): array
+    protected function searchEntryId(array $newValue, array $searchOn, bool $isGroup): string
     {
         $formId = $isGroup ? $this->arguments['college2'] : $this->arguments['college1'];
         if (empty($formId) || empty($newValue) || empty($searchOn)){
-            return [];
+            return '';
         }
         $queries = [];
         foreach ($searchOn as $type) {
             if (!isset($newValue[$type]) || !isset(ColumnsDef::COLUMNS_SEARCH[$type]['prop'])){
-                return [];
+                return '';
             }
             $queries[ColumnsDef::COLUMNS_SEARCH[$type]['prop']] = $newValue[$type];
         }
@@ -308,6 +308,6 @@ class HPFImportMemberShipAction extends YesWikiAction
             ],
             'queries' => $queries
         ]);
-        return count($entries) > 0 ? $entries[array_key_first($entries)]: [];
+        return count($entries) > 0 ? ($entries[array_key_first($entries)]['id_fiche'] ?? ''): '';
     }
 }
