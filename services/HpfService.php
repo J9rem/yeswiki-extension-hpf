@@ -308,7 +308,7 @@ class HpfService
      * @param array $names
      * @return array $entry
      * Feature UUID : hpf-payment-status-action
-     * Feature UUID : ???
+     * Feature UUID : hpf-register-payment-action
      */
     public function updateCalcFields(array $entry, array $names = []): array
     {
@@ -770,6 +770,9 @@ class HpfService
         return 0;
     }
 
+    /**
+     * Feature UUID : hpf-register-payment-action
+     */
     public function updateEntry($data): array
     {
         if ($this->securityController->isWikiHibernated()) {
@@ -939,7 +942,7 @@ class HpfService
      * @throws Exception if badly formatted payment
      * Feature UUID : hpf-helloasso-payments-table
      * Feature UUID : hpf-payments-by-cat-table
-     * Feature UUID : hpf-???
+     * Feature UUID : hpf-register-payment-action
      */
     public function convertStringToPayments(string $paymentContent):array
     {
@@ -979,7 +982,7 @@ class HpfService
      * @throws Exception
      * Feature UUID : hpf-helloasso-payments-table
      * Feature UUID : hpf-payments-by-cat-table
-     * Feature UUID : hpf-???
+     * Feature UUID : hpf-register-payment-action
      */
     public function formatPaymentForField(array $params): array
     {
@@ -1017,7 +1020,7 @@ class HpfService
      * @return array $formattedPayment
      * Feature UUID : hpf-helloasso-payments-table
      * Feature UUID : hpf-payments-by-cat-table
-     * Feature UUID : hpf-???
+     * Feature UUID : hpf-register-payment-action
      */
     private function formatPaymentForFieldInternal(
         ?Payment $payment,
@@ -1761,6 +1764,9 @@ class HpfService
         }
     }
 
+    /**
+     * Feature UUID : hpf-register-payment-action
+     */
     public function deletePaymentInEntry(string $entryId,string $paymentId): array
     {
         return $this->addRemoveCommon(
@@ -1796,6 +1802,9 @@ class HpfService
         );
     }
 
+    /**
+     * Feature UUID : hpf-register-payment-action
+     */
     public function addPaymentInEntry(
         string $entryId,
         string $paymentDate,
@@ -1831,6 +1840,9 @@ class HpfService
         );
     }
 
+    /**
+     * Feature UUID : hpf-register-payment-action
+     */
     protected function addRemoveCommon(string $entryId, $callback): array
     {
         $entry = $this->entryManager->getOne($entryId);
@@ -1874,6 +1886,9 @@ class HpfService
 
     }
 
+    /**
+     * Feature UUID : hpf-register-payment-action
+     */
     public function findHelloAssoPayments(string $date,int $amount): array
     {
         if (empty($date)){

@@ -135,6 +135,7 @@ class ApiController extends YesWikiController
 
     /**
      * @Route("/api/hpf/helloasso/payment/getToken", methods={"POST"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-register-payment-action
      */
     public function getToken()
     {
@@ -143,6 +144,7 @@ class ApiController extends YesWikiController
 
     /**
      * @Route("/api/hpf/helloasso/payment/find/{date}/{amount}", methods={"POST"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-register-payment-action
      */
     public function findHelloAssoPayments($date,$amount)
     {
@@ -153,6 +155,7 @@ class ApiController extends YesWikiController
 
     /**
      * @Route("/api/hpf/helloasso/payment/{entryId}/delete/{paymentId}", methods={"POST"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-register-payment-action
      */
     public function deletePaymentInEntry($entryId,$paymentId)
     {
@@ -163,6 +166,7 @@ class ApiController extends YesWikiController
 
     /**
      * @Route("/api/hpf/helloasso/payment/{entryId}/add", methods={"POST"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-register-payment-action
      */
     public function addPaymentInEntry($entryId)
     {

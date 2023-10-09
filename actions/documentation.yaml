@@ -95,7 +95,7 @@ actions:
         label: _t(AB_hpf_hpfhelloassopayments_partner_label)
         type: number
         min: 1
-  hpfregisterpayment:
+  hpfregisterpayment: # Feature UUID : hpf-register-payment-action
     label: _t(AB_hpf_hpfregisterpayment_label)
     properties:
       formsids:

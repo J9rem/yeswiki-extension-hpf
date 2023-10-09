@@ -13,6 +13,7 @@ return [
 
     // actions/documentation.yaml
     'AB_HPF_group_label' => 'Spécifique HPF',
+    // Feature UUID : hpf-payment-status-action
     'AB_hpf_hpfpaymentstatus_label' => 'Afficher le lien de paiement HelloAsso',
     'AB_hpf_hpfpaymentstatus_empty_message_label' => 'Texte à afficher s\'il n\'y a pas de fiche',
     'AB_hpf_hpfpaymentstatus_empty_message_hint' => 'Laisser vide pour ne rien afficher',
@@ -30,6 +31,7 @@ return [
     'HPF_BAZARTABLEAU_LINK_TO_GROUP_LABEL' => 'Tableau (avec lien groupe vers BDD)',
 
     // actions/HpfPaymentStatusAction.php
+    // Feature UUID : hpf-payment-status-action
     'HPF_CLICK_BUTTON_BOTTOM' => "cliquant sur le bouton ci-dessous",
     'HPF_IFRAME_INSTRUCTION' => "complétant le formulaire ci-dessous",
     'HPF_GET_URL_ERROR' => 'Une erreur est survenue dans le fichier {file} (ligne {line}) : {message}',
@@ -68,6 +70,7 @@ return [
     'HPF_FORBIDEN_FOR_THIS_ENTRY' => 'vous n\'avez ps le droit de modifier cette fiche',
 
     // actions/HPFHelloAssoPaymentsAction.php
+    // Feature UUID : hpf-helloasso-payments-table
     'AB_hpf_hpfhelloassopayments_label' => 'Liste des paiements Hello Asso',
     'AB_hpf_hpfhelloassopayments_college1_label' => 'Collège 1',
     'AB_hpf_hpfhelloassopayments_college2_label' => 'Collège 2',
@@ -77,9 +80,11 @@ return [
     'AB_hpf_hpfhelloassopayments_partner_label' => 'Partenaires',
 
     // actions/HpfpaymentsbycatAction.php
+    // Feature UUID : hpf-payments-by-cat-table
     'AB_hpf_hpfpaymentsbycat_label' => 'Liste des paiements Hello Asso par catégories',
 
     // action/HPFRegisterPaymentAction.php
+    // Feature UUID : hpf-register-payment-action
     'AB_hpf_hpfregisterpayment_label' => 'Enregistrement simplifié d\'un paiement',
     'AB_hpf_hpfregisterpayment_formsids_label' => 'Formulaires concernés',
     'AB_hpf_hpfregisterpayment_formsids_hint' => 'entiers séparés par des virgules. Ex.: 16,23,24',

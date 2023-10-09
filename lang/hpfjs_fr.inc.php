@@ -17,6 +17,7 @@ return [
     'HPF_CONDITIONVIEW_WAITEDVALUE' => 'Valeur attendue',
 
     // tools/hpf/javascripts/refresh-link.js
+    // Feature UUID : hpf-payment-status-action
     'HPF_ALREADY_REFRESHING' => 'Rafraichissement déjà en cours',
     'HPF_REFRESHING' => 'Rafraichissement des données en cours',
     'HPF_ALREADY_REFRESHED' => 'Données mises à jour : veuillez recharger la page',
