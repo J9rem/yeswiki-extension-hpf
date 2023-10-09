@@ -919,6 +919,9 @@ class HpfService
      * @param string $paymentContent
      * @return array $payments
      * @throws Exception if badly formatted payment
+     * Feature UUID : hpf-helloasso-payments-table
+     * Feature UUID : hpf-payments-by-cat-table
+     * Feature UUID : hpf-???
      */
     public function convertStringToPayments(string $paymentContent):array
     {
@@ -956,6 +959,9 @@ class HpfService
      * @param array $params
      * @return array $payment
      * @throws Exception
+     * Feature UUID : hpf-helloasso-payments-table
+     * Feature UUID : hpf-payments-by-cat-table
+     * Feature UUID : hpf-???
      */
     public function formatPaymentForField(array $params): array
     {
@@ -991,6 +997,9 @@ class HpfService
      * @param string $date (if no payment)
      * @param string $total (if no payment)
      * @return array $formattedPayment
+     * Feature UUID : hpf-helloasso-payments-table
+     * Feature UUID : hpf-payments-by-cat-table
+     * Feature UUID : hpf-???
      */
     private function formatPaymentForFieldInternal(
         ?Payment $payment,
@@ -1082,6 +1091,10 @@ class HpfService
         return empty($results) ? [] : $results->getPayments();
     }
 
+    /**
+     * Feature UUID : hpf-helloasso-payments-table
+     * Feature UUID : hpf-payments-by-cat-table
+     */
     public function refreshPaymentCache(
         array $formsIds, 
         string $college3to4fieldname,
@@ -1117,6 +1130,9 @@ class HpfService
         return compact(['code','output']);
     }
 
+    /**
+     * Feature UUID : hpf-payments-by-cat-table
+     */
     protected function getDefaultPaymentsByCat():array
     {
         $defaultPayment = [];
@@ -1136,6 +1152,9 @@ class HpfService
         return $defaultPayments;
     }
 
+    /**
+     * Feature UUID : hpf-helloasso-payments-table
+     */
     protected function getDefaultPayments():array
     {
         $defaultPayment = [];
@@ -1159,6 +1178,9 @@ class HpfService
         ];
     }
 
+    /**
+     * Feature UUID : hpf-helloasso-payments-table
+     */
     protected function updatePayments(array &$payments,string $college, array $entry, array &$fieldCache, string $college3to4fieldname)
     {
         if (empty($entry['id_typeannonce'])){
@@ -1217,6 +1239,9 @@ class HpfService
         }
     }
 
+    /**
+     * Feature UUID : hpf-payments-by-cat-table
+     */
     protected function updatePaymentsByCat(array &$payments,string $college, array $entry, array &$fieldCache, string $college3to4fieldname)
     {
         if (empty($entry['id_typeannonce'])){
@@ -1319,6 +1344,7 @@ class HpfService
      * @param array $entry
      * @param array &$fieldCache
      * @return array [$fieldname => [string $area,string $dept]]
+     * Feature UUID : hpf-payments-by-cat-table
      */
     protected function prepareAreaData(array $entry, array &$fieldCache): array
     {
@@ -1339,6 +1365,7 @@ class HpfService
      * @param array &$fieldCache
      * @param string $fieldName
      * @return array [string $area,string $dept]
+     * Feature UUID : hpf-payments-by-cat-table
      */
     protected function extractArea(array $entry, array &$fieldCache, string $fieldName): array
     {
@@ -1403,6 +1430,7 @@ class HpfService
      * @param string $college
      * @param string $destinationKey
      * @return string
+     * Feature UUID : hpf-payments-by-cat-table
      */
     protected function getTypeForCat(string $fieldName,string $college, string $destinationKey): string
     {
@@ -1420,6 +1448,7 @@ class HpfService
      * @param array &$fieldCache
      * @return string
      * @throws Exception if payment field not found
+     * Feature UUID : hpf-payments-by-cat-table
      */
     protected function getdefaultPaymentType(array $entry, array &$fieldCache): string
     {
@@ -1431,6 +1460,7 @@ class HpfService
      * format Payment Type
      * @param string $paymentType
      * @return string
+     * Feature UUID : hpf-payments-by-cat-table
      */
     protected function formatPaymentType(string $paymentType): string
     {
@@ -1449,6 +1479,7 @@ class HpfService
      * @param array &$fieldCache
      * @return bool
      * @throws Exception if payment field not found
+     * Feature UUID : hpf-helloasso-payments-table
      */
     protected function checkIfIsCB(array $entry, array &$fieldCache): bool
     {
@@ -1463,6 +1494,8 @@ class HpfService
      * @param array &$fieldCache
      * @return string
      * @throws Exception if payment field not found
+     * Feature UUID : hpf-helloasso-payments-table
+     * Feature UUID : hpf-payments-by-cat-table
      */
     protected function extractPaymentType(array $entry, array &$fieldCache): string
     {
@@ -1482,6 +1515,8 @@ class HpfService
      * @param callable $setdata
      * @param bool $shouldExtractData
      * @return array
+     * Feature UUID : hpf-helloasso-payments-table
+     * Feature UUID : hpf-payments-by-cat-table
      */
     protected function getFirstData(array $entry, array &$fieldCache, array $payments, array $defaultPayment, $setdata, bool $shouldExtractData = true): array
     {
@@ -1514,6 +1549,8 @@ class HpfService
      * @param string $college
      * @param string $college3to4fieldname
      * @return array
+     * Feature UUID : hpf-helloasso-payments-table
+     * Feature UUID : hpf-payments-by-cat-table
      */
     protected function getAssociations(array $entry, array &$fieldCache, string $college, string $college3to4fieldname):array
     {
@@ -1551,6 +1588,8 @@ class HpfService
      * @param array $associations
      * @param callable $isRightPayment
      * @param callable $affectValue
+     * Feature UUID : hpf-helloasso-payments-table
+     * Feature UUID : hpf-payments-by-cat-table
      */
     protected function extractPayments(
         array $entry,
@@ -1616,6 +1655,10 @@ class HpfService
 
     }
 
+    /**
+     * Feature UUID : hpf-helloasso-payments-table
+     * Feature UUID : hpf-payments-by-cat-table
+     */
     protected function getPropertyNameFromFormOrCache(string $formId,array &$fieldCache,string $name): string
     {
         if (empty($fieldCache[$formId])){
@@ -1638,6 +1681,10 @@ class HpfService
         return $paymentTypePropertyName;
     }
 
+    /**
+     * Feature UUID : hpf-helloasso-payments-table
+     * Feature UUID : hpf-payments-by-cat-table
+     */
     protected function registerCache(array $payments, bool $byCat = false)
     {
         $date = (new DateTime())->format('d-m-Y H:i:s');

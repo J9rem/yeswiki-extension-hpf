@@ -5,6 +5,7 @@
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
+ * Feature UUID : hpf-payments-by-cat-table
  */
 
 import HpfTableByCat from './components/HpfTableByCat.js'

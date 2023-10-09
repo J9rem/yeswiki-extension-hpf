@@ -7,6 +7,7 @@
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
+ * Feature UUID : hpf-payments-by-cat-table
  */
 
 namespace YesWiki\Hpf;
@@ -14,7 +15,7 @@ namespace YesWiki\Hpf;
 use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use YesWiki\Core\YesWikiAction;
 
-class HpfpaymentsbycatAction extends YesWikiAction
+class HpfpaymentsByCatAction extends YesWikiAction
 {
     public function formatArguments($arg)
     {

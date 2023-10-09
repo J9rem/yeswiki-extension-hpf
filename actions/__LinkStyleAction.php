@@ -7,6 +7,10 @@
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
+ * Feature UUID : hpf-helloasso-payments-table
+ * Feature UUID : hpf-payments-by-cat-table
+ * 
+ * could be deleted now
  */
 
 namespace YesWiki\Hpf;

@@ -92,6 +92,7 @@ class ApiController extends YesWikiController
     
     /**
      * @Route("/api/hpf/helloasso/payment/refreshcache", methods={"POST"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-helloasso-payments-table
      */
     public function refreshPaymentCache()
     {
@@ -100,12 +101,17 @@ class ApiController extends YesWikiController
 
     /**
      * @Route("/api/hpf/payments-by-cat/refreshcache", methods={"POST"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-payments-by-cat-table
      */
     public function refreshPaymentsByCatCache()
     {
         return $this->callRefreshPaymentCommon('refresh-payments-by-cat-cache-token',true);
     }
 
+    /**
+     * Feature UUID : hpf-helloasso-payments-table
+     * Feature UUID : hpf-payments-by-cat-table
+     */
     protected function callRefreshPaymentCommon(string $tokenKeyname,bool $byCat = false)
     {
         $csrfTokenController = $this->getService(CsrfTokenController::class);

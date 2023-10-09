@@ -41,7 +41,7 @@ actions:
         label: _t(AB_hpf_hpfpaymentstatus_nothing_to_pay_message_label)
         type: text
         hint: _t(AB_hpf_hpfpaymentstatus_nothing_to_pay_message_hint)
-  hpfhelloassopayments:
+  hpfhelloassopayments: # Feature UUID : hpf-helloasso-payments-table
     label: _t(AB_hpf_hpfhelloassopayments_label)
     properties:
       college1:
@@ -68,7 +68,7 @@ actions:
         label: _t(AB_hpf_hpfhelloassopayments_partner_label)
         type: number
         min: 1
-  hpfpaymentsbycat:
+  hpfpaymentsbycat: # Feature UUID : hpf-payments-by-cat-table
     label: _t(AB_hpf_hpfpaymentsbycat_label)
     properties:
       college1:
