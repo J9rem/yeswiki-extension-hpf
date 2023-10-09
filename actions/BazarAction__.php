@@ -24,6 +24,7 @@ class BazarAction__ extends YesWikiAction
             && isset($this->arguments[BazarAction::VARIABLE_ACTION]) && in_array($this->arguments[BazarAction::VARIABLE_ACTION], [BazarAction::ACTION_FORM_CREATE,BazarAction::ACTION_FORM_EDIT], true)
             ) {
             $this->wiki->AddJavascriptFile('tools/hpf/javascripts/fields/form-edit-template-register-field.js');
+            // Feature UUID : hpf-condition-view-field
             $this->wiki->AddJavascriptFile('tools/hpf/javascripts/fields/conditionviewfield.js');
             $this->wiki->AddJavascriptFile('tools/hpf/javascripts/fields/paymentsfield.js');
             if (file_exists('tools/bazar/presentation/javascripts/form-edit-template/fields/commons/render-helper.js')){

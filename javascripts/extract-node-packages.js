@@ -2,6 +2,7 @@
 // The extracted files are integrated to the repository, so production server don't need to
 // have node installed
 // Feature UUID : hpf-register-payment-action
+// Feature UUID : hpf-payments-field
 
 // Include fs and path module
 

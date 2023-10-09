@@ -924,6 +924,7 @@ class HpfService
      * @param array $params
      * @return string $paymentContent
      * @throws Exception
+     * Feature UUID : hpf-payments-field
      */
     public function appendFormatPaymentForField(string $paymentContent,array $params): string
     {
@@ -943,6 +944,7 @@ class HpfService
      * Feature UUID : hpf-helloasso-payments-table
      * Feature UUID : hpf-payments-by-cat-table
      * Feature UUID : hpf-register-payment-action
+     * Feature UUID : hpf-payments-field
      */
     public function convertStringToPayments(string $paymentContent):array
     {
@@ -983,6 +985,7 @@ class HpfService
      * Feature UUID : hpf-helloasso-payments-table
      * Feature UUID : hpf-payments-by-cat-table
      * Feature UUID : hpf-register-payment-action
+     * Feature UUID : hpf-payments-field
      */
     public function formatPaymentForField(array $params): array
     {
@@ -1021,6 +1024,7 @@ class HpfService
      * Feature UUID : hpf-helloasso-payments-table
      * Feature UUID : hpf-payments-by-cat-table
      * Feature UUID : hpf-register-payment-action
+     * Feature UUID : hpf-payments-field
      */
     private function formatPaymentForFieldInternal(
         ?Payment $payment,

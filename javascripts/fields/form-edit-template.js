@@ -7,5 +7,5 @@
  * file that was distributed with this source code.
  */
 
-registerFieldHpf(getConditionViewField())
-registerFieldHpf(getPaymentsField(defaultMapping))
+registerFieldHpf(getConditionViewField()) // Feature UUID : hpf-condition-view-field
+registerFieldHpf(getPaymentsField(defaultMapping)) // Feature UUID : hpf-payments-field

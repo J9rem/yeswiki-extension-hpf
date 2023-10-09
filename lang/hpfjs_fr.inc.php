@@ -12,6 +12,7 @@
 return [
     // tools/hpf/javascripts/paymentsfield/form-edit-template.js
     'HPF_PAYMENTS_FIELD' => 'Liste des paiements',
+    // Feature UUID : hpf-condition-view-field
     'HPF_CONDITIONVIEW_FIELD' => 'HTML condition en lecture',
     'HPF_CONDITIONVIEW_FIELDNAME' => 'Nom du champ conditionnel',
     'HPF_CONDITIONVIEW_WAITEDVALUE' => 'Valeur attendue',

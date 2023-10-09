@@ -9,5 +9,5 @@
 
 import {defaultMapping} from '../../../bazar/presentation/javascripts/form-edit-template/fields/commons/attributes.js'
 
-registerFieldAsModuleHpf(getConditionViewField())
-registerFieldAsModuleHpf(getPaymentsField(defaultMapping))
+registerFieldAsModuleHpf(getConditionViewField()) // Feature UUID : hpf-condition-view-field
+registerFieldAsModuleHpf(getPaymentsField(defaultMapping)) // Feature UUID : hpf-payments-field
