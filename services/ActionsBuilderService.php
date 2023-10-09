@@ -54,6 +54,7 @@ trait ActionsBuilderServiceCommon
                 $this->data = $this->previousData;
             }
             if (isset($this->data['action_groups']['bazarliste'])) {
+                /* === Feature UUID : hpf-bazar-template-list-no-empty === */
                 if (isset($this->data['action_groups']['bazarliste']['actions']) &&
                         !isset($this->data['action_groups']['bazarliste']['actions']['bazarlistnoempty'])) {
                     $newTab = [];
@@ -138,6 +139,8 @@ trait ActionsBuilderServiceCommon
                 if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['iconmapping']['showOnlyFor'])){
                     $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['iconmapping']['showOnlyFor'][] = 'bazarlistnoempty';
                 }
+                /* === end of Feature UUID : hpf-bazar-template-list-no-empty === */
+                /* === Feature UUID : hpf-bazar-template-tableau-link-to-group === */
                 if (isset($this->data['action_groups']['bazarliste']['actions']['bazartableau']) &&
                     !isset($this->data['action_groups']['bazarliste']['actions']['bazartableaulink'])) {
                     $this->data['action_groups']['bazarliste']['actions']['bazartableaulink'] = $this->data['action_groups']['bazarliste']['actions']['bazartableau'];
@@ -145,6 +148,7 @@ trait ActionsBuilderServiceCommon
                         _t('HPF_BAZARTABLEAU_LINK_TO_GROUP_LABEL');
                     $this->data['action_groups']['bazarliste']['actions']['bazartableaulink']['properties']['template']['value'] = 'tableau-link-to-group.tpl.html';
                 }
+                /* === end of Feature UUID : hpf-bazar-template-tableau-link-to-group === */
             }
         }
         return $this->data;

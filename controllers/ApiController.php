@@ -27,6 +27,7 @@ class ApiController extends YesWikiController
 {
     /**
      * @Route("/api/shop/helloasso/{token}", methods={"POST"},options={"acl":{"public"}},priority=2)
+     * Feature UUID : hpf-api-helloasso-token-triggered
      */
     public function postHelloAsso($token)
     {

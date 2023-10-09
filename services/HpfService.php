@@ -167,10 +167,12 @@ class HpfService
         $this->tripleStore = $tripleStore;
         $this->userManager = $userManager;
         $this->wiki = $wiki;
+        /* === Feature UUID : hpf-api-helloasso-token-triggered === */
         if ($this->wiki->services->has(EventDispatcher::class)) {
             $eventDispatcher = $this->wiki->services->get(EventDispatcher::class);
             $eventDispatcher->addListener('shop.helloasso.api.called', [$this,'processTrigger']);
         }
+        /* === end of Feature UUID : hpf-api-helloasso-token-triggered === */
     }
 
     /**
@@ -182,6 +184,7 @@ class HpfService
      * @return array $entries
      * @throws Exception
      * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
      */
     public function getCurrentContribEntries(string $formId, string $email = "", string $preferedEntryId = "", string $preferedUserName = ''): array
     {
@@ -245,6 +248,11 @@ class HpfService
         return [];
     }
 
+    /**
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-payments-field
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     */
     public function getCurrentPaymentsFormIds(): array
     {
         $this->getHpfParams();
@@ -269,6 +277,9 @@ class HpfService
      * @param string $formId
      * @param array $names
      * @return CalcField[] $fields
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-register-payment-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
      */
     public function getContribCalcFields(string $formId, array $names = []): array
     {
@@ -309,6 +320,7 @@ class HpfService
      * @return array $entry
      * Feature UUID : hpf-payment-status-action
      * Feature UUID : hpf-register-payment-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
      */
     public function updateCalcFields(array $entry, array $names = []): array
     {
@@ -340,6 +352,10 @@ class HpfService
         return $this->debug;
     }
 
+    /**
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     */
     public function getPaymentFormUrl(string $formId = ""): string
     {
         $this->getHpfParams();
@@ -368,12 +384,18 @@ class HpfService
         return $urls[0];
     }
 
+    /**
+     * Feature UUID : hpf-payment-status-action
+     */
     public function getPaymentFormButtonHtml(string $formId = ""): string
     {
         $url = $this->getPaymentFormUrl($formId);
         return "<iframe id=\"haWidgetButton\" src=\"{$url}widget-bouton\" style=\"border: none;\"></iframe>";
     }
 
+    /**
+     * Feature UUID : hpf-payment-status-action
+     */
     public function getPaymentFormIframeHtml(string $formId = ""): string
     {
         $url = $this->getPaymentFormUrl($formId);
@@ -382,7 +404,7 @@ class HpfService
 
     /**
      * Feature UUID : hpf-payment-status-action
-     * Feature UUID : ??
+     * Feature UUID : hpf-api-helloasso-token-triggered
      */
     public function refreshPaymentsInfo(string $formId, string $email = "", string $preferedEntryId = '', ?HelloAssoPayments $payments = null)
     {
@@ -451,7 +473,7 @@ class HpfService
 
     /**
      * Feature UUID : hpf-payment-status-action
-     * Feature UUID : ???
+     * Feature UUID : hpf-api-helloasso-token-triggered
      */
     public function getPaymentForm(string $formId): array
     {
@@ -562,7 +584,7 @@ class HpfService
      * @param string $forceYear
      * @return array $updatedEntry
      * Feature UUID : hpf-payment-status-action
-     * Feature UUID : ????
+     * Feature UUID : hpf-api-helloasso-token-triggered
      */
     public function updateEntryWithPayment(array $entry, Payment $payment, string $forceOrigin = '',string $forceYear = ''):array
     {
@@ -838,6 +860,9 @@ class HpfService
         return $updatedEntry;
     }
 
+    /**
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     */
     public function processTrigger(Event $event)
     {
         $postNotSanitized = $event->getData();
@@ -887,6 +912,9 @@ class HpfService
         }
     }
 
+    /**
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     */
     private function appendToHelloAssoLog($postNotSanitized)
     {
         if (empty($postNotSanitized['post']['eventType']) ||
@@ -906,6 +934,9 @@ class HpfService
         }
     }
 
+    /**
+     * Feature UUID : hpf-payment-status-action
+     */
     public function getPaymentMessageEntry(): array
     {
         $this->getHpfParams();
@@ -925,6 +956,8 @@ class HpfService
      * @return string $paymentContent
      * @throws Exception
      * Feature UUID : hpf-payments-field
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
      */
     public function appendFormatPaymentForField(string $paymentContent,array $params): string
     {
@@ -986,6 +1019,7 @@ class HpfService
      * Feature UUID : hpf-payments-by-cat-table
      * Feature UUID : hpf-register-payment-action
      * Feature UUID : hpf-payments-field
+     * Feature UUID : hpf-api-helloasso-token-triggered
      */
     public function formatPaymentForField(array $params): array
     {
@@ -1064,6 +1098,10 @@ class HpfService
         return $formattedPayment;
     }
 
+    /**
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     */
     protected function isAlreadyRegisteredPayment(array &$entry,Payment $payment): bool
     {
         $payments = $this->convertStringToPayments($entry[self::PAYMENTS_FIELDNAME] ?? '');

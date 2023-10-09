@@ -89,6 +89,8 @@ class HpfServiceTest extends YesWikiTestCase
      * @covers HpfService::getCurrentPaymentsFormIds
      * @param array $services [$wiki,$hpfService,$wakkaConfig]
      * @return array [$wiki,$hpfService,$wakkaConfig,$hpfParamdefined]
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-payments-field
      */
     public function testGetCurrentPaymentsFormIds(
         array $services
@@ -154,6 +156,7 @@ class HpfServiceTest extends YesWikiTestCase
      * @param array $data
      * @param array $services [$wiki,$hpfService,$wakkaConfig,$hpfParamdefined]
      * @return array [$wiki,$hpfService,$wakkaConfig,$hpfParamdefined]
+     * Feature UUID : hpf-payment-status-action
      */
     public function testBfCalc(
         array $data,
