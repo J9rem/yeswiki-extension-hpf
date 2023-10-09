@@ -10,7 +10,7 @@ position: 500
 previewHeight: 200px
 onlyForAdmins: true
 actions:
-  hpfpaymentstatus:
+  hpfpaymentstatus: # Feature UUID : hpf-payment-status-action
     label: _t(AB_hpf_hpfpaymentstatus_label)
     properties:
       formid:

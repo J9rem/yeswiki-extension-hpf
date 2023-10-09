@@ -181,6 +181,7 @@ class HpfService
      * @param string $preferedUserName
      * @return array $entries
      * @throws Exception
+     * Feature UUID : hpf-payment-status-action
      */
     public function getCurrentContribEntries(string $formId, string $email = "", string $preferedEntryId = "", string $preferedUserName = ''): array
     {
@@ -306,6 +307,8 @@ class HpfService
      * @param array $entry
      * @param array $names
      * @return array $entry
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : ???
      */
     public function updateCalcFields(array $entry, array $names = []): array
     {
@@ -377,6 +380,10 @@ class HpfService
         return "<iframe id=\"haWidget\" src=\"{$url}widget\" style=\"width: 100%; height: 800px; border: none;\" scrolling=\"auto\"></iframe>";
     }
 
+    /**
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : ??
+     */
     public function refreshPaymentsInfo(string $formId, string $email = "", string $preferedEntryId = '', ?HelloAssoPayments $payments = null)
     {
         $form = $this->getPaymentForm($formId);
@@ -442,6 +449,10 @@ class HpfService
         }
     }
 
+    /**
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : ???
+     */
     public function getPaymentForm(string $formId): array
     {
         if (is_null($this->paymentForm)) {
@@ -529,6 +540,7 @@ class HpfService
      * @param array $entry
      * @param string $email
      * @return array $entry
+     * Feature UUID : hpf-payment-status-action
      */
     public function refreshEntryFromHelloAsso(array $entry, string $email)
     {
@@ -549,6 +561,8 @@ class HpfService
      * @param string $forceOrigin
      * @param string $forceYear
      * @return array $updatedEntry
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : ????
      */
     public function updateEntryWithPayment(array $entry, Payment $payment, string $forceOrigin = '',string $forceYear = ''):array
     {
@@ -606,6 +620,10 @@ class HpfService
         return $entry;
     }
 
+    /**
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : ???
+     */
     private function manipulatePayment(
         &$restToAffect,
         string $contribFormId,

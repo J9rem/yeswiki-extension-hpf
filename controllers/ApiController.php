@@ -37,6 +37,7 @@ class ApiController extends YesWikiController
 
     /**
      * @Route("/api/hpf/refresh-payment/{tag}", methods={"GET"},options={"acl":{"public","+"}})
+     * Feature UUID : hpf-payment-status-action
      */
     public function refreshHelloAsso($tag)
     {
