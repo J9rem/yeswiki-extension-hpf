@@ -1070,6 +1070,9 @@ class HpfService
         return array_key_exists($payment->id,$payments);
     }
 
+    /**
+     * Feature UUID : hpf-payments-field
+     */
     public function getPaymentInfos(string $id): array
     {
         if (empty($id)){
@@ -1105,6 +1108,9 @@ class HpfService
         return $data;
     }
 
+    /**
+     * Feature UUID : hpf-payments-field
+     */
     public function getPaymentsViaEmail(string $email): array
     {
         if (empty($email)){

@@ -77,6 +77,7 @@ class ApiController extends YesWikiController
 
     /**
      * @Route("/api/hpf/helloasso/payment/info/{id}", methods={"GET"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-payments-field
      */
     public function getPaymentInfo($id)
     {
@@ -85,6 +86,7 @@ class ApiController extends YesWikiController
 
     /**
      * @Route("/api/hpf/helloasso/payment/email/{email}", methods={"GET"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-bazar-template-list-no-empty
      */
     public function getPaymentsViaEmail($email)
     {

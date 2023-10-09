@@ -11,6 +11,7 @@
 
 return [
     // tools/hpf/javascripts/paymentsfield/form-edit-template.js
+    // Feature UUID : hpf-payments-field
     'HPF_PAYMENTS_FIELD' => 'Liste des paiements',
     // Feature UUID : hpf-condition-view-field
     'HPF_CONDITIONVIEW_FIELD' => 'HTML condition en lecture',
@@ -25,6 +26,7 @@ return [
     'HPF_ALREADY_NOT_REFRESHED' => 'Données mises à jour sans changement',
 
     // tools/hpf/javascripts/fields/payments-input.js
+    // Feature UUID : hpf-payments-field
     'afterDateInput' => ' ',
     'beforeCalendarHeader' => 'Date',
 ];

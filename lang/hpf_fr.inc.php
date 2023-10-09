@@ -25,6 +25,7 @@ return [
     'AB_hpf_hpfpaymentstatus_view_iframe_label' => 'Iframe Hello ASso',
     'AB_hpf_hpfpaymentstatus_pay_button_title_label' => 'Texte pour le bouton YesWiki',
     'AB_hpf_hpfpaymentstatus_formid_label' => 'Formulaire associé',
+    // Feature UUID : hpf-bazar-template-list-no-empty
     'HPF_bazarlistnoempty_label' => 'Liste (sauf vide)',
     'AB_bazarliste_initialheight_label' => 'Hauteur initiale pendant le chargement',
     'AB_bazarliste_initialheight_hint' => 'Nombre de pixels sans unité (500 = défaut) ; ex. : 100',

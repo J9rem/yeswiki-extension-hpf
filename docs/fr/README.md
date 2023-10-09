@@ -16,3 +16,4 @@ Tout est réutilisable sur d'autres YesWiki mais la conception est d'abord pens�
 ||`hpfregisterpayment`|Enregistrer un paiement dans une fiche|[`hpf-register-payment-action`](https://github.com/search?q=repo%3AJ9rem%2Fyeswiki-extension-hpf%20hpf-register-payment-action&type=code)|
 |Champ Bazar|`conditionview`|Champ pour afficher une zone en fonction d'une condition|[`hpf-condition-view-field`](https://github.com/search?q=repo%3AJ9rem%2Fyeswiki-extension-hpf%20hpf-condition-view-field&type=code)|
 ||`payments`|Champ pour enregistrer les détails sur les paiements|[`hpf-payments-field`](https://github.com/search?q=repo%3AJ9rem%2Fyeswiki-extension-hpf%20hpf-payments-field&type=code)|
+|Template Bazar|`list-no-empty`|Template bazar pour afficher une liste dynamique uniquement si non vide|[`hpf-bazar-template-list-no-empty`](https://github.com/search?q=repo%3AJ9rem%2Fyeswiki-extension-hpf%20hpf-bazar-template-list-no-empty&type=code)|
