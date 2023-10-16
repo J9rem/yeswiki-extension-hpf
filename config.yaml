@@ -18,7 +18,6 @@ parameters:
       - paymentMessageEntry
     - 'AreaFieldName'               # Feature UUID : hpf-area-management
     - 'PostalCodeFieldName'         # Feature UUID : hpf-area-management
-    - 'formIdAreaToDepartment'      # Feature UUID : hpf-area-management
     - 'GroupsAdminsSuffixForEmails' # Feature UUID : hpf-area-management
 
 services:
