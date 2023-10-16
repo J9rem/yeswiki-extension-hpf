@@ -6,11 +6,20 @@
 # file that was distributed with this source code.
 #
 parameters:
+  GroupsAdminsSuffixForEmails: ''        # Feature UUID : hpf-area-management
+  AreaFieldName: ''                      # Feature UUID : hpf-area-management
+  PostalCodeFieldName: 'bf_code_postal'  # Feature UUID : hpf-area-management
+  departmentListName: 'ListeDepartementsFrancais' # Feature UUID : hpf-area-management
+  formIdAreaToDepartment: ''             # Feature UUID : hpf-area-management
   hpf_editable_config_params:
     - hpf:
       - contribFormIds
       - paymentsFormUrls
       - paymentMessageEntry
+    - 'AreaFieldName'               # Feature UUID : hpf-area-management
+    - 'PostalCodeFieldName'         # Feature UUID : hpf-area-management
+    - 'formIdAreaToDepartment'      # Feature UUID : hpf-area-management
+    - 'GroupsAdminsSuffixForEmails' # Feature UUID : hpf-area-management
 
 services:
   _defaults:
@@ -18,7 +27,9 @@ services:
     public: true
 
   YesWiki\Hpf\Service\:
-     resource: 'services/*'
+    resource: 'services/*'
+    exclude:
+     - 'GroupManagementServiceInterface.php' # Feature UUID : hpf-area-management
 
   # Allows to use controllers as services
   YesWiki\Hpf\Controller\:
@@ -36,4 +47,12 @@ services:
     decoration_on_invalid: null
     arguments:
       $parentActionsBuilderService: '@.inner'
+  
+  # Feature UUID : hpf-area-management
+  YesWiki\Hpf\Service\GroupManagementService:
+    decorates: YesWiki\Groupmanagement\Service\GroupManagementService
+    decoration_on_invalid: null
+  YesWiki\Hpf\Controller\GroupController:
+    tags:
+      - { name: yeswiki.event_subscriber }
 

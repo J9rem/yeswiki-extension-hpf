@@ -149,6 +149,41 @@ trait ActionsBuilderServiceCommon
                     $this->data['action_groups']['bazarliste']['actions']['bazartableaulink']['properties']['template']['value'] = 'tableau-link-to-group.tpl.html';
                 }
                 /* === end of Feature UUID : hpf-bazar-template-tableau-link-to-group === */
+                /* === end of Feature UUID : hpf-area-management === */
+                if (!empty($this->wiki->config['GroupsAdminsSuffixForEmails']) &&
+                        isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties'])) {
+                    $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembers'] = [
+                        'label' => _t('HPF_SELECTMEMBERS_LABEL'),
+                        'hint' => _t('HPF_SELECTMEMBERS_HINT'),
+                        'type' => 'list',
+                        'default' => '',
+                        'advanced' => true,
+                        'options' => [
+                            'only_members' => _t('HPF_SELECTMEMBERS_ONLY_MEMBERS'),
+                            'members_and_profiles_in_area' => _t('HPF_SELECTMEMBERS_BY_AREA'),
+                        ],
+                    ];
+                    $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembersparentform'] = [
+                        'label' => _t('HPF_SELECTMEMBERSPARENT_FORM_LABEL'),
+                        'type' => 'form-select',
+                        'advanced' => true,
+                        'required' => true,
+                        'min' => 1,
+                        'showif' => [
+                            'selectmembers' => 'only_members|members_and_profiles_in_area' ,
+                        ],
+                    ];
+                    $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembersdisplayfilters'] = [
+                        'label' => _t('HPF_SELECTMEMBERS_DISPLAY_FILTERS_LABEL'),
+                        'type' => 'checkbox',
+                        'advanced' => true,
+                        'default' => "false",
+                        'checkedvalue' => "true",
+                        'uncheckedvalue' => "false",
+                        'showif' => 'selectmembers'
+                    ];
+                }
+                /* === end of Feature UUID : hpf-area-management === */
             }
         }
         return $this->data;
