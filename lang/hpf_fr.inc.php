@@ -10,6 +10,10 @@
  */
 
 return [
+    // actions/__BazarListeAction.php
+    // Feature UUID : hpf-area-management
+    'HPF_AREA_MNGT_PARENTS_TITLES' => 'Sélectionnez une structure',
+    'HPF_AREA_MNGT_AREAS_TITLES' => 'Périmètre géographique',
 
     // actions/documentation.yaml
     'AB_HPF_group_label' => 'Spécifique HPF',
@@ -98,4 +102,18 @@ return [
     'EDIT_CONFIG_HINT_HPF[PAYMENTSFORMURLS]' => 'Lien vers le formulaire HelloAsso de paiement associé (séparé par des virgules)',
     'EDIT_CONFIG_HINT_HPF[PAYMENTMESSAGEENTRY]' => 'Fiche avec les messages pour le paiement',
     'EDIT_CONFIG_GROUP_HPF' => 'Paramètres spécifiques HPF',
+    // Feature UUID : hpf-area-management
+    'EDIT_CONFIG_HINT_AREAFIELDNAME' => 'Nom du champ avec la localisation validée pour les structures',
+    'EDIT_CONFIG_HINT_FORMIDAREATODEPARTMENT' => 'Numero du formulaire de correspondance entre région et département',
+    'EDIT_CONFIG_HINT_GROUPSADMINSSUFFIXFOREMAILS' => 'Suffix des groupes admins qui peuvent envoyer des e-mails',
+    'EDIT_CONFIG_HINT_POSTALCODEFIELDNAME' => 'Nom du champ avec le code postal',
+
+    // docs/actions/bazarliste.yaml via templates/aceditor/actions-builder.tpl.html
+    // Feature UUID : hpf-area-management
+    'HPF_SELECTMEMBERSPARENT_FORM_LABEL' => 'Formulaire parent',
+    'HPF_SELECTMEMBERS_BY_AREA' => 'Membres ET profils de la zone géographique',
+    'HPF_SELECTMEMBERS_DISPLAY_FILTERS_LABEL' => 'Ajouter les structures d\'intérêt et le périmètre géographique aux facettes',
+    'HPF_SELECTMEMBERS_HINT' => 'Filtre à partir des fiches mères (structures) où je suis administrateur',
+    'HPF_SELECTMEMBERS_LABEL' => 'Filtrer les fiches',
+    'HPF_SELECTMEMBERS_ONLY_MEMBERS' => 'Uniquement les membres',
 ];

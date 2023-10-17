@@ -1,0 +1,22 @@
+<?php
+
+/*
+ * This file is part of the YesWiki Extension hpf.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ * Feature UUID : hpf-bazar-template-tableau-with-email
+ */
+
+// put 'displayEmailController' in params to use it into twig
+use YesWiki\Hpf\Controller\DisplayEmailController ;
+$param['displayEmailController'] = $this->wiki->services->get(DisplayEmailController::class);
+echo $this->render('@bazar/tableau.tpl.html', compact([
+    'fiches',
+    'info_res',
+    'param',
+    'pager_links',
+    'filters'
+]));
