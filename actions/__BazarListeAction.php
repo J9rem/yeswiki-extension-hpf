@@ -52,7 +52,8 @@ class __BazarListeAction extends YesWikiAction
                 $newArg['dynamic'] = false;
             }
             return $newArg;
-        }if ($this->wiki->services->has(GroupController::class)){
+        }
+        if ($this->wiki->services->has(GroupController::class)){
             $selectmembers = (
                 !empty($arg['selectmembers']) &&
                     is_string($arg['selectmembers']) &&
@@ -63,6 +64,17 @@ class __BazarListeAction extends YesWikiAction
                 !empty($arg['selectmembersdisplayfilters']) &&
                 in_array($arg['selectmembersdisplayfilters'], [true,1,"1","true"], true)
             );
+            // keep that for compatibility with sendmail
+            if (!empty($arg['template']) && $arg['template'] == "send-mail") {
+                $newArgs['dynamic'] = true;
+                $newArgs['pagination'] = -1;
+                $arg['dynamic'] = true;
+                $arg['pagination'] = -1;
+            }
+            if (($arg['template'] ?? '') === 'video'){
+                $newArgs['dynamic'] = true;
+                $arg['dynamic'] = true;
+            }
 
             return $newArg + $this->getService(GroupController::class)->defineBazarListeActionParams(
                 $arg,

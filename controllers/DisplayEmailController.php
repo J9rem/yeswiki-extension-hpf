@@ -77,7 +77,7 @@ class DisplayEmailController extends YesWikiController  implements EventSubscrib
             if ($data['isAdmin']){
                 $data['filteredEntriesIds'] = $data['entriesIds'];
             } else {
-                $params = $this->getParams();
+                $params = $data['params'];
                 if (empty($params['selectmembers']) ||
                     !in_array($params['selectmembers'], ["only_members","members_and_profiles_in_area"])) {
                     $data['filteredEntriesIds'] = [];
