@@ -12,12 +12,14 @@
 
 namespace YesWiki\Hpf\Controller;
 
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use YesWiki\Alternativeupdatej9rem\Entity\DataContainer;
 use YesWiki\Bazar\Field\EmailField;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Hpf\Service\AreaManager;
 use YesWiki\Core\YesWikiController;
 
-class DisplayEmailController extends YesWikiController
+class DisplayEmailController extends YesWikiController  implements EventSubscriberInterface
 {
     protected $areaManager;
 
@@ -25,6 +27,73 @@ class DisplayEmailController extends YesWikiController
         AreaManager $areaManager
     ) {
         $this->areaManager = $areaManager;
+    }
+
+    public static function getSubscribedEvents()
+    {
+        return [
+            'auj9.sendmail.filterentries' => 'checkIfFilterEntries',
+            'auj9.sendmail.filterAuthorizedEntries' => 'filterAuthorizedEntries'
+        ];
+    }
+
+    public function checkIfFilterEntries($event)
+    {
+        $eventData = $event->getData();
+        if (!empty($eventData) && is_array($eventData) && isset($eventData['dataContainer']) && ($eventData['dataContainer'] instanceof DataContainer)) {
+            $data = $eventData['dataContainer']->getData();
+            if (!$data['isAdmin']) {
+                $suffix = $this->areaManager->getAdminSuffix();
+                if (empty($suffix)) {
+                    $data['errorMessage'] = '(only for admins)';
+                }
+            }
+            if (empty($data['errorMessage'])){
+                $params = $this->getParams();
+                if (!$data['isAdmin'] || !empty($params['selectmembers'])){
+                    $data['canOverrideAdminRestriction'] = false;
+                    $data['callbackIfNotOverridden'] = function($contacts,$callback) use ($params){
+                        $this->areaManager->filterEntriesFromParents(
+                            $contacts,
+                            false,
+                            $params['selectmembers'],
+                            $params['selectmembersparentform'],
+                            function ($entry, $form, $suffix, $user) use($callback){
+                                return $callback($entry, $form);
+                            }
+                        );
+                    };
+                }
+            }
+            $eventData['dataContainer']->setData($data);
+        }
+    }
+
+    public function filterAuthorizedEntries($event)
+    {
+        $eventData = $event->getData();
+        if (!empty($eventData) && is_array($eventData) && isset($eventData['dataContainer']) && ($eventData['dataContainer'] instanceof DataContainer)) {
+            $data = $eventData['dataContainer']->getData();
+            if ($data['isAdmin']){
+                $data['filteredEntriesIds'] = $data['entriesIds'];
+            } else {
+                $params = $this->getParams();
+                if (empty($params['selectmembers']) ||
+                    !in_array($params['selectmembers'], ["only_members","members_and_profiles_in_area"])) {
+                    $data['filteredEntriesIds'] = [];
+                } else {
+                    $selectmembersparentform = (empty($params['selectmembersparentform']) ||
+                        intval($params['selectmembersparentform']) != $params['selectmembersparentform'] ||
+                        intval($params['selectmembersparentform']) < 0)
+                        ? ""
+                        : $params['selectmembersparentform'];
+                    $entriesIds = $data['entriesIds'];
+                    $entries = $this->areaManager->filterEntriesFromParents($entriesIds, false, $params['selectmembers'], $selectmembersparentform);
+                    $data['filteredEntriesIds'] = array_keys($entries);
+                }
+            }
+            $eventData['dataContainer']->setData($data);
+        }
     }
 
     /**
@@ -115,5 +184,18 @@ class DisplayEmailController extends YesWikiController
             }
         }
         return $entry;
+    }
+
+    private function getParams(): array
+    {
+        $selectmembers = filter_input(INPUT_POST, 'selectmembers', FILTER_UNSAFE_RAW);
+        $selectmembers = in_array($selectmembers, ["members_and_profiles_in_area","only_members"], true) ? $selectmembers : "";
+        $selectmembersparentform = (!empty($_POST['selectmembersparentform']) && is_scalar($_POST['selectmembersparentform'])
+            && strval($_POST['selectmembersparentform']) == intval($_POST['selectmembersparentform']) && intval($_POST['selectmembersparentform']) > 0)
+            ? strval($_POST['selectmembersparentform']) : "";
+        return compact([
+            'selectmembers',
+            'selectmembersparentform'
+        ]);
     }
 }

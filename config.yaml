@@ -54,4 +54,7 @@ services:
   YesWiki\Hpf\Controller\GroupController:
     tags:
       - { name: yeswiki.event_subscriber }
+  YesWiki\Hpf\Controller\DisplayEmailController:
+    tags:
+      - { name: yeswiki.event_subscriber }
 
