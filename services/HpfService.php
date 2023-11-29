@@ -609,7 +609,7 @@ class HpfService
         $paymentYear = $paymentDate->format("Y");
         $currentYear = (new DateTime())->format("Y");
 
-        $restToAffect =  floatval($payment->amount);
+        $restToAffect =  floatval($payment->status === 'Authorized' ? $payment->amount : 0);
         $paymentParams = 
         [
             'payment' => $payment,
@@ -1077,7 +1077,7 @@ class HpfService
         if (!empty($payment)){
             $id = $payment->id;
             $date = $payment->date;
-            $total = strval($payment->amount);
+            $total = ($payment->status === 'Authorized') ? strval($payment->amount) : '0';
         }
         $formattedPayment = [
             $id => [
