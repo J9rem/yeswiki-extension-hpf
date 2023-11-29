@@ -1867,7 +1867,8 @@ class HpfService
             'id' => $paymentId,
             'amount' => $paymentTotal,
             'date' => (new DateTime($paymentDate))->format('Y-m-d'),
-            'payer' => new User()
+            'payer' => new User(),
+            'status' => 'Authorized'
         ]);
         return $this->addRemoveCommon(
             $entryId,
