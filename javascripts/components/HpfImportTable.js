@@ -56,6 +56,14 @@ export default {
         element(){
             return isVueJS3 ? this.$el.parentNode : this.$el
         },
+        loading:{
+            get(){
+                return this.isLoading
+            },
+            set(value){
+                return this.$emit('update-loading',value === true)
+            }
+        },
         refreshingText(){
             return TemplateRenderer.render('HpfPaymentsTable',this,'refreshingtext')
         },
@@ -90,7 +98,8 @@ export default {
                                     )
                                 break
                             case 'year':
-                                formattedData[col.data] = this.getSum(row)
+                                formattedData[col.data] = 0 //this.getSum(row)
+                                console.error('getSum in not existing')
                                 break
                             default:
                                 if (Array.isArray(row?.[col.data]?.[1])){
@@ -388,7 +397,8 @@ export default {
                 console.error(error)
             }
         }
-        // this.updatePayments() // to force display table
+        this.updatePayments() // to force display table
+        this.loading = false
         // this.updateYear(this.year).catch(this.manageError)
     },
     watch:{
