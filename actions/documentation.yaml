@@ -103,7 +103,7 @@ actions:
         hint: _t(AB_hpf_hpfregisterpayment_formsids_hint)
         type: text
         required: true
-  hpfimportmembership:
+  hpfimportmembership: # Feature UUID : hpf-import-payments
     label: _t(AB_hpf_hpfimportmembership_label)
     properties:
       college1:

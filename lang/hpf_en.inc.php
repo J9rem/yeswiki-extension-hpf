@@ -95,6 +95,15 @@ return [
     // 'AB_hpf_hpfregisterpayment_formsids_hint' => 'entiers séparés par des virgules. Ex.: 16,23,24',
     // 'HPF_REGISTER_A_PAYMENT' => 'Enregistrer un paiement',
     // 'HPF_REGISTER_PAYMENT_FORM' => 'Formulaire concerné',
+    
+    // action/HPFRegisterPaymentAction.php
+    // Feature UUID : hpf-import-payments
+    // 'HPF_IMPORT_BAD_ERROR_FORMAT' => 'Le format du fichier fournit n\'est pas bon. Il devrait être ".ods", ".csv", ".xls" ou ".xlsx" !',
+    // 'HPF_IMPORT_DATA_FROM' => 'Données extraites de \'%{file}\' :',
+    // 'HPF_IMPORT_MEMBERSHIPS_LABEL' => 'Fichier à importer',
+    // 'HPF_IMPORT_MEMBERSHIPS_TITLE' => 'Import de listes d\'adhésions',
+    // 'HPF_IMPORT_OTHER_FILE' => 'Importer un autre fichier',
+    // 'AB_hpf_hpfimportmembership_label' => 'Import de listes d\'adhésions',
 
     // config.yaml
     // Feature UUID : hpf-payment-status-action
