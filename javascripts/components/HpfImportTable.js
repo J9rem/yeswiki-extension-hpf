@@ -25,6 +25,14 @@ const retrievMainVue = (element) => {
     throw new Error('Main Import Vue action vue not found')
 }
 
+const timeToStr = (timeObj) => {
+    const day = timeObj.getDate()
+    const month = timeObj.getMonth() + 1
+    return `${day < 10 ? '0' : ''}${day}/${month < 10  ? '0': '' }${month}/${timeObj.getFullYear()}`
+}
+
+const today = timeToStr(new Date())
+
 window.hpfImportTableWrapper = {
     updateValue(event,name,key){
         event.stopPropagation()
@@ -74,7 +82,7 @@ export default {
             this.values.forEach((value,idx)=>{
                 const formattedData = {}
                 this.columns.forEach((col)=>{
-                    formattedData[col.data] = value?.[col.data] ?? ''
+                    formattedData[col.data] = value?.[col.data] ?? (col.data === 'date' ? today : '')
                 })
                 this.$set(this.rows,idx,formattedData)
             })
@@ -95,6 +103,31 @@ export default {
                         return data
                     }
                 } : {}),
+                ...width
+            })
+        },
+        appendColumnGroupName(data,width){
+            data.columns.push({
+                ...{
+                    data: 'groupName',
+                    title: TemplateRenderer.render('HpfImportTable',this,'tgroupname'),
+                    footer: '',
+                    render: (data,type,row)=>{
+                        if (type === 'display'){
+                            const dataVal = typeof data === 'string' ? data : ''
+                            return `
+                                <input
+                                    type="text"
+                                    size="15"
+                                    value="${dataVal}"
+                                    onChange="hpfImportTableWrapper.updateValue(event,'groupName',${row.id})"
+                                    ${row?.isGroup === 'x' ? '': 'disabled style="display:none;"'}
+                                />
+                            `;
+                        }
+                        return data
+                    }
+                },
                 ...width
             })
         },
@@ -164,7 +197,9 @@ export default {
                 this.appendColumn('email',data,width)
                 this.appendColumn('number',data,width)
                 this.appendColumnEuros('value',data,width)
+                this.appendColumn('date',data,width,true,10)
                 this.appendColumnSelect('isGroup',data,width,{'':'Adhésion individuelle','x':'Adhésion groupe'})
+                this.appendColumnGroupName(data,width)
                 this.appendColumn('comment',data,width,false)
                 // prénom (retour ligne prénom fiche associée)
                 // nom (retour ligne nom fiche associée)

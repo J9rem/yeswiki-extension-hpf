@@ -93,6 +93,26 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
         'comment' => [
             'search' => "/^\s*(?:bf_)?(?:comments?|commentaires?).*$/i",
             'filter' => "/^\s*(.*)\s*$/"
+        ],
+        'isGroup' => [
+            'search' => "/^\s*(?:Est groupe\s*\\?|bf_is_group)\s*$/i",
+            'filter' => "/^\s*(.*)\s*$/",
+            'post' => [
+                'trim',
+                'strtolower',
+                '\\'.self::class.'::extractGroup'
+            ]
+        ],
+        'groupName' => [
+            'search' => "/^\s*(Nom du groupe|bf_group).*$/i",
+            'filter' => "/^\s*(.*)\s*$/",
+            'post' => [
+                'trim'
+            ]
+        ],
+        'date' => [
+            'search' => "/^\s*(Date|bf_date)\s*$/i",
+            'filter' => "/^\s*([0-9]{2}\\\/[0-9]{2}\\\/[0-9]{2,4})\s*$/"
         ]
     ];
 
@@ -203,5 +223,9 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
     public static function rowUcWords($input): string
     {
         return is_string($input) ? ucwords($input,"-,. \t\r\n\f\v") : '';
+    }
+    public static function extractGroup($input): string
+    {
+        return (is_string($input) && strlen($input) > 0) ? 'x' : '';
     }
 }
