@@ -56,17 +56,25 @@
         <hpf-import-table data-values="{{ data|json_encode }}" v-model="isLoading">
             <template #taddress>{{ _t('HPF_ADDRESS') }}</template>
             <template #taddresscomp>{{ _t('HPF_ADDRESS_COMP') }}</template>
+            <template #tadjustedmembership>{{ _t('HPF_ADJUSTED') }}</template>
             <template #tcomment>{{ _t('HPF_COMMENT') }}</template>
             <template #tdate>{{ _t('HPF_DATE') }}</template>
             <template #temail>{{ _t('HPF_EMAIL') }}</template>
             <template #tfirstname>{{ _t('HPF_FIRSTNAME') }}</template>
+            <template #tfreemembership>{{ _t('HPF_FREE') }}</template>
+            <template #tgroupmembership>{{ _t('HPF_GROUP_MEMBERSHIP') }}</template>
             <template #tgroupname>{{ _t('HPF_GROUP_NAME') }}</template>
+            <template #tmembershiptype>{{ _t('HPF_MEMBERSHIP_TYPE') }}</template>
+            <template #tpersonalmembership>{{ _t('HPF_PERSONAL_MEMBERSHIP') }}</template>
             <template #tisgroup>{{ _t('HPF_IS_GROUP') }}</template>
             <template #tname>{{ _t('HPF_NAME') }}</template>
             <template #tnumber>{{ _t('HPF_PAYMENT_NUMBER') }}</template>
+            <template #tstandardmembership>{{ _t('HPF_STANDARD') }}</template>
+            <template #tsupportmembership>{{ _t('HPF_SUPPORT') }}</template>
             <template #tpostalcode>{{ _t('HPF_POSTAL_CODE') }}</template>
             <template #ttown>{{ _t('HPF_TOWN') }}</template>
             <template #tvalue>{{ _t('HPF_VALUE') }}</template>
+            <template #tyear>{{ _t('HPF_YEAR') }}</template>
         </hpf-import-table>
         <spinner-loader v-if="isLoading" class="overlay super-overlay" :height="500"></spinner-loader>
     </div>

@@ -32,6 +32,19 @@ const timeToStr = (timeObj) => {
 }
 
 const today = timeToStr(new Date())
+const currentYear = String((new Date()).getFullYear())
+
+const getYear = (strTime) => {
+    try {
+        if (strTime.match(/^[0-9]{2}\/[0-9]{2}\/[0-9]{2,4}\/$/)){
+            return String(strTime.match(/^[0-9]{2}\/[0-9]{2}\/([0-9]{2,4})\/$/,"$1"))
+        }
+        const date = new Date(strTime)
+        return String(date.getFullYear())
+    } catch (error) {
+        return currentYear
+    }
+}
 
 window.hpfImportTableWrapper = {
     updateValue(event,name,key){
@@ -82,7 +95,7 @@ export default {
             this.values.forEach((value,idx)=>{
                 const formattedData = {}
                 this.columns.forEach((col)=>{
-                    formattedData[col.data] = value?.[col.data] ?? (col.data === 'date' ? today : '')
+                    formattedData[col.data] = value?.[col.data] ?? ''
                 })
                 this.$set(this.rows,idx,formattedData)
             })
@@ -141,7 +154,7 @@ export default {
                         if (type === 'display'){
                             const cents = Math.round((data % 1)*100)
                             const euros = Math.round(data-cents/100)
-                            return `${euros},${cents < 10 ? '0' : ''}${cents} €`
+                            return `${euros},${cents < 10 ? '0' : ''}${cents}&nbsp;€`
                         }
                         return data
                     }
@@ -198,7 +211,22 @@ export default {
                 this.appendColumn('number',data,width)
                 this.appendColumnEuros('value',data,width)
                 this.appendColumn('date',data,width,true,10)
-                this.appendColumnSelect('isGroup',data,width,{'':'Adhésion individuelle','x':'Adhésion groupe'})
+                this.appendColumnSelect('year',data,width,Object.fromEntries(
+                    [-2,-1,0,1].map((offset)=>{
+                        const year = String(Number(currentYear) + offset)
+                        return [year,year]
+                    })
+                ))
+                this.appendColumnSelect('isGroup',data,width,{
+                    '': TemplateRenderer.render('HpfImportTable',this,`tpersonalmembership`),
+                    'x': TemplateRenderer.render('HpfImportTable',this,`tgroupmembership`)
+                })
+                this.appendColumnSelect('membershipType',data,width,{
+                    'standard': TemplateRenderer.render('HpfImportTable',this,`tstandardmembership`),
+                    'soutien': TemplateRenderer.render('HpfImportTable',this,`tsupportmembership`),
+                    'ajuste': TemplateRenderer.render('HpfImportTable',this,`tadjustedmembership`),
+                    'libre': TemplateRenderer.render('HpfImportTable',this,`tfreemembership`)
+                })
                 this.appendColumnGroupName(data,width)
                 this.appendColumn('comment',data,width,false)
                 // prénom (retour ligne prénom fiche associée)
@@ -240,6 +268,46 @@ export default {
                 }
             },5000)
         },
+        setDefaultValues(){
+            this.values.forEach((v,k)=>{
+                if (!(v?.date?.length > 0)){
+                    this.values[k].date = today
+                }
+                if (!(v?.year?.length > 0)){
+                    this.values[k].year = getYear(this.values[k].date)
+                }
+                const membershipValue = Math.round(v?.value ?? 0)
+                switch (membershipValue) {
+                    case 15:
+                        this.values[k].membershipType = (v?.isGroup === 'x')
+                            ? 'free'
+                            : 'standard'
+                        break;
+                    case 30:
+                        this.values[k].membershipType = (v?.isGroup === 'x')
+                            ? 'free'
+                            : 'support'
+                        break;
+                    case 100:
+                        this.values[k].membershipType = 'standard'
+                        this.values[k].isGroup = 'x'
+                        break;
+                    case 200:
+                        this.values[k].membershipType = 'support'
+                        this.values[k].isGroup = 'x'
+                        break;
+                
+                    default:
+                        if (membershipValue % 15 === 0){
+                            this.values[k].membershipType = 'ajuste'
+                            this.values[k].isGroup = 'x'
+                        } else {
+                            this.values[k].membershipType = 'libre'
+                        }
+                        break;
+                }
+            })
+        },
         updateRows(){
             this.getColumns()
             this.removeRows()
@@ -261,6 +329,7 @@ export default {
         if (rawValues){
             try {
                 this.values = JSON.parse(rawValues)
+                this.setDefaultValues()
             } catch (error) {
                 console.error(error)
             }
