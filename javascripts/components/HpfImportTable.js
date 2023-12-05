@@ -13,6 +13,29 @@ import TemplateRenderer from 'TemplateRenderer'
 
 const isVueJS3 = (typeof window.Vue.createApp == "function");
 
+const retrievMainVue = (element) => {
+    const mainParent = $(element).closest('.dynamic-hpf-import-memberships-action')
+    if (mainParent?.length > 0){
+        const currentParent = $(mainParent).parent().find('.dynamic-hpf-import-memberships-action > [data-values]')
+        if (currentParent?.length > 0 && (currentParent?.[0]?.__vue__) !== null){
+            return currentParent[0].__vue__
+        }
+        throw new Error('HpfImportTable vue not found')
+    }
+    throw new Error('Main Import Vue action vue not found')
+}
+
+window.hpfImportTableWrapper = {
+    updateValue(event,name,key){
+        event.stopPropagation()
+        event.preventDefault()
+        const elem = event.target
+        const mainVue = retrievMainVue(elem)
+        const value = $(elem).val()
+        mainVue.updateValue(key,name,value)
+    }
+}
+
 export default {
     model: {
         prop: 'isLoading',
@@ -48,21 +71,73 @@ export default {
     },
     methods:{
         addRows(){
-            this.values.forEach((value)=>{
-                const id = value?.entryId ?? `${(value?.firstname ?? '').trim().replace(/\s/,'')}_${(value?.name ?? '').trim().replace(/\s/,'')}`
+            this.values.forEach((value,idx)=>{
                 const formattedData = {}
                 this.columns.forEach((col)=>{
                     formattedData[col.data] = value?.[col.data] ?? ''
                 })
-                this.$set(this.rows,id,formattedData)
+                this.$set(this.rows,idx,formattedData)
             })
         },
-        appendColumn(name,data,width){
+        appendColumn(name,data,width,canEdit=true,maxSize=15){
             data.columns.push({
                 ...{
                     data: name,
                     title: TemplateRenderer.render('HpfImportTable',this,`t${name.toLowerCase()}`),
                     footer: ''
+                },
+                ...(canEdit ? {
+                    render: (data,type,row)=>{
+                        if (type === 'display'){
+                            const dataVal = typeof data === 'string' ? data : ''
+                            return `<input type="text" size="${maxSize}" value="${dataVal}" onChange="hpfImportTableWrapper.updateValue(event,${JSON.stringify(name).replace(/"/g,"'")},${row.id})"/>`;
+                        }
+                        return data
+                    }
+                } : {}),
+                ...width
+            })
+        },
+        appendColumnEuros(name,data,width){
+            data.columns.push({
+                ...{
+                    data: name,
+                    title: TemplateRenderer.render('HpfImportTable',this,`t${name.toLowerCase()}`),
+                    footer: '',
+                    render: (data,type)=>{
+                        if (type === 'display'){
+                            const cents = Math.round((data % 1)*100)
+                            const euros = Math.round(data-cents/100)
+                            return `${euros},${cents < 10 ? '0' : ''}${cents} €`
+                        }
+                        return data
+                    }
+                },
+                ...width
+            })
+        },
+        appendColumnSelect(name,data,width,options){
+            data.columns.push({
+                ...{
+                    data: name,
+                    title: TemplateRenderer.render('HpfImportTable',this,`t${name.toLowerCase()}`),
+                    footer: '',
+                    render: (data,type,row)=>{
+                        if (type === 'display'){
+                            const dataVal = typeof data === 'string' ? data.toLowerCase() : ''
+                            return `
+                                <select value="${dataVal}" onChange="hpfImportTableWrapper.updateValue(event,${JSON.stringify(name).replace(/"/g,"'")},${row.id})">
+                                    ${Object.entries(options)
+                                        .map(([value,txt])=>{
+                                            const valLower = typeof value === 'string' ? value.toLowerCase() : ''
+                                            return `<option value="${valLower}"${ valLower === dataVal ? ' selected' : ''}>${txt}</option>`
+                                        })
+                                        .join("\n")}
+                                </select>
+                            `;
+                        }
+                        return data
+                    }
                 },
                 ...width
             })
@@ -84,12 +159,13 @@ export default {
                 this.appendColumn('name',data,width)
                 this.appendColumn('address',data,width)
                 this.appendColumn('addressComp',data,width)
-                this.appendColumn('postalcode',data,width)
+                this.appendColumn('postalcode',data,width,true,5)
                 this.appendColumn('town',data,width)
                 this.appendColumn('email',data,width)
                 this.appendColumn('number',data,width)
-                this.appendColumn('value',data,width)
-                this.appendColumn('comment',data,width)
+                this.appendColumnEuros('value',data,width)
+                this.appendColumnSelect('isGroup',data,width,{'':'Adhésion individuelle','x':'Adhésion groupe'})
+                this.appendColumn('comment',data,width,false)
                 // prénom (retour ligne prénom fiche associée)
                 // nom (retour ligne nom fiche associée)
                 // email (retour email nom fiche associée)
@@ -135,6 +211,12 @@ export default {
             this.addRows()
             this.toggleRefresh = !this.toggleRefresh
         },
+        updateValue(key,name,newValue){
+            const sanitizedKey = Number(key)
+            if (sanitizedKey >= 0 && sanitizedKey < this.values.length){
+                this.$set(this.values[sanitizedKey],name,newValue)
+            }
+        }
     },
     mounted(){
         $(this.element).on('dblclick',function(e) {
