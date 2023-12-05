@@ -13,22 +13,6 @@ import TemplateRenderer from 'TemplateRenderer'
 
 const isVueJS3 = (typeof window.Vue.createApp == "function");
 
-const defaultValues = {}
-for (let index = 1; index <= 12; index++) {
-    defaultValues[`${index}`] = [0,[]]
-}
-defaultValues.other = [0,[]]
-
-const defaultData = {}
-for (let index = 1; index <= 5; index++) {
-    defaultData[`${index}`] = {...defaultValues}
-}
-defaultData.donation = {...defaultValues}
-
-const currentYear = (new Date()).getFullYear()
-
-class NoCacheError extends Error {}
-
 export default {
     model: {
         prop: 'isLoading',
@@ -38,19 +22,15 @@ export default {
     props: ['isLoading'],
     data: function() {
         return {
-            cache: {},
             columns: [],
-            currentYear,
             message: null,
             messageClass: {['alert-info']:true},
             params: null,
-            payments: {...defaultData},
             rows: {},
             toggleRefresh: false,
             token: '',
             uuid: null,
-            values: null,
-            year: currentYear
+            values: null
         }
     },
     computed:{
@@ -65,86 +45,32 @@ export default {
                 return this.$emit('update-loading',value === true)
             }
         },
-        refreshingText(){
-            return TemplateRenderer.render('HpfPaymentsTable',this,'refreshingtext')
-        },
-        sumtranslate(){
-            return TemplateRenderer.render('HpfPaymentsTable',this,'sumtranslate')
-        },
-        title(){
-            return TemplateRenderer.render('HpfPaymentsTable',this,'title',{year:this.year})
-        }
     },
     methods:{
         addRows(){
-            Object.entries(this.payments).forEach(([id,row])=>{
+            this.values.forEach((value)=>{
+                const id = value?.entryId ?? `${(value?.firstname ?? '').trim().replace(/\s/,'')}_${(value?.name ?? '').trim().replace(/\s/,'')}`
                 const formattedData = {}
                 this.columns.forEach((col)=>{
-                    if (!(typeof col.data === 'string')){
-                        formattedData[col.data] = ''
-                    } else {
-                        switch (col.data) {
-                            case 'name':
-                                formattedData[col.data] = TemplateRenderer.render(
-                                        'HpfPaymentsTable',
-                                        this,
-                                        (id === 'donation')
-                                            ? 'donation' 
-                                            : (id == '5'
-                                                ? 'partner'
-                                                : 'name'
-                                            ),
-                                        {},
-                                        [['{id}',id]]
-                                    )
-                                break
-                            case 'year':
-                                formattedData[col.data] = 0 //this.getSum(row)
-                                console.error('getSum in not existing')
-                                break
-                            default:
-                                if (Array.isArray(row?.[col.data]?.[1])){
-                                    formattedData[col.data] = {v:row?.[col.data]?.[0] ?? '',e:row[col.data][1]}
-                                    formattedData[col.data].toString = ()=>{
-                                        return formattedData[col.data].v
-                                    }
-                                } else {
-                                    formattedData[col.data] = row?.[col.data]?.[0] ?? ''
-                                }
-                                break
-                        }
-                    }
+                    formattedData[col.data] = value?.[col.data] ?? ''
                 })
                 this.$set(this.rows,id,formattedData)
+            })
+        },
+        appendColumn(name,data,width){
+            data.columns.push({
+                ...{
+                    data: name,
+                    title: TemplateRenderer.render('HpfImportTable',this,`t${name.toLowerCase()}`),
+                    footer: ''
+                },
+                ...width
             })
         },
         appendMessage(message){
             this.message = ((this.message.length === 0)
                 ? ''
                 : `${this.message}<br>`)+message
-        },
-        displayCache(data){
-            this.messageClass = {['alert-success']:true}
-            this.message = TemplateRenderer.render('HpfPaymentsTable',this,'cachedisplayed',{},[['{date}',data.date]])
-            Object.keys(defaultData).forEach((key)=>{
-                Object.keys(defaultValues).forEach((month)=>{
-                    const item = data?.values?.[key === 'donation' ? 'd' : key]?.[month === 'other' ? 'o' : month]
-                    this.payments[key][month] = [item?.v ?? 0,item?.e ?? []]
-                })
-            })
-        },
-        async fetchJsonSecure(url,options={},returnNullOnError=true){
-            return await fetch(url,options)
-                .then((response)=>{
-                    if (response.ok){
-                        return response.json()
-                    }
-                    throw new Error(`response badly formatted (${response.status} - ${response.statusText})`)
-                })
-                .catch((error)=>{
-                    this.manageError(error)
-                    return returnNullOnError ? null : Promise.reject(error)
-                })
         },
         getColumns(){
             if (this.columns.length == 0){
@@ -154,6 +80,16 @@ export default {
                 // case à cocher : importer
                 // fiche associée / créer une fiche
                 // acteur/groupe ... type
+                this.appendColumn('firstname',data,width)
+                this.appendColumn('name',data,width)
+                this.appendColumn('address',data,width)
+                this.appendColumn('addressComp',data,width)
+                this.appendColumn('postalcode',data,width)
+                this.appendColumn('town',data,width)
+                this.appendColumn('email',data,width)
+                this.appendColumn('number',data,width)
+                this.appendColumn('value',data,width)
+                this.appendColumn('comment',data,width)
                 // prénom (retour ligne prénom fiche associée)
                 // nom (retour ligne nom fiche associée)
                 // email (retour email nom fiche associée)
@@ -165,81 +101,6 @@ export default {
                 // Code postal (retour ligne code postal fiche associée)
                 // Ville (retour ligne Ville fiche associée)
                 // Groupe BDD associé
-                data.columns.push({
-                    ...{
-                        data: 'name',
-                        title: TemplateRenderer.render('HpfPaymentsTable',this,'firstcolumntitle'),
-                        footer: ''
-                    },
-                    ...width
-                })
-                data.columns.push({
-                    ...{
-                        data: 'year',
-                        class: 'sum-activated',
-                        title: TemplateRenderer.render('HpfPaymentsTable',this,'yeartotal'),
-                        footer: ''
-                    },
-                    ...width
-                })
-                Object.keys(defaultValues).forEach((key)=>{
-                    const associations = {
-                        '1':'jan',
-                        '2':'feb',
-                        '3':'mar',
-                        '4':'apr',
-                        '5':'may',
-                        '6':'jun',
-                        '7':'jul',
-                        '8':'aug',
-                        '9':'sep',
-                        '10':'oct',
-                        '11':'nov',
-                        '12':'dec',
-                    }
-                    data.columns.push({
-                        ...{
-                            data: key,
-                            class: 'sum-activated',
-                            title: TemplateRenderer.render('HpfPaymentsTable',this,associations?.[key] ?? key),
-                            footer: '',
-                            render: (data,type,row)=>{
-                                const value = (typeof data === 'object')
-                                    ? (data?.v ?? 0)
-                                    : data
-                                const entries = (typeof data === 'object')
-                                    ? (data?.e ?? [])
-                                    : []
-                                return (type === 'display' && entries.length > 0)
-                                    ? TemplateRenderer.render('HpfPaymentsTable',this,'link',{},[
-                                        ['{link}',entries.length === 1
-                                            ? wiki.url(entries[0])
-                                            : wiki.url('?BazaR',{
-                                                vue:'consulter',
-                                                query:`id_fiche=${entries.join(',')}`,
-                                                template:'list',
-                                                id:(row?.id === 'donation'
-                                                    ? Object.values(this.params.forms)
-                                                    .filter((val)=>val.length > 0)
-                                                    .join(',')
-                                                    : (
-                                                        this.params.forms?.[row?.id ?? -1]
-                                                        ?? (row?.id == '4'
-                                                            ? this.params.forms?.[3]
-                                                            : (row?.id == '5' ? this.params.forms?.partner : ''))
-                                                        ?? ''
-                                                    )
-                                                )
-                                            })
-                                        ],
-                                        ['{value}',value]
-                                    ])
-                                    : value
-                            },
-                        },
-                        // ...width
-                    })
-                })
                 this.columns = data.columns
             }
             return this.columns
@@ -250,85 +111,11 @@ export default {
             }
             return this.uuid
         },
-        async loadCache(year){
-            if (year in this.cache){
-                return this.cache[year]
-            }
-            this.messageClass = {['alert-info']:true}
-            this.appendMessage(TemplateRenderer.render('HpfPaymentsTable',this,'gettingcache',{},[['{year}',year]]))
-            return await this.fetchJsonSecure(wiki.url(`?api/triples/${year}&property=https://www.habitatparticipatif-france.fr/PaymentsCache`))
-                .then((data)=>{
-                    if (!Array.isArray(data)
-                        || data.length === 0
-                        || typeof data[0] !== 'object'
-                        || String(data[0]?.resource) !== String(year)
-                        || (typeof data[0]?.value !=='string')){
-                        throw new NoCacheError('Pas de cache')
-                    }
-                    const values = JSON.parse(data[0].value)
-                    if ((typeof values !== 'object') ||!('date' in values)||!('values' in values)){
-                        throw new NoCacheError('Mal formatté')
-                    }
-                    this.cache[year] = values
-                    return this.cache[year]
-                })
-        },
         manageError(error = null){
             if (error && wiki.isDebugEnabled){
                 console.error(error)
             }
             return null
-        },
-        async refresh(){
-            if (!this.isLoading){
-                this.$emit('update-loading',true)
-                return await this.refreshCache()
-                    .then(()=>{
-                        return this.loadCache(this.year)
-                    })
-                    .then(this.displayCache)
-                    .catch((error)=>{
-                        this.messageClass = {['alert-danger']:true}
-                        this.appendMessage(`<b>${TemplateRenderer.render('HpfPaymentsTable',this,'error')}</b>`)
-                        this.manageError(error)
-                        return null
-                    })
-                    .finally(()=>{
-                        if (this.isLoading){
-                            this.$emit('update-loading',false)
-                        }
-                    })
-            }
-        },
-        async refreshCache(preserveClass = false){
-            if (!preserveClass){
-                this.messageClass = {['alert-info']:true}
-                this.message = TemplateRenderer.render('HpfPaymentsTable',this,'refresh')
-            } else {
-                this.appendMessage(TemplateRenderer.render('HpfPaymentsTable',this,'refresh'))
-            }
-            Object.keys(this.cache).forEach((year)=>{
-                this.$delete(this.cache,year)
-            })
-            let formData = new FormData()
-            formData.append('anti-csrf-token',this.token)
-            formData.append('formsIds[1]',this.params?.forms?.[1] ?? '')
-            formData.append('formsIds[2]',this.params?.forms?.[2] ?? '')
-            formData.append('formsIds[3]',this.params?.forms?.[3] ?? '')
-            formData.append('formsIds[4]',this.params?.forms?.[4] ?? '')
-            formData.append('formsIds[5]',this.params?.forms?.partner ?? '')
-            formData.append('college3to4fieldname',this.params?.college3to4fieldname ?? '')
-            const options = {
-                method: 'POST',
-                body: new URLSearchParams(formData),
-                headers: (new Headers()).append('Content-Type','application/x-www-form-urlencoded')
-            }
-            return await this.fetchJsonSecure('?api/hpf/helloasso/payment/refreshcache',options,false)
-                .then((data)=>{
-                    if(typeof data?.newtoken === 'string'){
-                        this.token = data.newtoken
-                    }
-                })
         },
         removeRows(){
             Object.keys(this.rows).forEach((id)=>{
@@ -342,40 +129,12 @@ export default {
                 }
             },5000)
         },
-        updatePayments(){
+        updateRows(){
             this.getColumns()
             this.removeRows()
             this.addRows()
             this.toggleRefresh = !this.toggleRefresh
         },
-        async updateYear(newYear){
-            this.$emit('update-loading',true)
-            this.message = ''
-            await this.loadCache(newYear)
-                .catch(async (error)=>{
-                    if (error instanceof NoCacheError){
-                        this.messageClass = {['alert-warning']:true}
-                        this.message = TemplateRenderer.render('HpfPaymentsTable',this,'nocache',{},[['{year}',newYear]])
-                        return await this.refreshCache(true)
-                            .then(()=>{
-                                return this.loadCache(newYear)
-                            })
-                    }
-                    return Promise.reject(error)
-                })
-                .then(this.displayCache)
-                .catch((error)=>{
-                    this.messageClass = {['alert-danger']:true}
-                    this.appendMessage(`<b>${TemplateRenderer.render('HpfPaymentsTable',this,'error')}</b>`)
-                    this.manageError(error)
-                    return null
-                })
-                .finally(()=>{
-                    if (this.isLoading){
-                        this.$emit('update-loading',false)
-                    }
-                })
-        }
     },
     mounted(){
         $(this.element).on('dblclick',function(e) {
@@ -398,19 +157,15 @@ export default {
                 console.error(error)
             }
         }
-        this.updatePayments() // to force display table
+        this.updateRows() // to force display table
         this.loading = false
-        // this.updateYear(this.year).catch(this.manageError)
     },
     watch:{
-        payments:{
+        values:{
             deep: true,
             handler(n){
-                this.updatePayments()
+                this.updateRows()
             }
-        },
-        year(newYear){
-            this.updateYear(newYear)
         }
     },
     template: `

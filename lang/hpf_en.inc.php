@@ -125,4 +125,17 @@ return [
     'HPF_SELECTMEMBERS_HINT' => 'Filter from parent entry (structures) where I am administrator',
     'HPF_SELECTMEMBERS_LABEL' => 'Filter entries',
     'HPF_SELECTMEMBERS_ONLY_MEMBERS' => 'Only members',
+
+    // templates/hpf-import-memberships-action.twig
+    // Feature UUID : hpf-import-payments
+    'HPF_ADDRESS' => 'Address',
+    'HPF_ADDRESS_COMP' => 'Complement of address',
+    'HPF_COMMENT' => 'Comment',
+    'HPF_EMAIL' => 'E-mail',
+    'HPF_FIRSTNAME' => 'First name',
+    'HPF_NAME' => 'Name',
+    'HPF_PAYMENT_NUMBER' => 'Payment number',
+    'HPF_POSTAL_CODE' => 'Postal code',
+    'HPF_TOWN' => 'Town',
+    'HPF_VALUE' => 'Value',
 ];

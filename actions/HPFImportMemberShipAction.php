@@ -256,7 +256,18 @@ class HPFImportMemberShipAction extends YesWikiAction
                     : '';
                     $colDefPostAction = ColumnsDef::COLUMNS_SEARCH[$key]['post'] ?? '';
                     if (!empty($colDefPostAction)){
-                        $extractedLine[$key] = call_user_func($colDefPostAction,$extractedLine[$key]);
+                        $listOfAction = is_array($colDefPostAction)
+                            ? $colDefPostAction
+                            : (
+                                is_string($colDefPostAction)
+                                ? [$colDefPostAction]
+                                : []
+                            );
+                        foreach($listOfAction as $functionName){
+                            if (is_callable($functionName)){
+                                $extractedLine[$key] = call_user_func($functionName,$extractedLine[$key]);
+                            }
+                        }
                     }
                 }
                 $extracted[] = $extractedLine;

@@ -28,17 +28,32 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
         'name' => [
             'search' => "/^\s*(?:bf_)?(?:noms?|names?)\s*$/i",
             'filter' => "/^\s*(.*)\s*$/",
-            'prop' => 'bf_nom'
+            'prop' => 'bf_nom',
+            'post' => [
+                'trim',
+                'strtolower',
+                '\\'.self::class.'::rowUcWords'
+            ]
         ],
         'firstname' => [
             'search' => "/^\s*(?:bf_)?(?:pr(?:e|é)noms?|firstnames?)\s*$/i",
             'filter' => "/^\s*(.*)\s*$/",
-            'prop' => 'bf_prenom'
+            'prop' => 'bf_prenom',
+            'post' => [
+                'trim',
+                'strtolower',
+                '\\'.self::class.'::rowUcWords'
+            ]
         ],
         'town' => [
             'search' => "/^\s*(?:bf_)?(?:villes?|towns?)\s*$/i",
             'filter' => "/^\s*(.*)\s*$/",
-            'prop' => 'bf_ville'
+            'prop' => 'bf_ville',
+            'post' => [
+                'trim',
+                'strtolower',
+                '\\'.self::class.'::rowUcWords'
+            ]
         ],
         'postalcode' => [
             'search' => "/^\s*(?:bf_)?(?:codes?_?posta(?:l|aux)|postal_?codes?|CP)\s*$/i",
@@ -47,11 +62,21 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
         ],
         'address' => [
             'search' => "/^\s*(?:bf_)?(?:adresses?|addresses?)[0-1]?\s*$/i",
-            'filter' => "/^\s*(.*)\s*$/"
+            'filter' => "/^\s*(.*)\s*$/",
+            'post' => [
+                'trim',
+                'strtolower',
+                '\\'.self::class.'::rowUcWords'
+            ]
         ],
         'addressComp' => [
             'search' => "/^\s*(?:bf_)?(?:(?:adresses?|addresses?)[0-1]?|compl(?:é|e)ments?\s*d'?adresses?)\s*$/i",
-            'filter' => "/^\s*(.*)\s*$/"
+            'filter' => "/^\s*(.*)\s*$/",
+            'post' => [
+                'trim',
+                'strtolower',
+                '\\'.self::class.'::rowUcWords'
+            ]
         ],
         'value' => [
             'search' => "/^\s*(?:bf_)?(?:adh(?:é|e)sions?|montants?|sommes?|total).*$/i",
@@ -60,7 +85,10 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
         ],
         'number' => [
             'search' => "/^\s*(?:bf_)?(?:num(?:é|e)ros?|n°).*$/i",
-            'filter' => "/^\s*(.*)\s*$/"
+            'filter' => "/^\s*(.*)\s*$/",
+            'post' => [
+                'trim'
+            ]
         ],
         'comment' => [
             'search' => "/^\s*(?:bf_)?(?:comments?|commentaires?).*$/i",
@@ -169,5 +197,11 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
     {
         return array_key_exists($this->currentIdx,$this->cacheKeys)
             && array_key_exists($this->cacheKeys[$this->currentIdx],$this->data);
+    }
+
+    /* === static === */
+    public static function rowUcWords($input): string
+    {
+        return is_string($input) ? ucwords($input,"-,. \t\r\n\f\v") : '';
     }
 }

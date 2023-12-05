@@ -54,6 +54,16 @@
     
     <div class="dynamic-hpf-import-memberships-action">
         <hpf-import-table data-values="{{ data|json_encode }}" v-model="isLoading">
+            <template #taddress>{{ _t('HPF_ADDRESS') }}</template>
+            <template #taddresscomp>{{ _t('HPF_ADDRESS_COMP') }}</template>
+            <template #tcomment>{{ _t('HPF_COMMENT') }}</template>
+            <template #temail>{{ _t('HPF_EMAIL') }}</template>
+            <template #tfirstname>{{ _t('HPF_FIRSTNAME') }}</template>
+            <template #tname>{{ _t('HPF_NAME') }}</template>
+            <template #tnumber>{{ _t('HPF_PAYMENT_NUMBER') }}</template>
+            <template #tpostalcode>{{ _t('HPF_POSTAL_CODE') }}</template>
+            <template #ttown>{{ _t('HPF_TOWN') }}</template>
+            <template #tvalue>{{ _t('HPF_VALUE') }}</template>
         </hpf-import-table>
         <spinner-loader v-if="isLoading" class="overlay super-overlay" :height="500"></spinner-loader>
     </div>
