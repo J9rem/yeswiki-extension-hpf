@@ -93,6 +93,7 @@ export default {
     props: ['isLoading'],
     data: function() {
         return {
+            asyncHelper: null,
             cache:{
                 college1:{
                     email:{}
@@ -150,7 +151,7 @@ export default {
                                 error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailbadlyformatted')
                             } else if (!this.checkPostalCode(row)){
                                 error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tpostalcodebadlyformatted')
-                            } else if (row.email in this.cache[row?.isGroup === 'x' ? 'college2' : 'college1'].email
+                            } else if (this.getAssociatedId(row.id).length > 0
                                 || this.values.filter((v,idx)=>idx < row.id && v.email == row.email).length > 0){
                                 error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailalreadyused')
                             } else if (row?.isGroup === 'x' && !(row?.groupName?.length > 0)){
@@ -182,6 +183,63 @@ export default {
                                         `
                             } else {
                                 this.values[row.id].canAdd = true
+                                return input
+                            }
+                        } else if (type == 'sort'){
+                            return row?.id ?? data
+                        }
+                        return data
+                    },
+                    orderable: false
+                },
+                ...width
+            })
+        },
+        appendCheckBoxToAppendPayment(data,width){
+            data.columns.push({
+                ...{
+                    data: 'appendPayment',
+                    title: TemplateRenderer.render('HpfImportTable',this,'tappendpayment'),
+                    footer: '',
+                    render: (data,type,row)=>{
+                        if (!(row?.email?.length > 0)){
+                            return ''
+                        }
+                        const associatedId = this.getAssociatedId(row.id)
+                        if (!(associatedId.length > 0)){
+                            return ''
+                        }
+                        if (type === 'display'){
+                            let error = ''
+                            const input = `
+                                <span onClick="hpfImportTableWrapper.toogleCheckbox(event,'appendPayment',${row.id})">
+                                    <input 
+                                        type="checkbox"
+                                        ${data === true ? ' checked' : ''}
+                                        ${(this.processing === true || error.length > 0) ? ' disabled' : ''}
+                                    />
+                                    <span></span>
+                                </span>
+                                <a
+                                    href="${window.wiki.url(`?${associatedId}/iframe`)}"
+                                    data-iframe="1"
+                                    data-size="modal-lg"
+                                    class="modalbox"
+                                    title="${associatedId}"
+                                    >${associatedId}</a>
+                                `
+                            if (error.length > 0){
+                                this.values[row.id].canAppend = false
+                                return  `
+                                        <div>
+                                            ${input}<br/>
+                                            <span style="color:red;">
+                                                ${error}
+                                            </span>
+                                        </div>
+                                        `
+                            } else {
+                                this.values[row.id].canAppend = true
                                 return input
                             }
                         } else if (type == 'sort'){
@@ -330,12 +388,22 @@ export default {
                         /^(?:[0-9]{5}|2[AB][0-9]{3})$/
                     )
         },
+        getAssociatedId(key){
+            if (this.values?.[key]?.email?.length > 0){
+                return this.cache[this.getCollegeForCache(key)].email?.[this.values[key].email] ?? ''
+            }
+            return ''
+        },
+        getCollegeForCache(key){
+            return this.values?.[key]?.isGroup === 'x' ? 'college2' : 'college1'
+        },
         getColumns(){
             if (this.columns.length == 0){
                 const data = {columns:[]}
                 const defaultcolumnwidth = '100px';
                 const width = defaultcolumnwidth.length > 0 ? {width:defaultcolumnwidth}: {}
                 this.appendCheckBoxforEntryCreation(data,width)
+                this.appendCheckBoxToAppendPayment(data,width)
                 this.appendColumn('firstname',data,width)
                 this.appendColumn('name',data,width)
                 this.appendColumn('address',data,width)
@@ -431,10 +499,12 @@ export default {
                         break;
                 }
                 if (v?.associatedEntryId?.length > 0 && v?.email?.length > 0){
-                    this.cache[this.values[k].isGroup === 'x' ? 'college2' : 'college1'].email[v.email] = v.associatedEntryId
+                    this.cache[this.getCollegeForCache(k)].email[v.email] = v.associatedEntryId
                 }
                 this.values[k].createEntry = false
+                this.values[k].appendPayment = false
                 this.values[k].canAdd = true
+                this.values[k].canAppend = true
             })
         },
         toogleCheckbox(key,name){
@@ -443,6 +513,33 @@ export default {
                 const previous = this.values[sanitizedKey]?.[name] ?? false
                 this.$set(this.values[sanitizedKey],name,(previous !== true))
                 this.updateRows()
+            }
+        },
+        async updateEmailStatusIfNeeded(key){
+            const email = this.values?.[key]?.email ?? ''
+            if (this.asyncHelper
+                && email?.length > 0
+                && this.processing === false
+                && !(this.cache[this.getCollegeForCache(key)].email?.[email]?.length >0)
+                ){
+                this.processing = true
+                const cacheKey = this.getCollegeForCache(key)
+                this.cache[cacheKey].email[email] = ''
+                try {
+                    this.asyncHelper.fetch(window.wiki.url(`?api/forms/${this.params[cacheKey]}/entries`,{query:`bf_mail=${email}`}))
+                        .then((data)=>{
+                            const entries = Object.values(data)
+                            if (entries.length > 0){
+                                this.cache[cacheKey].email[email] = entries[0].id_fiche ?? ''
+                            }
+                        })
+                        .catch(this.asyncHelper.manageError)
+                        .finally(()=>{
+                            this.processing = false
+                        })
+                } catch (error) {
+                    this.processing = false
+                }
             }
         },
         updateRows(){
@@ -458,6 +555,9 @@ export default {
             const sanitizedKey = Number(key)
             if (sanitizedKey >= 0 && sanitizedKey < this.values.length){
                 this.$set(this.values[sanitizedKey],name,newValue)
+                if (name === 'email'){
+                    this.updateEmailStatusIfNeeded(key)
+                }
             }
         }
     },
@@ -485,6 +585,12 @@ export default {
         }
         this.updateRows() // to force display table
         this.loading = false
+        import(wiki.baseUrl.replace(/\/?\??$/,'')+'/tools/alternativeupdatej9rem/javascripts/asyncHelper.js')
+            .then((module)=>{this.asyncHelper = module.default})
+            .catch(()=>{
+                this.messageClass = {['alert-danger']:true}
+                this.message = 'Ce module ne pourra pas fonctionner correctement tant que l\'extension "alternativeupdatej9rem" n\'est pas installée !'
+            })
     },
     watch:{
         processing(){

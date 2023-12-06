@@ -131,6 +131,7 @@ return [
     'HPF_ADDRESS' => 'Address',
     'HPF_ADDRESS_COMP' => 'Complement of address',
     'HPF_ADJUSTED' => 'Adjusted',
+    'HPF_APPEND_PAYMENT' => 'Add payment on existing entry',
     'HPF_CREATE_ENTRY' => 'Create an entry',
     'HPF_CREATE_ENTRY_NOT_POSSIBLE' => 'Not possible:',
     'HPF_COMMENT' => 'Comment',
