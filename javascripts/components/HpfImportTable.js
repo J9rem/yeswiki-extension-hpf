@@ -55,10 +55,27 @@ const getVue = (event) => {
     return {elem,mainVue}
 }
 
+const calculateCents = (value) => {
+    return Math.round((Number(value) % 1) *100)/100
+}
+const calculateEuros = (value) => {
+    return Math.round(Number(value) - calculateCents(value))
+}
+
 window.hpfImportTableWrapper = {
     toogleCheckbox(event,name,key){
         const {mainVue} = getVue(event)
         mainVue.toogleCheckbox(key,name)
+    },
+    updateCents(event,key){
+        const {elem,mainVue} = getVue(event)
+        const value = $(elem).val()
+        mainVue.updateValue(key,'value',calculateEuros(mainVue.values?.[key]?.value ?? 0) + calculateCents(value/100))
+    },
+    updateEuros(event,key){
+        const {elem,mainVue} = getVue(event)
+        const value = $(elem).val()
+        mainVue.updateValue(key,'value',calculateEuros(value) + calculateCents(mainVue.values?.[key]?.value ?? 0))
     },
     updateValue(event,name,key){
         const {elem,mainVue} = getVue(event)
@@ -78,18 +95,17 @@ export default {
         return {
             cache:{
                 college1:{
-                    email:{},
-                    firtname:{}
+                    email:{}
                 },
                 college2:{
-                    email:{},
-                    firtname:{}
+                    email:{}
                 }
             },
             columns: [],
             message: null,
             messageClass: {['alert-info']:true},
             params: null,
+            processing: false,
             rows: {},
             toggleRefresh: false,
             token: '',
@@ -128,10 +144,52 @@ export default {
                     footer: '',
                     render: (data,type,row)=>{
                         if (type === 'display'){
-                            return `<input type="checkbox" ${data === true ? ' checked' : (data === 'disabled') ? ' disabled' : ''} onChange="hpfImportTableWrapper.toogleCheckbox(event,'createEntry',${row.id})"/>`;
+                            let error = ''
+                            const defaultError = TemplateRenderer.render('HpfImportTable',this,'tcreateentrynotpossible')
+                            if (!this.checkEmail(row)){
+                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailbadlyformatted')
+                            } else if (!this.checkPostalCode(row)){
+                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tpostalcodebadlyformatted')
+                            } else if (row.email in this.cache[row?.isGroup === 'x' ? 'college2' : 'college1'].email
+                                || this.values.filter((v,idx)=>idx < row.id && v.email == row.email).length > 0){
+                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailalreadyused')
+                            } else if (row?.isGroup === 'x' && !(row?.groupName?.length > 0)){
+                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tgroupnameempty')
+                            } else if (row?.isGroup !== 'x' && !(row?.firstname?.length > 0)){
+                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tfirstnameempty')
+                            } else if (row?.isGroup !== 'x' && !(row?.name?.length > 0)){
+                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tnameempty')
+                            }
+                            const input = `
+                                <span onClick="hpfImportTableWrapper.toogleCheckbox(event,'createEntry',${row.id})">
+                                    <input 
+                                        type="checkbox"
+                                        ${data === true ? ' checked' : ''}
+                                        ${(this.processing === true || error.length > 0) ? ' disabled' : ''}
+                                    />
+                                    <span></span>
+                                <span>
+                                `
+                            if (error.length > 0){
+                                this.values[row.id].canAdd = false
+                                return  `
+                                        <div>
+                                            ${input}<br/>
+                                            <span style="color:red;">
+                                                ${error}
+                                            </span>
+                                        </div>
+                                        `
+                            } else {
+                                this.values[row.id].canAdd = true
+                                return input
+                            }
+                        } else if (type == 'sort'){
+                            return row?.id ?? data
                         }
                         return data
-                    }
+                    },
+                    orderable: false
                 },
                 ...width
             })
@@ -145,7 +203,7 @@ export default {
                 },
                 ...(canEdit ? {
                     render: (data,type,row)=>{
-                        if (type === 'display'){
+                        if (type === 'display' && this.processing === false){
                             const dataVal = typeof data === 'string' ? data : ''
                             return `<input type="text" size="${maxSize}" value="${dataVal}" onChange="hpfImportTableWrapper.updateValue(event,${JSON.stringify(name).replace(/"/g,"'")},${row.id})"/>`;
                         }
@@ -170,7 +228,8 @@ export default {
                                     size="15"
                                     value="${dataVal}"
                                     onChange="hpfImportTableWrapper.updateValue(event,'groupName',${row.id})"
-                                    ${row?.isGroup === 'x' ? '': 'disabled style="display:none;"'}
+                                    ${row?.isGroup === 'x' ? '': 'style="display:none;"'}
+                                    ${(row?.isGroup !== 'x' || this.processing === true) ? 'disabled' : ''}
                                 />
                             `;
                         }
@@ -186,11 +245,25 @@ export default {
                     data: name,
                     title: TemplateRenderer.render('HpfImportTable',this,`t${name.toLowerCase()}`),
                     footer: '',
-                    render: (data,type)=>{
+                    render: (data,type,row)=>{
                         if (type === 'display'){
-                            const cents = Math.round((data % 1)*100)
-                            const euros = Math.round(data-cents/100)
-                            return `${euros},${cents < 10 ? '0' : ''}${cents}&nbsp;€`
+                            const cents = calculateCents(data)*100
+                            const formattedCents = (cents < 10 ? '0' : '')+cents
+                            return `
+                                <span style="white-space: nowrap;">
+                                <input
+                                type="text"
+                                value="${calculateEuros(data)}"
+                                size="3"
+                                onChange="hpfImportTableWrapper.updateEuros(event,${row.id})"
+                                ${this.processing === true ? ' disabled' : ''}
+                                />,<input
+                                type="text"
+                                value="${formattedCents}"
+                                size="2"
+                                onChange="hpfImportTableWrapper.updateCents(event,${row.id})"
+                                ${this.processing === true ? ' disabled' : ''}
+                            />&nbsp;€</span>`
                         }
                         return data
                     }
@@ -208,7 +281,11 @@ export default {
                         if (type === 'display'){
                             const dataVal = typeof data === 'string' ? data.toLowerCase() : ''
                             return `
-                                <select value="${dataVal}" onChange="hpfImportTableWrapper.updateValue(event,${JSON.stringify(name).replace(/"/g,"'")},${row.id})">
+                                <select
+                                    value="${dataVal}"
+                                    onChange="hpfImportTableWrapper.updateValue(event,${JSON.stringify(name).replace(/"/g,"'")},${row.id})"
+                                    ${this.processing === true ? ' disabled' : ''}
+                                    >
                                     ${Object.entries(options)
                                         .map(([value,txt])=>{
                                             const valLower = typeof value === 'string' ? value.toLowerCase() : ''
@@ -228,6 +305,22 @@ export default {
             this.message = ((this.message.length === 0)
                 ? ''
                 : `${this.message}<br>`)+message
+        },
+        checkEmail(data){
+            return data?.email?.length > 0
+                && String(data.email)
+                    .toLowerCase()
+                    .match(
+                        /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+                    )
+        },
+        checkPostalCode(data){
+            return data?.postalcode?.length > 0
+                && String(data.postalcode)
+                    .toUpperCase()
+                    .match(
+                        /^(?:[0-9]{5}|2[AB][0-9]{3})$/
+                    )
         },
         getColumns(){
             if (this.columns.length == 0){
@@ -330,16 +423,18 @@ export default {
                         break;
                 }
                 if (v?.associatedEntryId?.length > 0 && v?.email?.length > 0){
-                    this.cache[this.values[k].isGroup === 'x' ? 'college2' : 'college2'].email[v.email] = v.associatedEntryId
+                    this.cache[this.values[k].isGroup === 'x' ? 'college2' : 'college1'].email[v.email] = v.associatedEntryId
                 }
                 this.values[k].createEntry = false
+                this.values[k].canAdd = true
             })
         },
         toogleCheckbox(key,name){
             const sanitizedKey = Number(key)
             if (sanitizedKey >= 0 && sanitizedKey < this.values.length){
                 const previous = this.values[sanitizedKey]?.[name] ?? false
-                this.$set(this.values[sanitizedKey],name,previous === 'disabled' ? false : (previous !== true))
+                this.$set(this.values[sanitizedKey],name,(previous !== true))
+                this.updateRows()
             }
         },
         updateRows(){
@@ -347,6 +442,9 @@ export default {
             this.removeRows()
             this.addRows()
             this.toggleRefresh = !this.toggleRefresh
+            setTimeout(() => {
+                this.toggleRefresh = !this.toggleRefresh
+            }, 300)
         },
         updateValue(key,name,newValue){
             const sanitizedKey = Number(key)
@@ -381,6 +479,9 @@ export default {
         this.loading = false
     },
     watch:{
+        processing(){
+            this.updateRows()
+        },
         values:{
             deep: true,
             handler(n){
