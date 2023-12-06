@@ -102,6 +102,7 @@ export default {
                     email:{}
                 }
             },
+            canProceed: false,
             columns: [],
             message: null,
             messageClass: {['alert-info']:true},
@@ -115,6 +116,9 @@ export default {
         }
     },
     computed:{
+        buttonTxt(){
+            return TemplateRenderer.render('HpfImportTable',this,'tbtntxt')
+        },
         element(){
             return isVueJS3 ? this.$el.parentNode : this.$el
         },
@@ -128,6 +132,9 @@ export default {
         },
     },
     methods:{
+        async addEntry(data){
+            return ''
+        },
         addRows(){
             this.values.forEach((value,idx)=>{
                 const formattedData = {}
@@ -372,6 +379,9 @@ export default {
                 ? ''
                 : `${this.message}<br>`)+message
         },
+        async appendPayment(data){
+            return false
+        },
         checkEmail(data){
             return data?.email?.length > 0
                 && String(data.email)
@@ -448,6 +458,56 @@ export default {
             }
             return null
         },
+        async process(){
+            if (this.asyncHelper
+                && this.processing === false
+                ){
+                try {
+                    this.processing = true
+                    this.messageClass = {['alert-info']:true}
+                    this.message = TemplateRenderer.render('HpfImportTable',this,`tprocessing`)
+                    for (let key = 0; key < this.values.length; key++) {
+                        const v = this.values[key];
+                        if (v.canAdd && v.createEntry){
+                            await this.addEntry(v)
+                                .then((entryId)=>{
+                                    if (entryId?.length > 0){
+                                        this.appendMessage(`✅ ajout OK pour <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a>`)
+                                        this.cache[this.getCollegeForCache(key)].email[v.email] = entryId
+                                        return entryId
+                                    } else {
+                                        throw new Error('empty entryId')
+                                    }
+                                })
+                                .catch((error)=>{
+                                    this.asyncHelper.manageError(error)
+                                    this.appendMessage(`❌ la fiche avec l'e-mail '${v.email}' n'a pas été ajoutée !`)
+                                })
+                        } else if (v.canAppend && v.appendPayment){
+                            const entryId = this.getAssociatedId(key)
+                            await this.appendPayment(v)
+                                .then((isOK)=>{
+                                    if (isOK){
+                                        this.appendMessage(`✅ ajout du paiment fait pour <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a>`)
+                                        return entryId
+                                    } else {
+                                        throw new Error('payment not added')
+                                    }
+                                })
+                                .catch((error)=>{
+                                    this.asyncHelper.manageError(error)
+                                    this.appendMessage(`❌ le paiment n'a pas été ajouté pour la fiche <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a> !`)
+                                })
+                        }
+                    }
+                    this.appendMessage('✅ Fin')
+                    this.processing = false
+                } catch (error) {
+                    this.appendMessage('❌ Error : '+error)
+                    this.processing = false
+                }
+            }
+        },
         removeRows(){
             Object.keys(this.rows).forEach((id)=>{
                 this.$delete(this.rows,id)
@@ -459,6 +519,9 @@ export default {
                     this.$emit('update-loading',false)
                 }
             },5000)
+        },
+        refreshCanProceed(){
+            this.canProceed = this.values?.some((v)=>(v.canAdd && v.createEntry) || (v.canAppend && v.appendPayment)) ?? false
         },
         setDefaultValues(){
             this.values.forEach((v,k)=>{
@@ -546,6 +609,7 @@ export default {
             this.getColumns()
             this.removeRows()
             this.addRows()
+            this.refreshCanProceed()
             this.toggleRefresh = !this.toggleRefresh
             setTimeout(() => {
                 this.toggleRefresh = !this.toggleRefresh
@@ -611,6 +675,7 @@ export default {
         <dyn-table :columns="columns" :rows="rows" :forceRefresh="toggleRefresh" :uuid="getUuid()">
             <template #dom>&lt;'row'&lt;'col-sm-12'tr>>&lt;'row'&lt;'col-sm-6'i>&lt;'col-sm-6'&lt;'pull-right'B>>></template>
         </dyn-table>
+        <button class="btn btn-danger" :disabled="processing || !canProceed" @click.prevent.stop="process">{{ buttonTxt }}</button>
     </div>
     `
 }

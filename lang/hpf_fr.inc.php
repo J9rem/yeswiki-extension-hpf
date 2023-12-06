@@ -153,6 +153,8 @@ return [
     'HPF_PERSONAL_MEMBERSHIP' => 'Adhésion individuelle',
     'HPF_POSTAL_CODE' => 'Code postal',
     'HPF_POSTAL_CODE_BADLY_FORMATTED' => 'Code postal mal formatté',
+    'HPF_PROCESS' => 'Traiter les données',
+    'HPF_PROCESSING' => 'Traitement des données en cours',
     'HPF_STANDARD' => 'Standard',
     'HPF_SUPPORT' => 'Soutien',
     'HPF_TOWN' => 'Ville',
