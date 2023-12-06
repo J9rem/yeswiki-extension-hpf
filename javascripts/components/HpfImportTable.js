@@ -132,8 +132,18 @@ export default {
         },
     },
     methods:{
-        async addEntry(data){
-            return ''
+        async addEntryOrAppend(data,append = false){
+            const type = data.isGroup === 'x' ? 'college2' : 'college1'
+            const formId = this.params[type]
+            const mode  = append === true ? 'appendPayment' : 'createEntry'
+            return await this.asyncHelper.fetch(
+                window.wiki.url(`?api/hpf/importmembership/${mode}/${type}/${formId}`),
+                'post',
+                {
+                    data,
+                    'anti-csrf-token': this.token
+                }
+            )
         },
         addRows(){
             this.values.forEach((value,idx)=>{
@@ -379,9 +389,6 @@ export default {
                 ? ''
                 : `${this.message}<br>`)+message
         },
-        async appendPayment(data){
-            return false
-        },
         checkEmail(data){
             return data?.email?.length > 0
                 && String(data.email)
@@ -469,7 +476,7 @@ export default {
                     for (let key = 0; key < this.values.length; key++) {
                         const v = this.values[key];
                         if (v.canAdd && v.createEntry){
-                            await this.addEntry(v)
+                            await this.addEntryOrAppend(v,false)
                                 .then((entryId)=>{
                                     if (entryId?.length > 0){
                                         this.appendMessage(`✅ ajout OK pour <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a>`)
@@ -485,7 +492,7 @@ export default {
                                 })
                         } else if (v.canAppend && v.appendPayment){
                             const entryId = this.getAssociatedId(key)
-                            await this.appendPayment(v)
+                            await this.addEntryOrAppend(v,true)
                                 .then((isOK)=>{
                                     if (isOK){
                                         this.appendMessage(`✅ ajout du paiment fait pour <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a>`)

@@ -15,6 +15,7 @@ use Exception;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use YesWiki\Bazar\Service\EntryManager;
+use YesWiki\Bazar\Service\FormManager; // Feature UUID : hpf-import-payments
 use YesWiki\Core\ApiResponse;
 use YesWiki\Core\Controller\CsrfTokenController;
 use YesWiki\Core\Service\UserManager;
@@ -210,6 +211,49 @@ class ApiController extends YesWikiController
                 $data['year']
             ),
             200
+        );
+    }
+
+    
+    /**
+     * @Route("/api/hpf/importmembership/{mode}/{type}/{formId}", methods={"POST"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-import-payments
+     */
+    public function createEntryOrAppendPaymentForMemberShip($mode,$type,$formId)
+    {
+        $csrfTokenController = $this->getService(CsrfTokenController::class);
+        $formManager = $this->getService(FormManager::class);
+        $csrfTokenController->checkToken('main', 'POST', 'anti-csrf-token',false);
+
+        if(empty($_POST['data'])
+            || !is_array($_POST['data'])) {
+            throw new Exception("\"\$_POST['data']\" should be an array !");
+        }
+
+        if (!in_array($mode,['createEntry','appendPayment'],true)){
+            throw new Exception("Mode \"$mode\" is not supported");
+        }
+        $appendMode = ($mode === 'appendPayment');
+
+        if (!in_array($type,['college1','college2'],true)){
+            throw new Exception("Mode \"$type\" is not supported");
+        }
+        $isGroup = ($type === 'college2');
+
+        if (empty($formId)){
+            throw new Exception("\"$formId\" should not be empty");
+        }
+
+        $form = $formManager->getOne($formId);
+        if (empty($form['prepared'])){
+            throw new Exception("form not found");
+        }
+
+        // emulate EntryCOntroller->create
+
+        return new ApiResponse(
+            ['error' => 'not ready'],
+            500
         );
     }
 }
