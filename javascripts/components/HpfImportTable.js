@@ -36,8 +36,9 @@ const currentYear = String((new Date()).getFullYear())
 
 const getYear = (strTime) => {
     try {
-        if (strTime.match(/^[0-9]{2}\/[0-9]{2}\/[0-9]{2,4}\/$/)){
-            return String(strTime.match(/^[0-9]{2}\/[0-9]{2}\/([0-9]{2,4})\/$/,"$1"))
+        const matchResult = strTime.match(/^[0-9]{2}\/[0-9]{2}\/([0-9]{2,4})$/)
+        if (matchResult?.[1]?.length > 0){
+            return matchResult[1]
         }
         const date = new Date(strTime)
         return String(date.getFullYear())
@@ -280,20 +281,20 @@ export default {
                 switch (membershipValue) {
                     case 15:
                         this.values[k].membershipType = (v?.isGroup === 'x')
-                            ? 'free'
+                            ? 'ajuste'
                             : 'standard'
                         break;
                     case 30:
                         this.values[k].membershipType = (v?.isGroup === 'x')
-                            ? 'free'
-                            : 'support'
+                            ? 'libre'
+                            : 'soutien'
                         break;
                     case 100:
                         this.values[k].membershipType = 'standard'
                         this.values[k].isGroup = 'x'
                         break;
                     case 200:
-                        this.values[k].membershipType = 'support'
+                        this.values[k].membershipType = 'soutien'
                         this.values[k].isGroup = 'x'
                         break;
                 

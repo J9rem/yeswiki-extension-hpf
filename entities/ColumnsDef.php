@@ -16,6 +16,8 @@ use ArrayAccess;
 use Exception;
 use Iterator;
 use JsonSerializable;
+use PhpOffice\PhpSpreadsheet\Shared\Date as PhpSpreadsheetDate;
+use Throwable;
 
 class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
 {
@@ -70,7 +72,7 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
             ]
         ],
         'addressComp' => [
-            'search' => "/^\s*(?:bf_)?(?:(?:adresses?|addresses?)[0-1]?|compl(?:é|e)ments?\s*d'?adresses?)\s*$/i",
+            'search' => "/^\s*(?:bf_)?(?:(?:adresses?|addresses?)[0-2]?|compl(?:é|e)ments?\s*d.*adresses?.*)\s*$/i",
             'filter' => "/^\s*(.*)\s*$/",
             'post' => [
                 'trim',
@@ -95,7 +97,7 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
             'filter' => "/^\s*(.*)\s*$/"
         ],
         'isGroup' => [
-            'search' => "/^\s*(?:Est groupe\s*\\?|bf_is_group)\s*$/i",
+            'search' => "/^\s*(?:Est groupe.*|bf_is_group)\s*$/i",
             'filter' => "/^\s*(.*)\s*$/",
             'post' => [
                 'trim',
@@ -112,7 +114,9 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
         ],
         'date' => [
             'search' => "/^\s*(Date|bf_date)\s*$/i",
-            'filter' => "/^\s*([0-9]{2}\\\/[0-9]{2}\\\/[0-9]{2,4})\s*$/"
+            'post' => [
+                '\\'.self::class.'::formatDate'
+            ]
         ]
     ];
 
@@ -227,5 +231,17 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
     public static function extractGroup($input): string
     {
         return (is_string($input) && strlen($input) > 0) ? 'x' : '';
+    }
+    public static function formatDate($input): string
+    {
+        $match = [];
+        if (is_string($input) && preg_match("/^\s*=?\"?([0-9]{2}\/[0-9]{2}\/[0-9]{2,4})\"?\s*$/",$input,$match)){
+            return $match[1];
+        }
+        try {
+            return PhpSpreadsheetDate::excelToDateTimeObject($input)->format('d/m/Y');
+        } catch (Throwable $th) {
+        }
+        return '';
     }
 }

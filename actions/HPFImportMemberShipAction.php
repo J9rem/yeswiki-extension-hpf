@@ -284,7 +284,16 @@ class HPFImportMemberShipAction extends YesWikiAction
     protected function appendCalculatedProps(array $data): array
     {
         foreach ($data as $key => $newValue){
-            $data[$key]['isGroup'] = !empty($newValue['comment']) && preg_match('/^\\s*groupe?s?.*\\s*$/i',$newValue['comment']);
+            $data[$key]['isGroup'] = 
+            (
+                empty($data[$key]['isGroup'])
+                && ((
+                    !empty($newValue['comment'])
+                    && preg_match('/^\\s*groupe?s?.*\\s*$/i',$newValue['comment'])
+                ) || (
+                    in_array($newValue['value'],[100,200])
+                ))
+            ) ? 'x' : ($data[$key]['isGroup'] ?? '');
             $data[$key]['associatedEntryId'] = $this->searchEntryId($newValue, ['email'], $data[$key]['isGroup']);
             if (empty($data[$key]['associatedEntryId'])){
                 $data[$key]['associatedEntryId'] = $this->searchEntryId($newValue, ['name','firstname'], $data[$key]['isGroup']);
