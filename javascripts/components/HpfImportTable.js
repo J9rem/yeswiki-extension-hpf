@@ -203,9 +203,17 @@ export default {
                 },
                 ...(canEdit ? {
                     render: (data,type,row)=>{
-                        if (type === 'display' && this.processing === false){
+                        if (type === 'display'){
                             const dataVal = typeof data === 'string' ? data : ''
-                            return `<input type="text" size="${maxSize}" value="${dataVal}" onChange="hpfImportTableWrapper.updateValue(event,${JSON.stringify(name).replace(/"/g,"'")},${row.id})"/>`;
+                            return `
+                                <input
+                                    type="text"
+                                    size="${maxSize}"
+                                    value="${dataVal}"
+                                    onChange="hpfImportTableWrapper.updateValue(event,${JSON.stringify(name).replace(/"/g,"'")},${row.id})"
+                                    ${this.processing === true ? ' disabled' : ''}
+                                />
+                            `;
                         }
                         return data
                     }
