@@ -53,10 +53,11 @@
     ><i class="fas fa-file-signature"></i></a><br/>
     
     <div class="dynamic-hpf-import-memberships-action">
-        <hpf-import-table data-values="{{ data|json_encode }}" v-model="isLoading">
+        <hpf-import-table data-values="{{ data|json_encode }}" v-model="isLoading" data-params="{{ params|json_encode }}">
             <template #taddress>{{ _t('HPF_ADDRESS') }}</template>
             <template #taddresscomp>{{ _t('HPF_ADDRESS_COMP') }}</template>
             <template #tadjustedmembership>{{ _t('HPF_ADJUSTED') }}</template>
+            <template #tcreateentry>{{ _t('HPF_CREATE_ENTRY') }}</template>
             <template #tcomment>{{ _t('HPF_COMMENT') }}</template>
             <template #tdate>{{ _t('HPF_DATE') }}</template>
             <template #temail>{{ _t('HPF_EMAIL') }}</template>

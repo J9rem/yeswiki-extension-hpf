@@ -132,6 +132,7 @@ return [
     'HPF_ADDRESS_COMP' => 'Complément d\'adresse',
     'HPF_ADJUSTED' => 'Ajustée',
     'HPF_COMMENT' => 'Commentaire',
+    'HPF_CREATE_ENTRY' => 'Créer une fiche',
     'HPF_DATE' => 'Date',
     'HPF_EMAIL' => 'E-mail',
     'HPF_FIRSTNAME' => 'Prénom',

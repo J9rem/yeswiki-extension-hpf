@@ -47,12 +47,21 @@ const getYear = (strTime) => {
     }
 }
 
+const getVue = (event) => {
+    event.stopPropagation()
+    event.preventDefault()
+    const elem = event.target
+    const mainVue = retrievMainVue(elem)
+    return {elem,mainVue}
+}
+
 window.hpfImportTableWrapper = {
+    toogleCheckbox(event,name,key){
+        const {mainVue} = getVue(event)
+        mainVue.toogleCheckbox(key,name)
+    },
     updateValue(event,name,key){
-        event.stopPropagation()
-        event.preventDefault()
-        const elem = event.target
-        const mainVue = retrievMainVue(elem)
+        const {elem,mainVue} = getVue(event)
         const value = $(elem).val()
         mainVue.updateValue(key,name,value)
     }
@@ -67,6 +76,16 @@ export default {
     props: ['isLoading'],
     data: function() {
         return {
+            cache:{
+                college1:{
+                    email:{},
+                    firtname:{}
+                },
+                college2:{
+                    email:{},
+                    firtname:{}
+                }
+            },
             columns: [],
             message: null,
             messageClass: {['alert-info']:true},
@@ -99,6 +118,22 @@ export default {
                     formattedData[col.data] = value?.[col.data] ?? ''
                 })
                 this.$set(this.rows,idx,formattedData)
+            })
+        },
+        appendCheckBoxforEntryCreation(data,width){
+            data.columns.push({
+                ...{
+                    data: 'createEntry',
+                    title: TemplateRenderer.render('HpfImportTable',this,'tcreateentry'),
+                    footer: '',
+                    render: (data,type,row)=>{
+                        if (type === 'display'){
+                            return `<input type="checkbox" ${data === true ? ' checked' : (data === 'disabled') ? ' disabled' : ''} onChange="hpfImportTableWrapper.toogleCheckbox(event,'createEntry',${row.id})"/>`;
+                        }
+                        return data
+                    }
+                },
+                ...width
             })
         },
         appendColumn(name,data,width,canEdit=true,maxSize=15){
@@ -199,9 +234,7 @@ export default {
                 const data = {columns:[]}
                 const defaultcolumnwidth = '100px';
                 const width = defaultcolumnwidth.length > 0 ? {width:defaultcolumnwidth}: {}
-                // case à cocher : importer
-                // fiche associée / créer une fiche
-                // acteur/groupe ... type
+                this.appendCheckBoxforEntryCreation(data,width)
                 this.appendColumn('firstname',data,width)
                 this.appendColumn('name',data,width)
                 this.appendColumn('address',data,width)
@@ -230,17 +263,6 @@ export default {
                 })
                 this.appendColumnGroupName(data,width)
                 this.appendColumn('comment',data,width,false)
-                // prénom (retour ligne prénom fiche associée)
-                // nom (retour ligne nom fiche associée)
-                // email (retour email nom fiche associée)
-                // Valeur adhésion
-                // Type adhésion (à choisir standard/libre)
-                // Date adhésion (celle du jour)
-                // Si fiche associée : est adhérent de la même année ? valeur adhésion déjà payée ?
-                // adresse (retour ligne adresse fiche associée)
-                // Code postal (retour ligne code postal fiche associée)
-                // Ville (retour ligne Ville fiche associée)
-                // Groupe BDD associé
                 this.columns = data.columns
             }
             return this.columns
@@ -307,7 +329,18 @@ export default {
                         }
                         break;
                 }
+                if (v?.associatedEntryId?.length > 0 && v?.email?.length > 0){
+                    this.cache[this.values[k].isGroup === 'x' ? 'college2' : 'college2'].email[v.email] = v.associatedEntryId
+                }
+                this.values[k].createEntry = false
             })
+        },
+        toogleCheckbox(key,name){
+            const sanitizedKey = Number(key)
+            if (sanitizedKey >= 0 && sanitizedKey < this.values.length){
+                const previous = this.values[sanitizedKey]?.[name] ?? false
+                this.$set(this.values[sanitizedKey],name,previous === 'disabled' ? false : (previous !== true))
+            }
         },
         updateRows(){
             this.getColumns()
@@ -362,7 +395,6 @@ export default {
         </div>
         <dyn-table :columns="columns" :rows="rows" :forceRefresh="toggleRefresh" :uuid="getUuid()">
             <template #dom>&lt;'row'&lt;'col-sm-12'tr>>&lt;'row'&lt;'col-sm-6'i>&lt;'col-sm-6'&lt;'pull-right'B>>></template>
-            <template #sumtranslate>{{ sumtranslate }}</template>
         </dyn-table>
     </div>
     `

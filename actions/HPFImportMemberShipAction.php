@@ -15,6 +15,7 @@ namespace YesWiki\Hpf;
 use Exception;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Core\YesWikiAction;
 use YesWiki\Hpf\Entity\ColumnsDef;
@@ -47,6 +48,20 @@ class HPFImportMemberShipAction extends YesWikiAction
                 'type' => 'danger'
             ]);
         }
+        
+        $params = [
+            'anti-csrf-token' => $this->getService(CsrfTokenManager::class)->getToken('main')->getValue()
+        ];
+        // not empty params
+        foreach (['college1','college2'] as $name) {
+            if (empty($this->arguments[$name])){
+                return $this->render('@templates/alert-message.twig',[
+                    'message' => "Le paramètre '$name' ne doit pas être vide !",
+                    'type' => 'danger'
+                ]);
+            }
+            $params[$name] = $this->arguments[$name];
+        }
 
         // get Services
         $this->entryManager = $this->getService(EntryManager::class);
@@ -66,7 +81,7 @@ class HPFImportMemberShipAction extends YesWikiAction
                 $error = $th->getMessage();
             }
         }
-        return $this->render('@hpf/hpf-import-memberships-action.twig',compact(['data','error','fileName']));  
+        return $this->render('@hpf/hpf-import-memberships-action.twig',compact(['data','error','fileName','params']));  
     }
 
     /**
