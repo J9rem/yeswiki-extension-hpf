@@ -95,6 +95,15 @@ return [
     // 'AB_hpf_hpfregisterpayment_formsids_hint' => 'entiers séparés par des virgules. Ex.: 16,23,24',
     // 'HPF_REGISTER_A_PAYMENT' => 'Enregistrer un paiement',
     // 'HPF_REGISTER_PAYMENT_FORM' => 'Formulaire concerné',
+    
+    // action/HPFRegisterPaymentAction.php
+    // Feature UUID : hpf-import-payments
+    // 'HPF_IMPORT_BAD_ERROR_FORMAT' => 'Le format du fichier fournit n\'est pas bon. Il devrait être ".ods", ".csv", ".xls" ou ".xlsx" !',
+    // 'HPF_IMPORT_DATA_FROM' => 'Données extraites de \'%{file}\' :',
+    // 'HPF_IMPORT_MEMBERSHIPS_LABEL' => 'Fichier à importer',
+    // 'HPF_IMPORT_MEMBERSHIPS_TITLE' => 'Import de listes d\'adhésions',
+    // 'HPF_IMPORT_OTHER_FILE' => 'Importer un autre fichier',
+    // 'AB_hpf_hpfimportmembership_label' => 'Import de listes d\'adhésions',
 
     // config.yaml
     // Feature UUID : hpf-payment-status-action
@@ -116,4 +125,39 @@ return [
     'HPF_SELECTMEMBERS_HINT' => 'Filter from parent entry (structures) where I am administrator',
     'HPF_SELECTMEMBERS_LABEL' => 'Filter entries',
     'HPF_SELECTMEMBERS_ONLY_MEMBERS' => 'Only members',
+
+    // templates/hpf-import-memberships-action.twig
+    // Feature UUID : hpf-import-payments
+    'HPF_ADDRESS' => 'Address',
+    'HPF_ADDRESS_COMP' => 'Complement of address',
+    'HPF_ADJUSTED' => 'Adjusted',
+    'HPF_APPEND_PAYMENT' => 'Add payment on existing entry',
+    'HPF_CREATE_ENTRY' => 'Create an entry',
+    'HPF_CREATE_ENTRY_NOT_POSSIBLE' => 'Not possible:',
+    'HPF_COMMENT' => 'Comment',
+    'HPF_DATE' => 'Date',
+    'HPF_EMAIL' => 'E-mail',
+    'HPF_EMAIL_ALREADY_USED' => 'E-mail aleary used',
+    'HPF_EMAIL_BADLY_FORMATTED' => 'E-mail badly formatted',
+    'HPF_FIRSTNAME' => 'First name',
+    'HPF_FIRSTNAME_EMPTY' => 'Empty first name',
+    'HPF_FREE' => 'Free',
+    'HPF_GROUP_MEMBERSHIP' => 'Group membership',
+    'HPF_GROUP_NAME' => 'Group\'s name',
+    'HPF_GROUP_NAME_EMPTY' => 'empty group\'s name',
+    'HPF_IS_GROUP' => 'Membership type',
+    'HPF_MEMBERSHIP_TYPE' => 'Value type',
+    'HPF_NAME' => 'Name',
+    'HPF_NAME_EMPTY' => 'Empty name',
+    'HPF_PAYMENT_NUMBER' => 'Payment number',
+    'HPF_PERSONAL_MEMBERSHIP' => 'Personal membership',
+    'HPF_POSTAL_CODE' => 'Postal code',
+    'HPF_POSTAL_CODE_BADLY_FORMATTED' => 'Postal code badly formatted',
+    'HPF_PROCESS' => 'Proceed data',
+    'HPF_PROCESSING' => 'Processing data',
+    'HPF_STANDARD' => 'Standard',
+    'HPF_SUPPORT' => 'Support',
+    'HPF_TOWN' => 'Town',
+    'HPF_VALUE' => 'Value',
+    'HPF_YEAR' => 'Membership year',
 ];

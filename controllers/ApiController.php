@@ -13,15 +13,16 @@ namespace YesWiki\Hpf\Controller;
 
 use Exception;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Csrf\CsrfTokenManager;
-use YesWiki\Bazar\Service\EntryManager;
+use Symfony\Component\Security\Csrf\CsrfTokenManager; // Feature UUID : hpf-register-payment-action
+use YesWiki\Bazar\Service\EntryManager; // Feature UUID : hpf-payment-status-action
 use YesWiki\Core\ApiResponse;
 use YesWiki\Core\Controller\CsrfTokenController;
-use YesWiki\Core\Service\UserManager;
+use YesWiki\Core\Service\UserManager; // Feature UUID : hpf-payment-status-action
 use YesWiki\Core\YesWikiController;
+use YesWiki\Hpf\Controller\HpfImportController; // Feature UUID : hpf-import-payments
+use YesWiki\Hpf\Exception\ApiException; // Feature UUID : hpf-payment-status-action
 use YesWiki\Hpf\Service\HpfService;
-use YesWiki\Hpf\Exception\ApiException;
-use YesWiki\Shop\Controller\ApiController as ShopApiController;
+use YesWiki\Shop\Controller\ApiController as ShopApiController; // Feature UUID : hpf-api-helloasso-token-triggered
 
 class ApiController extends YesWikiController
 {
@@ -211,5 +212,15 @@ class ApiController extends YesWikiController
             ),
             200
         );
+    }
+
+    
+    /**
+     * @Route("/api/hpf/importmembership/{mode}/{type}/{formId}", methods={"POST"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-import-payments
+     */
+    public function createEntryOrAppendPaymentForMemberShip($mode,$type,$formId)
+    {
+        return $this->getService(HpfImportController::class)->createEntryOrAppendPaymentForMemberShip($mode,$type,$formId);
     }
 }

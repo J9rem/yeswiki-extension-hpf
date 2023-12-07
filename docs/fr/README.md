@@ -27,6 +27,7 @@ La documentation embarquée de cette extension est disponible [ICI](/tools/alter
 ||`HpfpaymentsByCat`|Affiche les paiements dans une tablea par zone géographique et par année|[`hpf-payments-by-cat-table`](https://github.com/search?q=repo%3AJ9rem%2Fyeswiki-extension-hpf%20hpf-payments-by-cat-table&type=code)|
 ||`HpfPaymentStatus`|Affiche un texte si un paiment doit être réalisé|[`hpf-payment-status-action`](https://github.com/search?q=repo%3AJ9rem%2Fyeswiki-extension-hpf%20hpf-payment-status-action&type=code)|
 ||`hpfregisterpayment`|Enregistrer un paiement dans une fiche|[`hpf-register-payment-action`](https://github.com/search?q=repo%3AJ9rem%2Fyeswiki-extension-hpf%20hpf-register-payment-action&type=code)|
+||`hpfimportmembership`|Importer les paiments depuis un tableau|[`hpf-import-payments`](https://github.com/search?q=repo%3AJ9rem%2Fyeswiki-extension-hpf%20hpf-import-payments&type=code)|
 |Nouvelle fonctionnalité|`area-management`|Gérer les membres en fonction de leur zone géographique|[`hpf-area-management`](https://github.com/search?q=repo%3AJ9rem%2Fyeswiki-extension-hpf%20hpf-area-management&type=code)|
 |Champ Bazar|`conditionview`|Champ pour afficher une zone en fonction d'une condition|[`hpf-condition-view-field`](https://github.com/search?q=repo%3AJ9rem%2Fyeswiki-extension-hpf%20hpf-condition-view-field&type=code)|
 ||`payments`|Champ pour enregistrer les détails sur les paiements|[`hpf-payments-field`](https://github.com/search?q=repo%3AJ9rem%2Fyeswiki-extension-hpf%20hpf-payments-field&type=code)|

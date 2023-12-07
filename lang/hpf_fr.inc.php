@@ -95,6 +95,15 @@ return [
     'AB_hpf_hpfregisterpayment_formsids_hint' => 'entiers séparés par des virgules. Ex.: 16,23,24',
     'HPF_REGISTER_A_PAYMENT' => 'Enregistrer un paiement',
     'HPF_REGISTER_PAYMENT_FORM' => 'Formulaire concerné',
+    
+    // action/HPFRegisterPaymentAction.php
+    // Feature UUID : hpf-import-payments
+    'HPF_IMPORT_BAD_ERROR_FORMAT' => 'Le format du fichier fournit n\'est pas bon. Il devrait être ".ods", ".csv", ".xls" ou ".xlsx" !',
+    'HPF_IMPORT_DATA_FROM' => 'Données extraites de \'%{file}\' :',
+    'HPF_IMPORT_MEMBERSHIPS_LABEL' => 'Fichier à importer',
+    'HPF_IMPORT_MEMBERSHIPS_TITLE' => 'Import de listes d\'adhésions',
+    'HPF_IMPORT_OTHER_FILE' => 'Importer un autre fichier',
+    'AB_hpf_hpfimportmembership_label' => 'Import de listes d\'adhésions',
 
     // config.yaml
     // Feature UUID : hpf-payment-status-action
@@ -116,4 +125,39 @@ return [
     'HPF_SELECTMEMBERS_HINT' => 'Filtre à partir des fiches mères (structures) où je suis administrateur',
     'HPF_SELECTMEMBERS_LABEL' => 'Filtrer les fiches',
     'HPF_SELECTMEMBERS_ONLY_MEMBERS' => 'Uniquement les membres',
+    
+    // templates/hpf-import-memberships-action.twig
+    // Feature UUID : hpf-import-payments
+    'HPF_ADDRESS' => 'Adresse',
+    'HPF_ADDRESS_COMP' => 'Complément d\'adresse',
+    'HPF_ADJUSTED' => 'Ajustée',
+    'HPF_APPEND_PAYMENT' => 'Ajouter le paiemant à la fiche existante',
+    'HPF_COMMENT' => 'Commentaire',
+    'HPF_CREATE_ENTRY' => 'Créer une fiche',
+    'HPF_CREATE_ENTRY_NOT_POSSIBLE' => 'Création impossible :',
+    'HPF_DATE' => 'Date',
+    'HPF_EMAIL' => 'E-mail',
+    'HPF_EMAIL_ALREADY_USED' => 'E-mail déjà utilisé',
+    'HPF_EMAIL_BADLY_FORMATTED' => 'E-mail mal formatté',
+    'HPF_FIRSTNAME' => 'Prénom',
+    'HPF_FIRSTNAME_EMPTY' => 'le prénom est vide',
+    'HPF_FREE' => 'Libre',
+    'HPF_GROUP_MEMBERSHIP' => 'Adhésion de groupe',
+    'HPF_GROUP_NAME' => 'Nom du groupe',
+    'HPF_GROUP_NAME_EMPTY' => 'le nom du groupe est vide',
+    'HPF_IS_GROUP' => 'Type d\'adhésion',
+    'HPF_MEMBERSHIP_TYPE' => 'Type de montant',
+    'HPF_NAME' => 'Nom',
+    'HPF_NAME_EMPTY' => 'Nle nom est vide',
+    'HPF_PAYMENT_NUMBER' => 'Numéro de paiement',
+    'HPF_PERSONAL_MEMBERSHIP' => 'Adhésion individuelle',
+    'HPF_POSTAL_CODE' => 'Code postal',
+    'HPF_POSTAL_CODE_BADLY_FORMATTED' => 'Code postal mal formatté',
+    'HPF_PROCESS' => 'Traiter les données',
+    'HPF_PROCESSING' => 'Traitement des données en cours',
+    'HPF_STANDARD' => 'Standard',
+    'HPF_SUPPORT' => 'Soutien',
+    'HPF_TOWN' => 'Ville',
+    'HPF_VALUE' => 'Valeur',
+    'HPF_YEAR' => 'Année d\'adhésion',
 ];
