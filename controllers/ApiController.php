@@ -13,16 +13,16 @@ namespace YesWiki\Hpf\Controller;
 
 use Exception;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Csrf\CsrfTokenManager;
-use YesWiki\Bazar\Service\EntryManager;
-use YesWiki\Bazar\Service\FormManager; // Feature UUID : hpf-import-payments
+use Symfony\Component\Security\Csrf\CsrfTokenManager; // Feature UUID : hpf-register-payment-action
+use YesWiki\Bazar\Service\EntryManager; // Feature UUID : hpf-payment-status-action
 use YesWiki\Core\ApiResponse;
 use YesWiki\Core\Controller\CsrfTokenController;
-use YesWiki\Core\Service\UserManager;
+use YesWiki\Core\Service\UserManager; // Feature UUID : hpf-payment-status-action
 use YesWiki\Core\YesWikiController;
+use YesWiki\Hpf\Controller\HpfImportController; // Feature UUID : hpf-import-payments
+use YesWiki\Hpf\Exception\ApiException; // Feature UUID : hpf-payment-status-action
 use YesWiki\Hpf\Service\HpfService;
-use YesWiki\Hpf\Exception\ApiException;
-use YesWiki\Shop\Controller\ApiController as ShopApiController;
+use YesWiki\Shop\Controller\ApiController as ShopApiController; // Feature UUID : hpf-api-helloasso-token-triggered
 
 class ApiController extends YesWikiController
 {
@@ -221,39 +221,6 @@ class ApiController extends YesWikiController
      */
     public function createEntryOrAppendPaymentForMemberShip($mode,$type,$formId)
     {
-        $csrfTokenController = $this->getService(CsrfTokenController::class);
-        $formManager = $this->getService(FormManager::class);
-        $csrfTokenController->checkToken('main', 'POST', 'anti-csrf-token',false);
-
-        if(empty($_POST['data'])
-            || !is_array($_POST['data'])) {
-            throw new Exception("\"\$_POST['data']\" should be an array !");
-        }
-
-        if (!in_array($mode,['createEntry','appendPayment'],true)){
-            throw new Exception("Mode \"$mode\" is not supported");
-        }
-        $appendMode = ($mode === 'appendPayment');
-
-        if (!in_array($type,['college1','college2'],true)){
-            throw new Exception("Mode \"$type\" is not supported");
-        }
-        $isGroup = ($type === 'college2');
-
-        if (empty($formId)){
-            throw new Exception("\"$formId\" should not be empty");
-        }
-
-        $form = $formManager->getOne($formId);
-        if (empty($form['prepared'])){
-            throw new Exception("form not found");
-        }
-
-        // emulate EntryCOntroller->create
-
-        return new ApiResponse(
-            ['error' => 'not ready'],
-            500
-        );
+        return $this->getService(HpfImportController::class)->createEntryOrAppendPaymentForMemberShip($mode,$type,$formId);
     }
 }

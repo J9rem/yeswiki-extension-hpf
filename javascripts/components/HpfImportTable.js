@@ -171,6 +171,9 @@ export default {
                             } else if (this.getAssociatedId(row.id).length > 0
                                 || this.values.filter((v,idx)=>idx < row.id && v.email == row.email).length > 0){
                                 error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailalreadyused')
+                                if (this.getAssociatedId(row.id).length > 0){
+                                    this.values[row.id].associatedEntryId = this.getAssociatedId(row.id)
+                                }
                             } else if (row?.isGroup === 'x' && !(row?.groupName?.length > 0)){
                                 error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tgroupnameempty')
                             } else if (row?.isGroup !== 'x' && !(row?.firstname?.length > 0)){
@@ -477,11 +480,14 @@ export default {
                         const v = this.values[key];
                         if (v.canAdd && v.createEntry){
                             await this.addEntryOrAppend(v,false)
-                                .then((entryId)=>{
-                                    if (entryId?.length > 0){
-                                        this.appendMessage(`✅ ajout OK pour <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a>`)
-                                        this.cache[this.getCollegeForCache(key)].email[v.email] = entryId
-                                        return entryId
+                                .then((entry)=>{
+                                    if (entry?.id_fiche?.length > 0){
+                                        this.appendMessage(`✅ ajout OK pour <a href="${window.wiki.url(`?${entry.id_fiche}`)}" class="newtab">${entry.id_fiche}</a>`)
+                                        this.values[key].canAdd = false
+                                        this.values[key].createEntry = false
+                                        this.values[key].associatedEntryId = entry.id_fiche
+                                        this.cache[this.getCollegeForCache(key)].email[v.email] = entry.id_fiche
+                                        return entry.id_fiche
                                     } else {
                                         throw new Error('empty entryId')
                                     }
@@ -496,7 +502,9 @@ export default {
                                 .then((isOK)=>{
                                     if (isOK){
                                         this.appendMessage(`✅ ajout du paiment fait pour <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a>`)
-                                        return entryId
+                                        this.values[key].canAppend = false
+                                        this.values[key].appendPayment = false
+                                        return true
                                     } else {
                                         throw new Error('payment not added')
                                     }
