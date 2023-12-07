@@ -126,6 +126,8 @@ class HpfImportController extends YesWikiController
         if (!$this->canAddEntryInForm($form,$data['email'])){
             throw new Exception("An entry already exists for email '{$data['email']}'");
         }
+
+        throw new Exception('Not already available !');
         
         // clean $_POST and $_REQUEST
         $_POST = [];
