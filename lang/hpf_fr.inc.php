@@ -131,7 +131,7 @@ return [
     'HPF_ADDRESS' => 'Adresse',
     'HPF_ADDRESS_COMP' => 'Complément d\'adresse',
     'HPF_ADJUSTED' => 'Ajustée',
-    'HPF_APPEND_PAYMENT' => 'Ajouter le paiemant à la fiche existante',
+    'HPF_APPEND_PAYMENT' => 'Ajouter le paiement à la fiche existante',
     'HPF_COMMENT' => 'Commentaire',
     'HPF_CREATE_ENTRY' => 'Créer une fiche',
     'HPF_CREATE_ENTRY_NOT_POSSIBLE' => 'Création impossible :',
