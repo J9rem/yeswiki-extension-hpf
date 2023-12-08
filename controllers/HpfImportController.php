@@ -118,7 +118,7 @@ class HpfImportController extends YesWikiController
             }
         }
         
-        $updatedEntry = $this->appendPaymentIfPossible($data,$form,$isGroup);
+        $updatedEntry = $this->appendPaymentIfPossible($data,$form);
         if (empty($updatedEntry) || !is_array($updatedEntry)){
             if ($appendMode){
                 throw new Exception("entry not updated");
@@ -174,31 +174,44 @@ class HpfImportController extends YesWikiController
         ];
 
 
+        // extract some data
+        $memberShipValueType =
+            (
+                !empty($data['membershipType'])
+                && in_array(
+                    $data['membershipType'],
+                    $isGroup 
+                        ? ['standard','soutien','libre','ajuste']
+                        : ['standard','soutien','libre'],
+                    true)
+            )
+            ? $data['membershipType']
+            : 'libre' ;
+        $value = strval($data['value'] ?? 0);
+        $postalcode = strval($data['postalcode'] ?? '');
+        $town = strval($data['town'] ?? '');
+            
+        if (!empty($postalcode)){
+            $deptcode = $this->areaManager->extractAreaFromPostalCode([
+                $this->areaManager->getPostalCodeFieldName() => $postalcode
+            ]);
+            if (!empty($deptcode)){
+                $associations = $this->areaManager->getAssociations();
+                $areacode = $associations['depts'][$deptcode][0] ?? '';
+            }
+        }
+
         if ($isGroup){
-            throw new Exception('Not already available !');
+
+            // extract some other data
+            $groupName = strval($data['groupName'] ?? '');
+            if (empty($groupName)){
+                throw new Exception('groupName should not be empty !');
+            }
+
         } else {
 
-            // extract some data
-            $memberShipValueType =
-                (
-                    !empty($data['membershipType'])
-                    && in_array($data['membershipType'],['standard','soutien','libre'],true)
-                )
-                ? $data['membershipType']
-                : 'libre' ;
-            $value = strval($data['value'] ?? 0);
-            $postalcode = strval($data['postalcode'] ?? '');
-            $town = strval($data['town'] ?? '');
-            
-            if (!empty($postalcode)){
-                $deptcode = $this->areaManager->extractAreaFromPostalCode([
-                    $this->areaManager->getPostalCodeFieldName() => $postalcode
-                ]);
-                if (!empty($deptcode)){
-                    $associations = $this->areaManager->getAssociations();
-                    $areacode = $associations['depts'][$deptcode][0] ?? '';
-                }
-            }
+            // extract some other data
             $firstName = strval($data['firstname'] ?? '');
             $name = strval($data['name'] ?? '');
             if (empty($name)){
@@ -211,49 +224,92 @@ class HpfImportController extends YesWikiController
                     && $field->getName() === 'bf_type_contributeur_copy';},
                 'adhesion',
             ];
-            // membership type
-            $params[] = [
-                function ($field) {return $field instanceof EnumField
-                    && $field->getName() === 'bf_type_adhesion';},
-                'territoriale',
-            ];            
+        }
+
+        // membership type
+        $params[] = [
+            function ($field) use($isGroup) {return $field instanceof EnumField
+                && $field->getName() === ($isGroup ? 'bf_type_adhesion_groupe' : 'bf_type_adhesion');},
+            'territoriale',
+        ];
                 
-            // membership value type
-            $params[] = [
-                function ($field) {return $field instanceof SelectListField
-                    && $field->getName() === 'bf_montant_adhesion_college_1';},
-                $memberShipValueType,
-            ];
+        // membership value type
+        $params[] = [
+            function ($field) use($isGroup) {return $field instanceof SelectListField
+                && $field->getName() === ($isGroup ? 'bf_montant_adhesion_college_2' : 'bf_montant_adhesion_college_1');},
+            $memberShipValueType,
+        ];
             
-            if ($memberShipValueType === 'libre'){
-                $params[] = [
-                    function ($field) {return $field instanceof TextField
-                        && $field->getName() === 'bf_montant_adhesion_college_1_libre';},
-                    $value,
-                ];
-            }
-
-            // no donation by default
+        if ($memberShipValueType === 'libre'){
             $params[] = [
-                function ($field) {return $field instanceof RadioListField
-                    && $field->getLinkedObjectName() === 'ListeOuinon'
-                    && $field->getName() == 'bf_don_complementaire';},
-                'non',
+                function ($field) use($isGroup) {return $field instanceof TextField
+                    && $field->getName() === ($isGroup ? 'bf_montant_adhesion_college_2_libre' : 'bf_montant_adhesion_college_1_libre');},
+                $value,
             ];
+        }
+            
+        if ($isGroup && $memberShipValueType === 'ajuste'){
+            $params[] = [
+                function ($field) {return $field instanceof TextField
+                    && $field->getName() === 'bf_montant_adhesion_college_2_ajuste';},
+                $value,
+            ];
+        }
+
+        // no donation by default
+        $params[] = [
+            function ($field) use($isGroup) {return $field instanceof RadioListField
+                && $field->getLinkedObjectName() === 'ListeOuinon'
+                && $field->getName() == ($isGroup ? 'bf_don_complementaire_groupe' : 'bf_don_complementaire');},
+            'non',
+        ];
 
 
-            // area
-            if (!empty($areacode)){
+        // area
+        if (!empty($areacode)){
+            $params[] = [
+                function ($field) use($isGroup) {return $field instanceof SelectListField
+                    && $field->getName() === ($isGroup ? 'bf_region_adhesion_groupe' :'bf_region_adhesion');},
+                $areacode,
+            ];
+            // structure
+            $params[] = [
+                function ($field) use($isGroup) {return $field instanceof SelectEntryField
+                    && $field->getName() === ($isGroup ? 'bf_structure_regionale_adhesion_groupe' :'bf_structure_regionale_adhesion');},
+                function ($field) use($areacode){
+                    $options = $field->getOptions();
+                    $entries = array_map(
+                        function($entryId){
+                            return $this->entryManager->getOne($entryId);
+                        },
+                        array_keys($options)
+                    );
+                    $entries = array_filter(
+                        $entries,
+                        function($e) use ($areacode){
+                            return !empty($e['checkboxListeRegionsFrancaisesApresNouveauDecoupabf_region'])
+                                && in_array($areacode,explode(',',$e['checkboxListeRegionsFrancaisesApresNouveauDecoupabf_region']));
+                        }
+                    );
+                    if (empty($entries) || count($entries) > 1) {
+                        return '';
+                    }
+                    $e = array_pop($entries);
+                    return $e['id_fiche'];
+                },
+            ];
+            if (!empty($deptcode)){
                 $params[] = [
-                    function ($field) {return $field instanceof SelectListField
-                        && $field->getName() === 'bf_region_adhesion';},
-                    $areacode,
+                    function ($field) use($isGroup) {return $field instanceof SelectListField
+                        && $field->getName() === ($isGroup ? 'bf_departement_adhesion_groupe' :'bf_departement_adhesion');},
+                    $deptcode,
                 ];
+                
                 // structure
                 $params[] = [
-                    function ($field) {return $field instanceof SelectEntryField
-                        && $field->getName() === 'bf_structure_regionale_adhesion';},
-                    function ($field) use($areacode){
+                    function ($field) use($isGroup) {return $field instanceof SelectEntryField
+                        && $field->getName() === ($isGroup ? 'bf_structure_locale_adhesion_groupe' :'bf_structure_locale_adhesion');},
+                    function ($field) use($deptcode){
                         $options = $field->getOptions();
                         $entries = array_map(
                             function($entryId){
@@ -263,9 +319,9 @@ class HpfImportController extends YesWikiController
                         );
                         $entries = array_filter(
                             $entries,
-                            function($e) use ($areacode){
-                                return !empty($e['checkboxListeRegionsFrancaisesApresNouveauDecoupabf_region'])
-                                    && in_array($areacode,explode(',',$e['checkboxListeRegionsFrancaisesApresNouveauDecoupabf_region']));
+                            function($e) use ($deptcode){
+                                return !empty($e['checkboxListeDepartementsFrancais'])
+                                    && in_array($deptcode,explode(',',$e['checkboxListeDepartementsFrancais']));
                             }
                         );
                         if (empty($entries) || count($entries) > 1) {
@@ -275,49 +331,27 @@ class HpfImportController extends YesWikiController
                         return $e['id_fiche'];
                     },
                 ];
-                if (!empty($deptcode)){
-                    $params[] = [
-                        function ($field) {return $field instanceof SelectListField
-                            && $field->getName() === 'bf_departement_adhesion';},
-                        $deptcode,
-                    ];
-                    
-                    // structure
-                    $params[] = [
-                        function ($field) {return $field instanceof SelectEntryField
-                            && $field->getName() === 'bf_structure_locale_adhesion';},
-                        function ($field) use($deptcode){
-                            $options = $field->getOptions();
-                            $entries = array_map(
-                                function($entryId){
-                                    return $this->entryManager->getOne($entryId);
-                                },
-                                array_keys($options)
-                            );
-                            $entries = array_filter(
-                                $entries,
-                                function($e) use ($deptcode){
-                                    return !empty($e['checkboxListeDepartementsFrancais'])
-                                        && in_array($deptcode,explode(',',$e['checkboxListeDepartementsFrancais']));
-                                }
-                            );
-                            if (empty($entries) || count($entries) > 1) {
-                                return '';
-                            }
-                            $e = array_pop($entries);
-                            return $e['id_fiche'];
-                        },
-                    ];
-                }
             }
+        }
             
-            // type of payment
-            $params[] = [
-                function ($field) {return $field instanceof RadioListField
-                    && $field->getLinkedObjectName() === 'ListeMoyenDePaiement';},
-                'cheque',
-            ];
+        // type of payment
+        $params[] = [
+            function ($field) {return $field instanceof RadioListField
+                && $field->getLinkedObjectName() === 'ListeMoyenDePaiement';},
+            'cheque',
+        ];
 
+        if ($isGroup){
+            // name
+            if (!empty($groupName)){
+                $params[] = [
+                    function ($field) {return $field instanceof TextField
+                        && $field->getName() === 'bf_nom';},
+                    $groupName,
+                ];
+            }
+
+        } else {
             // first name
             if (!empty($firstName)){
                 $params[] = [
@@ -334,47 +368,47 @@ class HpfImportController extends YesWikiController
                     $name,
                 ];
             }
-            // custom sendmail
-            $params[] = [
-                function ($field) {return $field instanceof CustomSendMailField;},
-                'yes'
-            ];
-            $params[] = [
-                function ($field) {return $field instanceof CustomSendMailField;},
-                'no',
-                function ($field) {
-                    return $field->getPropertyName().'_option';
-                }
-            ];
-            // nom wiki
-            $entry['nom_wiki_force_label'] = 1;
-            $randomPwd = $this->wiki->generateRandomString(30);
-            $entry['mot_de_passe_wikini'] = $randomPwd;
-            $entry['mot_de_passe_repete_wikini'] = $randomPwd;
+        }
+        // custom sendmail
+        $params[] = [
+            function ($field) {return $field instanceof CustomSendMailField;},
+            'yes'
+        ];
+        $params[] = [
+            function ($field) {return $field instanceof CustomSendMailField;},
+            'no',
+            function ($field) {
+                return $field->getPropertyName().'_option';
+            }
+        ];
+        // nom wiki
+        $entry['nom_wiki_force_label'] = 1;
+        $randomPwd = $this->wiki->generateRandomString(30);
+        $entry['mot_de_passe_wikini'] = $randomPwd;
+        $entry['mot_de_passe_repete_wikini'] = $randomPwd;
 
-            // postal code
-            $params[] = [
-                function ($field) {return $field instanceof TextField
-                    && $field->getName() === 'bf_code_postal';},
-                $postalcode
-            ];
-            // town
-            $params[] = [
-                function ($field) {return $field instanceof TextField
-                    && $field->getName() === 'bf_ville';},
-                $town
-            ];
-            // newsletter
-            $params[] = [
-                function ($field) {return $field instanceof SelectListField
-                    && $field->getLinkedObjectName() === 'ListeListeAccordLettreDInfo';},
-                'non',
-            ];
+        // postal code
+        $params[] = [
+            function ($field) {return $field instanceof TextField
+                && $field->getName() === 'bf_code_postal';},
+            $postalcode
+        ];
+        // town
+        $params[] = [
+            function ($field) {return $field instanceof TextField
+                && $field->getName() === 'bf_ville';},
+            $town
+        ];
+        // newsletter
+        $params[] = [
+            function ($field) {return $field instanceof SelectListField
+                && $field->getLinkedObjectName() === 'ListeListeAccordLettreDInfo';},
+            'non',
+        ];
 
             
-            // manage area from postal code
-            $this->appendConcernedFieldsInData($entry,$form,$params);
-        }
+        // manage area from postal code
+        $this->appendConcernedFieldsInData($entry,$form,$params);
 
         // check title to force save
         if (empty($entry['bf_titre'])){
@@ -510,11 +544,10 @@ class HpfImportController extends YesWikiController
      * append payment if possible
      * @param array $data
      * @param array $form
-     * @param bool $isGroup
      * @return array $entry
      * @throws Exception
      */
-    protected function appendPaymentIfPossible(array $data, array $form, bool $isGroup): array
+    protected function appendPaymentIfPossible(array $data, array $form): array
     {
         if (empty($data['associatedEntryId']) || !is_string($data['associatedEntryId'])){
             throw new Exception('"$_POST[\'data\'][\'associatedEntryId\']" should not be empty and should be a string!');
