@@ -482,7 +482,7 @@ class AreaManager
         }
     }
 
-    private function getPostalCodeFieldName(): string
+    public function getPostalCodeFieldName(): string
     {
         if (is_null($this->postalCodeFieldName)) {
             $this->postalCodeFieldName = $this->params->get('PostalCodeFieldName');
@@ -572,7 +572,7 @@ class AreaManager
         return $this->areaAssociationForm;
     }
 
-    private function getAssociations(): array
+    public function getAssociations(): array
     {
         if (is_null($this->areaAssociationCache)) {
             $this->areaAssociationCache = [];
@@ -620,7 +620,7 @@ class AreaManager
         return $this->areaAssociationCache;
     }
 
-    private function extractAreaFromPostalCode(array $entry): string
+    public function extractAreaFromPostalCode(array $entry): string
     {
         $departmentList = $this->getDepartmentList();
         if (!empty($departmentList)) {
