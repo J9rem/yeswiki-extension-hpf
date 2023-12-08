@@ -33,6 +33,7 @@ use YesWiki\Core\Service\EventDispatcher;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Core\YesWikiController;
 use YesWiki\Hpf\Service\AreaManager;
+use YesWiki\Hpf\Service\HpfService;
 use YesWiki\Wiki;
 
 class HpfImportController extends YesWikiController
@@ -51,6 +52,7 @@ class HpfImportController extends YesWikiController
         EntryManager $entryManager,
         EventDispatcher $eventDispatcher,
         FormManager $formManager,
+        HpfService $hpfService,
         UserManager $userManager,
         Wiki $wiki
     ) {
@@ -59,6 +61,7 @@ class HpfImportController extends YesWikiController
         $this->entryManager = $entryManager;
         $this->eventDispatcher = $eventDispatcher;
         $this->formManager = $formManager;
+        $this->hpfService = $hpfService;
         $this->userManager = $userManager;
         $this->wiki = $wiki;
     }
@@ -99,21 +102,14 @@ class HpfImportController extends YesWikiController
             throw new Exception("form not found");
         }
 
-        if ($appendMode){
-            return new ApiResponse(
-                ['error' => 'not ready'],
-                500
-            );
-        } else {
+        $data = $_POST['data'];
+        if (!$appendMode){
             try {
-                $newEntry = $this->addEntryIfPossible($_POST['data'],$form,$isGroup);
+                $newEntry = $this->addEntryIfPossible($data,$form,$isGroup);
                 if (empty($newEntry) || !is_array($newEntry)){
                     throw new Exception("entry not created");
                 }
-                return new ApiResponse(
-                    $newEntry,
-                    200
-                );
+                $data['associatedEntryId'] = $newEntry['id_fiche'];
             } catch (Throwable $th) {
                 return new ApiResponse(
                     ['error' => $th->getMessage()],
@@ -121,6 +117,15 @@ class HpfImportController extends YesWikiController
                 );
             }
         }
+        
+        $updatedEntry = $this->appendPaymentIfPossible($data,$form,$isGroup);
+        if ($appendMode && (empty($updatedEntry) || !is_array($updatedEntry))){
+            throw new Exception("entry not updated");
+        }
+        return new ApiResponse(
+            $updatedEntry,
+            200
+        );
     }
 
     /**
@@ -495,5 +500,56 @@ class HpfImportController extends YesWikiController
             },
             $fields
         );
+    }
+    
+    /**
+     * append payment if possible
+     * @param array $data
+     * @param array $form
+     * @param bool $isGroup
+     * @return array $entry
+     * @throws Exception
+     */
+    protected function appendPaymentIfPossible(array $data, array $form, bool $isGroup): array
+    {
+        if (empty($data['associatedEntryId']) || !is_string($data['associatedEntryId'])){
+            throw new Exception('"$_POST[\'data\'][\'associatedEntryId\']" should not be empty and should be a string!');
+        }
+        // get entry
+        $entry = $this->entryManager->getOne($data['associatedEntryId'],false,null,false); // no cache
+        if (empty($entry)){
+            throw new Exception('"associatedEntryId" does not correspond to an existing entry !');
+        }
+        // check if payment is existing
+        if (empty($data['number']) || !is_scalar($data['number'])){
+            throw new Exception('"number" should be a not empty string or number !');
+        }
+        $proposedPaymentId = trim(strval($data['number']));
+        if (empty($proposedPaymentId)){
+            throw new Exception('"number" should be a not empty string or number !');
+        }
+        // append payment
+        $paymentContent = $entry[HpfService::PAYMENTS_FIELDNAME] ?? '';
+        if (!empty($paymentContent)){
+            $currentPayments = $this->hpfService->convertStringToPayments($paymentContent);
+            if (array_key_exists($proposedPaymentId,$currentPayments)){
+                throw new Exception('Payment already defined !');
+            }
+        }
+        foreach (['date','value','year'] as $key) {
+            if (empty($data[$key]) || !is_string($data[$key])){
+                throw new Exception("\"$key\" should be a not empty string !");
+            }
+        }
+        list('updatedEntry' => $updatedEntry) = $this->hpfService->addPaymentInEntry(
+            $data['associatedEntryId'],
+            $data['date'],
+            $data['value'],
+            'structure"',
+            $data['number'],
+            $data['year']
+        );
+        
+        return $updatedEntry;
     }
 }
