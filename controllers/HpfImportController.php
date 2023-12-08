@@ -19,6 +19,7 @@ use YesWiki\Bazar\Field\BazarField;
 use YesWiki\Bazar\Field\CheckboxField;
 use YesWiki\Bazar\Field\EmailField;
 use YesWiki\Bazar\Field\EnumField;
+use YesWiki\Bazar\Field\RadioListField;
 use YesWiki\Bazar\Field\SelectEntryField;
 use YesWiki\Bazar\Field\SelectListField;
 use YesWiki\Bazar\Field\TextField;
@@ -179,18 +180,14 @@ class HpfImportController extends YesWikiController
             $value = strval($data['value'] ?? 0);
             $postalcode = strval($data['postalcode'] ?? '');
             $town = strval($data['town'] ?? '');
+            
             if (!empty($postalcode)){
                 $deptcode = $this->areaManager->extractAreaFromPostalCode([
                     $this->areaManager->getPostalCodeFieldName() => $postalcode
                 ]);
                 if (!empty($deptcode)){
                     $associations = $this->areaManager->getAssociations();
-                    $areacode = '';
-                    foreach ($associations as $code => $depts) {
-                        if (strlen($areacode) === 0 && in_array($deptcode,$depts)){
-                            $areacode = $code;
-                        }
-                    }
+                    $areacode = $associations['depts'][$deptcode][0] ?? '';
                 }
             }
             $firstName = strval($data['firstname'] ?? '');
@@ -227,6 +224,15 @@ class HpfImportController extends YesWikiController
                 ];
             }
 
+            // no donation by default
+            $params[] = [
+                function ($field) {return $field instanceof RadioListField
+                    && $field->getLinkedObjectName() === 'ListeOuinon'
+                    && $field->getName() == 'bf_don_complementaire';},
+                'non',
+            ];
+
+
             // area
             if (!empty($areacode)){
                 $params[] = [
@@ -234,26 +240,74 @@ class HpfImportController extends YesWikiController
                         && $field->getName() === 'bf_region_adhesion';},
                     $areacode,
                 ];
-                // TODO manage structure
-                // $params[] = [
-                //     function ($field) {return $field instanceof SelectEntryField
-                //         && $field->getName() === 'bf_structure_regionale_adhesion';},
-                //     '',
-                // ];
+                // structure
+                $params[] = [
+                    function ($field) {return $field instanceof SelectEntryField
+                        && $field->getName() === 'bf_structure_regionale_adhesion';},
+                    function ($field) use($areacode){
+                        $options = $field->getOptions();
+                        $entries = array_map(
+                            function($entryId){
+                                return $this->entryManager->getOne($entryId);
+                            },
+                            array_keys($options)
+                        );
+                        $entries = array_filter(
+                            $entries,
+                            function($e) use ($areacode){
+                                return !empty($e['checkboxListeRegionsFrancaisesApresNouveauDecoupabf_region'])
+                                    && in_array($areacode,explode(',',$e['checkboxListeRegionsFrancaisesApresNouveauDecoupabf_region']));
+                            }
+                        );
+                        if (empty($entries) || count($entries) > 1) {
+                            return '';
+                        }
+                        $e = array_pop($entries);
+                        return $e['id_fiche'];
+                    },
+                ];
                 if (!empty($deptcode)){
                     $params[] = [
                         function ($field) {return $field instanceof SelectListField
                             && $field->getName() === 'bf_departement_adhesion';},
-                        $areacode,
+                        $deptcode,
                     ];
-                    // TODO manage structure
-                    // $params[] = [
-                    //     function ($field) {return $field instanceof SelectEntryField
-                    //         && $field->getName() === 'bf_structure_locale_adhesion';},
-                    //     '',
-                    // ];
+                    
+                    // structure
+                    $params[] = [
+                        function ($field) {return $field instanceof SelectEntryField
+                            && $field->getName() === 'bf_structure_locale_adhesion';},
+                        function ($field) use($deptcode){
+                            $options = $field->getOptions();
+                            $entries = array_map(
+                                function($entryId){
+                                    return $this->entryManager->getOne($entryId);
+                                },
+                                array_keys($options)
+                            );
+                            $entries = array_filter(
+                                $entries,
+                                function($e) use ($deptcode){
+                                    return !empty($e['checkboxListeDepartementsFrancais'])
+                                        && in_array($deptcode,explode(',',$e['checkboxListeDepartementsFrancais']));
+                                }
+                            );
+                            if (empty($entries) || count($entries) > 1) {
+                                return '';
+                            }
+                            $e = array_pop($entries);
+                            return $e['id_fiche'];
+                        },
+                    ];
                 }
             }
+            
+            // type of payment
+            $params[] = [
+                function ($field) {return $field instanceof RadioListField
+                    && $field->getLinkedObjectName() === 'ListeMoyenDePaiement';},
+                'cheque',
+            ];
 
             // first name
             if (!empty($firstName)){
@@ -326,11 +380,11 @@ class HpfImportController extends YesWikiController
         }
 
         // create entry
-        // $createdEntry = $this->entryManager->create($form['bn_id_nature'], $entry);
-        // $this->eventDispatcher->yesWikiDispatch('entry.created', [
-        //     'id' => $createdEntry['id_fiche'],
-        //     'data' => $createdEntry
-        // ]);
+        $createdEntry = $this->entryManager->create($form['bn_id_nature'], $entry);
+        $this->eventDispatcher->yesWikiDispatch('entry.created', [
+            'id' => $createdEntry['id_fiche'],
+            'data' => $createdEntry
+        ]);
 
         return (empty($createdEntry) || !is_array($createdEntry)) ? [] : $createdEntry;
     }
@@ -386,7 +440,7 @@ class HpfImportController extends YesWikiController
      */
     protected function appendConcernedFieldsInData(array &$data, array $form,array $params)
     {
-        $fields = $this->findFieldsInForm($form,$criterion);
+        $fields = $this->findFieldsInForm($form,$params);
         foreach ($fields as $key => $field) {
             if (!empty($field)){
                 $propName = (!empty($params[$key][2]) && is_callable($params[$key][2]))
