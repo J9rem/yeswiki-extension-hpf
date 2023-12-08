@@ -50,7 +50,6 @@ class HpfImportController extends YesWikiController
         EntryManager $entryManager,
         EventDispatcher $eventDispatcher,
         FormManager $formManager,
-        HpfService $hpfService,
         UserManager $userManager,
         Wiki $wiki
     ) {
@@ -59,7 +58,6 @@ class HpfImportController extends YesWikiController
         $this->entryManager = $entryManager;
         $this->eventDispatcher = $eventDispatcher;
         $this->formManager = $formManager;
-        $this->hpfService = $hpfService;
         $this->userManager = $userManager;
         $this->wiki = $wiki;
     }
