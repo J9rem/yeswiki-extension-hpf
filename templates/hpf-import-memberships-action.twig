@@ -54,8 +54,6 @@
     
     <div class="dynamic-hpf-import-memberships-action">
         <hpf-import-table data-values="{{ data|json_encode }}" v-model="isLoading" data-params="{{ params|json_encode }}">
-            <template #taddress>{{ _t('HPF_ADDRESS') }}</template>
-            <template #taddresscomp>{{ _t('HPF_ADDRESS_COMP') }}</template>
             <template #tadjustedmembership>{{ _t('HPF_ADJUSTED') }}</template>
             <template #tappendpayment>{{ _t('HPF_APPEND_PAYMENT') }}</template>
             <template #tbtntxt>{{ _t('HPF_PROCESS') }}</template>

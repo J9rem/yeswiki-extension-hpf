@@ -426,8 +426,6 @@ export default {
                 this.appendCheckBoxToAppendPayment(data,width)
                 this.appendColumn('firstname',data,width)
                 this.appendColumn('name',data,width)
-                this.appendColumn('address',data,width)
-                this.appendColumn('addressComp',data,width)
                 this.appendColumn('postalcode',data,width,true,5)
                 this.appendColumn('town',data,width)
                 this.appendColumn('email',data,width)

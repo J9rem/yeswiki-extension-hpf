@@ -128,8 +128,6 @@ return [
     
     // templates/hpf-import-memberships-action.twig
     // Feature UUID : hpf-import-payments
-    'HPF_ADDRESS' => 'Adresse',
-    'HPF_ADDRESS_COMP' => 'Complément d\'adresse',
     'HPF_ADJUSTED' => 'Ajustée',
     'HPF_APPEND_PAYMENT' => 'Ajouter le paiement à la fiche existante',
     'HPF_COMMENT' => 'Commentaire',
