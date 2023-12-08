@@ -497,8 +497,8 @@ export default {
                         } else if (v.canAppend && v.appendPayment){
                             const entryId = this.getAssociatedId(key)
                             await this.addEntryOrAppend(v,true)
-                                .then((isOK)=>{
-                                    if (isOK){
+                                .then((entry)=>{
+                                    if (entry?.id_fiche?.length > 0){
                                         this.appendMessage(`✅ ajout du paiment fait pour <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a>`)
                                         this.values[key].canAppend = false
                                         this.values[key].appendPayment = false

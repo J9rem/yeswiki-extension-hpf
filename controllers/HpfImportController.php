@@ -76,7 +76,7 @@ class HpfImportController extends YesWikiController
      */
     public function createEntryOrAppendPaymentForMemberShip(string $mode,string $type,string $formId): ApiResponse
     {
-        $this->csrfTokenController->checkToken('main', 'POST', 'anti-csrf-token',false);
+        $this->csrfTokenController->checkToken('hpf-import', 'POST', 'anti-csrf-token',false);
 
         if(empty($_POST['data'])
             || !is_array($_POST['data'])) {
@@ -119,8 +119,12 @@ class HpfImportController extends YesWikiController
         }
         
         $updatedEntry = $this->appendPaymentIfPossible($data,$form,$isGroup);
-        if ($appendMode && (empty($updatedEntry) || !is_array($updatedEntry))){
-            throw new Exception("entry not updated");
+        if (empty($updatedEntry) || !is_array($updatedEntry)){
+            if ($appendMode){
+                throw new Exception("entry not updated");
+            } else {
+                $updatedEntry = $newEntry ?? [];
+            }
         }
         return new ApiResponse(
             $updatedEntry,
@@ -541,11 +545,17 @@ class HpfImportController extends YesWikiController
                 throw new Exception("\"$key\" should be a not empty string !");
             }
         }
+        $date = $data['date'];
+        $match = [];
+        if (preg_match('/([0-9]{2})\\/([0-9]{2})\\/([0-9]{4})/',$date,$match)){
+            $date = "{$match[3]}{$match[2]}{$match[1]}";
+        }
+
         list('updatedEntry' => $updatedEntry) = $this->hpfService->addPaymentInEntry(
             $data['associatedEntryId'],
-            $data['date'],
+            $date,
             $data['value'],
-            'structure"',
+            'structure',
             $data['number'],
             $data['year']
         );

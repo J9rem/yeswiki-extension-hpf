@@ -50,7 +50,7 @@ class HPFImportMemberShipAction extends YesWikiAction
         }
         
         $params = [
-            'anti-csrf-token' => $this->getService(CsrfTokenManager::class)->getToken('main')->getValue()
+            'anti-csrf-token' => $this->getService(CsrfTokenManager::class)->getToken('hpf-import')->getValue()
         ];
         // not empty params
         foreach (['college1','college2'] as $name) {

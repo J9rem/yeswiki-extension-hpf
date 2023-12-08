@@ -221,7 +221,9 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
             return $match[1];
         }
         try {
-            return PhpSpreadsheetDate::excelToDateTimeObject($input)->format('d/m/Y');
+            if (!empty($input)){
+                return PhpSpreadsheetDate::excelToDateTimeObject($input)->format('d/m/Y');
+            }
         } catch (Throwable $th) {
         }
         return '';
