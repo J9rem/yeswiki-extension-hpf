@@ -130,6 +130,7 @@ return [
     // Feature UUID : hpf-import-payments
     'HPF_ADJUSTED' => 'Adjusted',
     'HPF_ADD_ENTRY_OR_PAYMENT' => 'Ajouter le paiement',
+    'HPF_APPEND_INSTEAD_OF_CREATE' => 'An entry already exists for this e-mail : only the payment will be appended to the entry, without changing anything else ! Click to see entry.',
     'HPF_CREATE_ENTRY_NOT_POSSIBLE' => 'Not possible:',
     'HPF_COMMENT' => 'Comment',
     'HPF_DATE' => 'Date',

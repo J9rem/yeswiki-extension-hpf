@@ -163,17 +163,30 @@ export default {
                     render: (data,type,row)=>{
                         if (type === 'display'){
                             let error = ''
+                            let appendPart = ''
                             const defaultError = TemplateRenderer.render('HpfImportTable',this,'tcreateentrynotpossible')
                             if (!this.checkEmail(row)){
                                 error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailbadlyformatted')
                             } else if (!this.checkPostalCode(row)){
                                 error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tpostalcodebadlyformatted')
-                            } else if (this.getAssociatedId(row.id).length > 0
-                                || this.values.filter((v,idx)=>idx < row.id && v.email == row.email).length > 0){
+                            } else if (this.getAssociatedId(row.id).length > 0){
+                                this.values[row.id].associatedEntryId = this.getAssociatedId(row.id)
+                                const warning = TemplateRenderer.render('HpfImportTable',this,'tappendinsteadofcreate')
+                                appendPart = `
+                                    <a
+                                        href="${window.wiki.url(`?${this.values[row.id].associatedEntryId}/iframe`)}"
+                                        style="color:orange;text-decoration: none;"
+                                        class="modalbox"
+                                        data-toggle="tooltip"
+                                        data-placement="right"
+                                        data-iframe="1"
+                                        data-size="modal-lg"
+                                        title="${warning}"
+                                        onMouseover="if(!this.hasAttribute('data-original-title')){$(this).tooltip('show');};this.removeAttribute('onMouseover')"
+                                        >❗</a>
+                                `
+                            } else if (this.values.filter((v,idx)=>idx < row.id && v.email == row.email).length > 0){
                                 error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailalreadyused')
-                                if (this.getAssociatedId(row.id).length > 0){
-                                    this.values[row.id].associatedEntryId = this.getAssociatedId(row.id)
-                                }
                             } else if (row?.isGroup === 'x' && !(row?.groupName?.length > 0)){
                                 error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tgroupnameempty')
                             } else if (row?.isGroup !== 'x' && !(row?.firstname?.length > 0)){
@@ -182,28 +195,31 @@ export default {
                                 error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tnameempty')
                             }
                             const input = `
-                                <span onClick="hpfImportTableWrapper.toogleCheckbox(event,'processEntry',${row.id})">
+                                <span ${(this.processing === true || error.length > 0) ? '' : `onClick="hpfImportTableWrapper.toogleCheckbox(event,'processEntry',${row.id})"`}>
                                     <input 
                                         type="checkbox"
-                                        ${data === true ? ' checked' : ''}
+                                        ${(data === true && error.length == 0) ? ' checked' : ''}
                                         ${(this.processing === true || error.length > 0) ? ' disabled' : ''}
                                     />
                                     <span></span>
-                                <span>
+                                </span>
                                 `
                             if (error.length > 0){
                                 this.values[row.id].canAdd = false
                                 return  `
                                         <div>
-                                            ${input}<br/>
-                                            <span style="color:red;">
-                                                ${error}
-                                            </span>
+                                            ${input}${appendPart} <span
+                                                style="color:red;"
+                                                data-toggle="tooltip"
+                                                data-placement="right"
+                                                title="${error}"
+                                                onMouseover="if(!this.hasAttribute('data-original-title')){$(this).tooltip('show');};this.removeAttribute('onMouseover')"
+                                                >⚠</span>
                                         </div>
                                         `
                             } else {
                                 this.values[row.id].canAdd = true
-                                return input
+                                return input+appendPart
                             }
                         } else if (type == 'sort'){
                             return row?.id ?? data
