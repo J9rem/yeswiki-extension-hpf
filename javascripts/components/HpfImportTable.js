@@ -157,7 +157,7 @@ export default {
         appendCheckBoxforEntryCreation(data,width){
             data.columns.push({
                 ...{
-                    data: 'createEntry',
+                    data: 'processEntry',
                     title: TemplateRenderer.render('HpfImportTable',this,'taddentryorpayment'),
                     footer: '',
                     render: (data,type,row)=>{
@@ -182,7 +182,7 @@ export default {
                                 error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tnameempty')
                             }
                             const input = `
-                                <span onClick="hpfImportTableWrapper.toogleCheckbox(event,'createEntry',${row.id})">
+                                <span onClick="hpfImportTableWrapper.toogleCheckbox(event,'processEntry',${row.id})">
                                     <input 
                                         type="checkbox"
                                         ${data === true ? ' checked' : ''}
@@ -418,41 +418,43 @@ export default {
                     this.message = TemplateRenderer.render('HpfImportTable',this,`tprocessing`)
                     for (let key = 0; key < this.values.length; key++) {
                         const v = this.values[key];
-                        if (v.canAdd && v.createEntry){
-                            await this.addEntryOrAppend(v,false)
-                                .then((entry)=>{
-                                    if (entry?.id_fiche?.length > 0){
-                                        this.appendMessage(`✅ ajout OK pour <a href="${window.wiki.url(`?${entry.id_fiche}`)}" class="newtab">${entry.id_fiche}</a>`)
-                                        this.values[key].canAdd = false
-                                        this.values[key].createEntry = false
-                                        this.values[key].associatedEntryId = entry.id_fiche
-                                        this.cache[this.getCollegeForCache(key)].email[v.email] = entry.id_fiche
-                                        return entry.id_fiche
-                                    } else {
-                                        throw new Error('empty entryId')
-                                    }
-                                })
-                                .catch((error)=>{
-                                    this.asyncHelper.manageError(error)
-                                    this.appendMessage(`❌ la fiche avec l'e-mail '${v.email}' n'a pas été ajoutée !`)
-                                })
-                        } else if (v.canAppend && v.appendPayment){
-                            const entryId = this.getAssociatedId(key)
-                            await this.addEntryOrAppend(v,true)
-                                .then((entry)=>{
-                                    if (entry?.id_fiche?.length > 0){
-                                        this.appendMessage(`✅ ajout du paiment fait pour <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a>`)
-                                        this.values[key].canAppend = false
-                                        this.values[key].appendPayment = false
-                                        return true
-                                    } else {
-                                        throw new Error('payment not added')
-                                    }
-                                })
-                                .catch((error)=>{
-                                    this.asyncHelper.manageError(error)
-                                    this.appendMessage(`❌ le paiment n'a pas été ajouté pour la fiche <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a> !`)
-                                })
+                        if (v.processEntry){
+                            if (v.canAdd){
+                                await this.addEntryOrAppend(v,false)
+                                    .then((entry)=>{
+                                        if (entry?.id_fiche?.length > 0){
+                                            this.appendMessage(`✅ ajout OK pour <a href="${window.wiki.url(`?${entry.id_fiche}`)}" class="newtab">${entry.id_fiche}</a>`)
+                                            this.values[key].canAdd = false
+                                            this.values[key].processEntry = false
+                                            this.values[key].associatedEntryId = entry.id_fiche
+                                            this.cache[this.getCollegeForCache(key)].email[v.email] = entry.id_fiche
+                                            return entry.id_fiche
+                                        } else {
+                                            throw new Error('empty entryId')
+                                        }
+                                    })
+                                    .catch((error)=>{
+                                        this.asyncHelper.manageError(error)
+                                        this.appendMessage(`❌ la fiche avec l'e-mail '${v.email}' n'a pas été ajoutée !`)
+                                    })
+                            } else if (v.canAppend){
+                                const entryId = this.getAssociatedId(key)
+                                await this.addEntryOrAppend(v,true)
+                                    .then((entry)=>{
+                                        if (entry?.id_fiche?.length > 0){
+                                            this.appendMessage(`✅ ajout du paiment fait pour <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a>`)
+                                            this.values[key].canAppend = false
+                                            this.values[key].processEntry = false
+                                            return true
+                                        } else {
+                                            throw new Error('payment not added')
+                                        }
+                                    })
+                                    .catch((error)=>{
+                                        this.asyncHelper.manageError(error)
+                                        this.appendMessage(`❌ le paiment n'a pas été ajouté pour la fiche <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a> !`)
+                                    })
+                            }
                         }
                     }
                     this.appendMessage('✅ Fin')
@@ -476,7 +478,7 @@ export default {
             },5000)
         },
         refreshCanProceed(){
-            this.canProceed = this.values?.some((v)=>(v.canAdd && v.createEntry) || (v.canAppend && v.appendPayment)) ?? false
+            this.canProceed = this.values?.some((v)=>(v.processEntry && (v.canAdd || v.canAppend))) ?? false
         },
         setDefaultValues(){
             this.values.forEach((v,k)=>{
@@ -519,8 +521,7 @@ export default {
                 if (v?.associatedEntryId?.length > 0 && v?.email?.length > 0){
                     this.cache[this.getCollegeForCache(k)].email[v.email] = v.associatedEntryId
                 }
-                this.values[k].createEntry = false
-                this.values[k].appendPayment = false
+                this.values[k].processEntry = true
                 this.values[k].canAdd = true
                 this.values[k].canAppend = true
             })
