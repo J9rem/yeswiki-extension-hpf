@@ -158,7 +158,7 @@ export default {
             data.columns.push({
                 ...{
                     data: 'createEntry',
-                    title: TemplateRenderer.render('HpfImportTable',this,'tcreateentry'),
+                    title: TemplateRenderer.render('HpfImportTable',this,'taddentryorpayment'),
                     footer: '',
                     render: (data,type,row)=>{
                         if (type === 'display'){
@@ -203,63 +203,6 @@ export default {
                                         `
                             } else {
                                 this.values[row.id].canAdd = true
-                                return input
-                            }
-                        } else if (type == 'sort'){
-                            return row?.id ?? data
-                        }
-                        return data
-                    },
-                    orderable: false
-                },
-                ...width
-            })
-        },
-        appendCheckBoxToAppendPayment(data,width){
-            data.columns.push({
-                ...{
-                    data: 'appendPayment',
-                    title: TemplateRenderer.render('HpfImportTable',this,'tappendpayment'),
-                    footer: '',
-                    render: (data,type,row)=>{
-                        if (!(row?.email?.length > 0)){
-                            return ''
-                        }
-                        const associatedId = this.getAssociatedId(row.id)
-                        if (!(associatedId.length > 0)){
-                            return ''
-                        }
-                        if (type === 'display'){
-                            let error = ''
-                            const input = `
-                                <span onClick="hpfImportTableWrapper.toogleCheckbox(event,'appendPayment',${row.id})">
-                                    <input 
-                                        type="checkbox"
-                                        ${data === true ? ' checked' : ''}
-                                        ${(this.processing === true || error.length > 0) ? ' disabled' : ''}
-                                    />
-                                    <span></span>
-                                </span>
-                                <a
-                                    href="${window.wiki.url(`?${associatedId}/iframe`)}"
-                                    data-iframe="1"
-                                    data-size="modal-lg"
-                                    class="modalbox"
-                                    title="${associatedId}"
-                                    >${associatedId}</a>
-                                `
-                            if (error.length > 0){
-                                this.values[row.id].canAppend = false
-                                return  `
-                                        <div>
-                                            ${input}<br/>
-                                            <span style="color:red;">
-                                                ${error}
-                                            </span>
-                                        </div>
-                                        `
-                            } else {
-                                this.values[row.id].canAppend = true
                                 return input
                             }
                         } else if (type == 'sort'){
@@ -423,7 +366,6 @@ export default {
                 const defaultcolumnwidth = '100px';
                 const width = defaultcolumnwidth.length > 0 ? {width:defaultcolumnwidth}: {}
                 this.appendCheckBoxforEntryCreation(data,width)
-                this.appendCheckBoxToAppendPayment(data,width)
                 this.appendColumn('firstname',data,width)
                 this.appendColumn('name',data,width)
                 this.appendColumn('postalcode',data,width,true,5)

@@ -55,9 +55,8 @@
     <div class="dynamic-hpf-import-memberships-action">
         <hpf-import-table data-values="{{ data|json_encode }}" v-model="isLoading" data-params="{{ params|json_encode }}">
             <template #tadjustedmembership>{{ _t('HPF_ADJUSTED') }}</template>
-            <template #tappendpayment>{{ _t('HPF_APPEND_PAYMENT') }}</template>
             <template #tbtntxt>{{ _t('HPF_PROCESS') }}</template>
-            <template #tcreateentry>{{ _t('HPF_CREATE_ENTRY') }}</template>
+            <template #taddentryorpayment>{{ _t('HPF_ADD_ENTRY_OR_PAYMENT') }}</template>
             <template #tcreateentrynotpossible>{{ _t('HPF_CREATE_ENTRY_NOT_POSSIBLE') }}</template>
             <template #tcomment>{{ _t('HPF_COMMENT') }}</template>
             <template #tdate>{{ _t('HPF_DATE') }}</template>

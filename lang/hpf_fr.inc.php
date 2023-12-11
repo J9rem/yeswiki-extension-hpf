@@ -129,9 +129,8 @@ return [
     // templates/hpf-import-memberships-action.twig
     // Feature UUID : hpf-import-payments
     'HPF_ADJUSTED' => 'Ajustée',
-    'HPF_APPEND_PAYMENT' => 'Ajouter le paiement à la fiche existante',
     'HPF_COMMENT' => 'Commentaire',
-    'HPF_CREATE_ENTRY' => 'Créer une fiche',
+    'HPF_ADD_ENTRY_OR_PAYMENT' => 'Ajouter le paiement',
     'HPF_CREATE_ENTRY_NOT_POSSIBLE' => 'Création impossible :',
     'HPF_DATE' => 'Date',
     'HPF_EMAIL' => 'E-mail',
