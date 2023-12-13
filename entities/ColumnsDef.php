@@ -118,6 +118,14 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
                 'strtolower',
                 '\\'.self::class.'::extractX'
             ]
+        ],
+        'year' => [
+            'search' => "/^\s*((?:ann(?:é|e)e|year)s?).*$/i",
+            'filter' => "/^\s*(20[1-3][0-9])\s*$/",
+            'post' => [
+                'trim',
+                'strtolower'
+            ]
         ]
     ];
 

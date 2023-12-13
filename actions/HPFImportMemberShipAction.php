@@ -257,9 +257,9 @@ class HPFImportMemberShipAction extends YesWikiAction
     {
         $extracted = [];
         $colDef = $this->detectColumns($rows);
-        foreach ($rows as $key => $row) {
+        foreach ($rows as $rowKey => $row) {
             // not first line
-            if ($key > 0){
+            if ($rowKey > 0){
                 $extractedLine = [];
                 foreach ($colDef as $key => $idx) {
                     $colDefFilter = ColumnsDef::COLUMNS_SEARCH[$key]['filter'] ?? '';
