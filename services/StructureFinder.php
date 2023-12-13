@@ -87,9 +87,10 @@ class StructureFinder
      * get structure form deptcode and field
      * @param string $deptcode
      * @param SelectEntryField|null $field
+     * @param string $wantedStructure
      * @return string
      */
-    public function findStructureFromDeptAndField(string $deptcode,?SelectEntryField $field): string
+    public function findStructureFromDeptAndField(string $deptcode,?SelectEntryField $field,string $wantedStructure= ''): string
     {
         if (empty($field)){
             return '';
@@ -108,6 +109,17 @@ class StructureFinder
                     && in_array($deptcode,explode(',',$e['checkboxListeDepartementsFrancais']));
             }
         );
+        if (!empty($wantedStructure) && count($entries) > 1){
+            $correspondingEntries = array_filter(
+                $entries,
+                function($e) use ($wantedStructure){
+                    return $e['id_fiche'] == $wantedStructure;
+                }
+            );
+            if (!empty($correspondingEntries)){
+                return $wantedStructure;
+            }
+        }
         if (empty($entries) || count($entries) > 1) {
             return '';
         }

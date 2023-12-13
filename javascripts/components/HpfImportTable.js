@@ -180,8 +180,10 @@ export default {
                 const defaultError = TemplateRenderer.render('HpfImportTable',this,'tcreateentrynotpossible')
                 if (!this.checkEmail(row)){
                     error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailbadlyformatted')
-                } else if (!this.checkPostalCode(row)){
+                } else if (row?.postalcode?.length > 0 && !this.checkPostalCode(row)){
                     error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tpostalcodebadlyformatted')
+                } else if (!(row?.postalcode?.length > 0) && !(row?.dept?.length > 0)){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tpostalcodeordeptmissing')
                 } else if (this.getAssociatedId(row.id).length > 0){
                     this.values[row.id].associatedEntryId = this.getAssociatedId(row.id)
                     const warning = TemplateRenderer.render('HpfImportTable',this,'tappendinsteadofcreate')
@@ -407,6 +409,7 @@ export default {
                 this.appendColumn('postalcode',data,width,true,5)
                 this.appendColumn('town',data,width)
                 this.appendColumn('dept',data,width,true,3)
+                this.appendColumn('wantedStructure',data,width)
                 this.appendColumn('email',data,width)
                 this.appendColumn('number',data,width)
                 this.appendColumnEuros('value',data,width)

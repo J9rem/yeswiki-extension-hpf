@@ -153,6 +153,7 @@ return [
     'HPF_PERSONAL_MEMBERSHIP' => 'Personal membership',
     'HPF_POSTAL_CODE' => 'Postal code',
     'HPF_POSTAL_CODE_BADLY_FORMATTED' => 'Postal code badly formatted',
+    'HPF_POSTAL_CODE_OR_DEPT_MISSING' => 'Postal code or department missing',
     'HPF_PROCESS' => 'Proceed data',
     'HPF_PROCESSING' => 'Processing data',
     'HPF_PUBLIC_VISIBILITY' => 'Public visibility?',
@@ -160,5 +161,6 @@ return [
     'HPF_SUPPORT' => 'Support',
     'HPF_TOWN' => 'Town',
     'HPF_VALUE' => 'Value',
+    'HPF_WANTED_STRUCTURE' => 'Wanted organization',
     'HPF_YEAR' => 'Membership year',
 ];

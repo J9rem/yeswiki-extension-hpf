@@ -201,6 +201,7 @@ class HpfImportController extends YesWikiController
         $value = strval($data['value'] ?? 0);
         $postalcode = strval($data['postalcode'] ?? '');
         $deptcode = strval($data['dept'] ?? '');
+        $wantedStructure = strval($data['wantedStructure'] ?? '');
         $town = strval($data['town'] ?? '');
             
         if (empty($deptcode) && !empty($postalcode)){
@@ -322,7 +323,7 @@ class HpfImportController extends YesWikiController
                     function ($field) use($isGroup) {return $field instanceof SelectEntryField
                         && $field->getName() === ($isGroup ? 'bf_structure_locale_adhesion_groupe' :'bf_structure_locale_adhesion');},
                     function ($field) use($deptcode){
-                        return $this->structureFinder->findStructureFromDeptAndField($deptcode,$field);
+                        return $this->structureFinder->findStructureFromDeptAndField($deptcode,$field,$wantedStructure);
                     },
                 ];
             }
