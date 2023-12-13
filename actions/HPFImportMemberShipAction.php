@@ -20,10 +20,12 @@ use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Core\YesWikiAction;
 use YesWiki\Hpf\Entity\ColumnsDef;
 use YesWiki\Hpf\Service\AreaManager;
+use YesWiki\Hpf\Service\StructureFinder;
 
 class HPFImportMemberShipAction extends YesWikiAction
 {
     protected $entryManager;
+    protected $structureFinder;
 
     public function formatArguments($arg)
     {
@@ -66,6 +68,7 @@ class HPFImportMemberShipAction extends YesWikiAction
 
         // get Services
         $this->entryManager = $this->getService(EntryManager::class);
+        $this->structureFinder = $this->getService(StructureFinder::class);
 
         $data = [];
         $error = '';
@@ -320,6 +323,14 @@ class HPFImportMemberShipAction extends YesWikiAction
                     $areaManager->getPostalCodeFieldName() => $data[$key]['postalcode']
                 ]);
                 $data[$key]['dept'] = empty($deptcode) ? '' : $deptcode;
+            }
+            if (empty($data[$key]['wantedStructure']) && !empty($data[$key]['deptcode'])){
+                $data[$key]['wantedStructure'] = $this->structureFinder->findStructureFromDept(
+                    $data[$key]['deptcode'],
+                    $data[$key]['isGroup'] === 'x'
+                        ? $this->arguments['college2']
+                        : $this->arguments['college1']
+                );
             }
         }
         return $data;

@@ -35,6 +35,7 @@ use YesWiki\Core\Service\UserManager;
 use YesWiki\Core\YesWikiController;
 use YesWiki\Hpf\Service\AreaManager;
 use YesWiki\Hpf\Service\HpfService;
+use YesWiki\Hpf\Service\StructureFinder;
 use YesWiki\Wiki;
 
 class HpfImportController extends YesWikiController
@@ -48,6 +49,7 @@ class HpfImportController extends YesWikiController
     protected $eventDispatcher;
     protected $formManager;
     protected $hpfService;
+    protected $structureFinder;
     protected $userManager;
 
     public function __construct(
@@ -58,6 +60,7 @@ class HpfImportController extends YesWikiController
         EventDispatcher $eventDispatcher,
         FormManager $formManager,
         HpfService $hpfService,
+        StructureFinder $structureFinder,
         UserManager $userManager,
         Wiki $wiki
     ) {
@@ -68,6 +71,7 @@ class HpfImportController extends YesWikiController
         $this->eventDispatcher = $eventDispatcher;
         $this->formManager = $formManager;
         $this->hpfService = $hpfService;
+        $this->structureFinder = $structureFinder;
         $this->userManager = $userManager;
         $this->wiki = $wiki;
     }
@@ -318,25 +322,7 @@ class HpfImportController extends YesWikiController
                     function ($field) use($isGroup) {return $field instanceof SelectEntryField
                         && $field->getName() === ($isGroup ? 'bf_structure_locale_adhesion_groupe' :'bf_structure_locale_adhesion');},
                     function ($field) use($deptcode){
-                        $options = $field->getOptions();
-                        $entries = array_map(
-                            function($entryId){
-                                return $this->entryManager->getOne($entryId);
-                            },
-                            array_keys($options)
-                        );
-                        $entries = array_filter(
-                            $entries,
-                            function($e) use ($deptcode){
-                                return !empty($e['checkboxListeDepartementsFrancais'])
-                                    && in_array($deptcode,explode(',',$e['checkboxListeDepartementsFrancais']));
-                            }
-                        );
-                        if (empty($entries) || count($entries) > 1) {
-                            return '';
-                        }
-                        $e = array_pop($entries);
-                        return $e['id_fiche'];
+                        return $this->structureFinder->findStructureFromDeptAndField($deptcode,$field);
                     },
                 ];
             }
