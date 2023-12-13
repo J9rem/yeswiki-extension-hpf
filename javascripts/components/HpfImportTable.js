@@ -178,28 +178,48 @@ export default {
                 let error = ''
                 let appendPart = ''
                 const defaultError = TemplateRenderer.render('HpfImportTable',this,'tcreateentrynotpossible')
+                const associatedId = this.getAssociatedId(row.id)
                 if (!this.checkEmail(row)){
                     error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailbadlyformatted')
                 } else if (row?.postalcode?.length > 0 && !this.checkPostalCode(row)){
                     error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tpostalcodebadlyformatted')
                 } else if (!(row?.postalcode?.length > 0) && !(row?.dept?.length > 0)){
                     error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tpostalcodeordeptmissing')
-                } else if (this.getAssociatedId(row.id).length > 0){
-                    this.values[row.id].associatedEntryId = this.getAssociatedId(row.id)
-                    const warning = TemplateRenderer.render('HpfImportTable',this,'tappendinsteadofcreate')
-                    appendPart = `
-                        <a
-                            href="${window.wiki.url(`?${this.values[row.id].associatedEntryId}/iframe`)}"
-                            style="color:orange;text-decoration: none;"
-                            class="modalbox"
-                            data-toggle="tooltip"
-                            data-placement="right"
-                            data-iframe="1"
-                            data-size="modal-lg"
-                            title="${warning}"
-                            onMouseover="if(!this.hasAttribute('data-original-title')){$(this).tooltip('show');};this.removeAttribute('onMouseover')"
-                            >❗</a>
-                    `
+                } else if (associatedId?.length > 0){
+                    this.values[row.id].associatedEntryId = associatedId
+                    this.values[row.id].canAdd = false
+                    if (this.values[row.id]?.registeredPayments?.includes(row?.number ?? '')){
+                        appendPart = `
+                            <a
+                                href="${window.wiki.url(`?${associatedId}/iframe`)}"
+                                style="color:green;text-decoration: none;"
+                                class="modalbox"
+                                data-toggle="tooltip"
+                                data-placement="right"
+                                data-iframe="1"
+                                data-size="modal-lg"
+                                title="${TemplateRenderer.render('HpfImportTable',this,'talreadyappended')}"
+                                onMouseover="if(!this.hasAttribute('data-original-title')){$(this).tooltip('show');};this.removeAttribute('onMouseover')"
+                                >✅</a>
+                        `
+                        this.values[row.id].canAppend = false
+                    } else {
+                        this.values[row.id].canAppend = true
+                        const warning = TemplateRenderer.render('HpfImportTable',this,'tappendinsteadofcreate')
+                        appendPart = `
+                            <a
+                                href="${window.wiki.url(`?${associatedId}/iframe`)}"
+                                style="color:orange;text-decoration: none;"
+                                class="modalbox"
+                                data-toggle="tooltip"
+                                data-placement="right"
+                                data-iframe="1"
+                                data-size="modal-lg"
+                                title="${warning}"
+                                onMouseover="if(!this.hasAttribute('data-original-title')){$(this).tooltip('show');};this.removeAttribute('onMouseover')"
+                                >❗</a>
+                        `
+                    }
                 } else if (this.values.filter((v,idx)=>idx < row.id && v.email == row.email).length > 0){
                     error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailalreadyused')
                 } else if (row?.isGroup === 'x' && !(row?.groupName?.length > 0)){
@@ -214,13 +234,15 @@ export default {
                         <input 
                             type="checkbox"
                             ${(data === true && error.length == 0) ? ' checked' : ''}
-                            ${(this.processing === true || error.length > 0) ? ' disabled' : ''}
+                            ${(this.processing === true || error.length > 0 || (this.values[row.id].canAppend === false && associatedId?.length > 0)) ? ' disabled' : ''}
                         />
                         <span></span>
                     </span>
                     `
                 if (error.length > 0){
                     this.values[row.id].canAdd = false
+                    this.values[row.id].canAppend = false
+                    this.values[row.id].processEntry = false
                     return  `
                             <div>
                                 ${input}${appendPart} <span
@@ -233,7 +255,9 @@ export default {
                             </div>
                             `
                 } else {
-                    this.values[row.id].canAdd = true
+                    if (this.values[row.id].canAppend === false && !(associatedId?.length > 0)){
+                        this.values[row.id].canAdd = true
+                    }
                     return input+appendPart
                 }
             })
@@ -389,6 +413,9 @@ export default {
                     )
         },
         getAssociatedId(key){
+            if (this.values?.[key]?.associatedEntryId?.length > 0){
+                return this.values[key].associatedEntryId
+            }
             if (this.values?.[key]?.email?.length > 0){
                 return this.cache[this.getCollegeForCache(key)].email?.[this.values[key].email] ?? ''
             }
@@ -467,6 +494,7 @@ export default {
                                             this.values[key].canAdd = false
                                             this.values[key].processEntry = false
                                             this.values[key].associatedEntryId = entry.id_fiche
+                                            this.values[key].registeredPayments.push(v.number)
                                             this.cache[this.getCollegeForCache(key)].email[v.email] = entry.id_fiche
                                             return entry.id_fiche
                                         } else {
@@ -485,14 +513,22 @@ export default {
                                             this.appendMessage(`✅ ajout du paiment fait pour <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a>`)
                                             this.values[key].canAppend = false
                                             this.values[key].processEntry = false
+                                            this.values[key].registeredPayments.push(v.number)
                                             return true
                                         } else {
                                             throw new Error('payment not added')
                                         }
                                     })
                                     .catch((error)=>{
-                                        this.asyncHelper.manageError(error)
-                                        this.appendMessage(`❌ le paiment n'a pas été ajouté pour la fiche <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a> !`)
+                                        if (error?.errorMsg === 'existing payment'){
+                                            this.values[key].canAppend = false
+                                            this.values[key].processEntry = false
+                                            this.values[key].registeredPayments.push(v.number)
+                                            this.appendMessage(`🚧 le paiment n'a pas été ajouté pour la fiche <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a> car il existe déjà !`)
+                                        } else {
+                                            this.asyncHelper.manageError(error)
+                                            this.appendMessage(`❌ le paiment n'a pas été ajouté pour la fiche <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a> !`)
+                                        }
                                     })
                             }
                         }
@@ -565,6 +601,7 @@ export default {
                 this.values[k].canAdd = true
                 this.values[k].canAppend = true
                 this.values[k].canDisplayPublic = (this.values[k].visibility === 'x')
+                this.values[k].registeredPayments = []
             })
         },
         toggleCheckbox(key,name){

@@ -33,6 +33,7 @@ use YesWiki\Core\Service\AclService;
 use YesWiki\Core\Service\EventDispatcher;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Core\YesWikiController;
+use YesWiki\Hpf\Exception\PaymentAlreadyExistingException;
 use YesWiki\Hpf\Service\AreaManager;
 use YesWiki\Hpf\Service\HpfService;
 use YesWiki\Hpf\Service\StructureFinder;
@@ -129,7 +130,14 @@ class HpfImportController extends YesWikiController
             }
         }
         
-        $updatedEntry = $this->appendPaymentIfPossible($data,$form);
+        try {
+            $updatedEntry = $this->appendPaymentIfPossible($data,$form);
+        } catch (PaymentAlreadyExistingException $th) {
+            return new ApiResponse(
+                ['error'=>'existing payment'],
+                400
+            );
+        }
         if (empty($updatedEntry) || !is_array($updatedEntry)){
             if ($appendMode){
                 throw new Exception("entry not updated");
@@ -565,7 +573,7 @@ class HpfImportController extends YesWikiController
         if (!empty($paymentContent)){
             $currentPayments = $this->hpfService->convertStringToPayments($paymentContent);
             if (array_key_exists($proposedPaymentId,$currentPayments)){
-                throw new Exception('Payment already defined !');
+                throw new PaymentAlreadyExistingException('Payment already defined !');
             }
         }
         foreach (['date','value','year'] as $key) {

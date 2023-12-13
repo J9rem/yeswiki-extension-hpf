@@ -130,6 +130,7 @@ return [
     // Feature UUID : hpf-import-payments
     'HPF_ADJUSTED' => 'Ajustée',
     'HPF_ADD_ENTRY_OR_PAYMENT' => 'Ajouter le paiement',
+    'HPF_ALREADY_APPENDED' => 'Une fiche existe déjà pour cet e-mail et le paiement a déjà été enregistré ! Cliquer pour voir la fiche.',
     'HPF_APPEND_INSTEAD_OF_CREATE' => 'Une fiche existe déjà pour cet e-mail : seul le paiement sera ajouté à la fiche existante, sans mettre à jour le reste ! Cliquer pour voir la fiche.',
     'HPF_COMMENT' => 'Commentaire',
     'HPF_CREATE_ENTRY_NOT_POSSIBLE' => 'Création impossible :',
