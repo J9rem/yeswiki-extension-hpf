@@ -29,6 +29,7 @@ use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\ApiResponse;
 use YesWiki\Core\Controller\CsrfTokenController;
+use YesWiki\Core\Service\AclService;
 use YesWiki\Core\Service\EventDispatcher;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Core\YesWikiController;
@@ -38,6 +39,9 @@ use YesWiki\Wiki;
 
 class HpfImportController extends YesWikiController
 {
+    public const ADMIN_GROUPNAME = 'AdminsDesStructures';
+
+    protected $aclService;
     protected $areaManager;
     protected $csrfTokenController;
     protected $entryManager;
@@ -47,6 +51,7 @@ class HpfImportController extends YesWikiController
     protected $userManager;
 
     public function __construct(
+        AclService $aclService,
         AreaManager $areaManager,
         CsrfTokenController $csrfTokenController,
         EntryManager $entryManager,
@@ -56,6 +61,8 @@ class HpfImportController extends YesWikiController
         UserManager $userManager,
         Wiki $wiki
     ) {
+        $this->aclService = $aclService;
+        $this->areaManager = $areaManager;
         $this->areaManager = $areaManager;
         $this->csrfTokenController = $csrfTokenController;
         $this->entryManager = $entryManager;
@@ -109,6 +116,7 @@ class HpfImportController extends YesWikiController
                 if (empty($newEntry) || !is_array($newEntry)){
                     throw new Exception("entry not created");
                 }
+                $this->updateAclsIfNeeded($data,$newEntry);
                 $data['associatedEntryId'] = $newEntry['id_fiche'];
             } catch (Throwable $th) {
                 return new ApiResponse(
@@ -594,5 +602,19 @@ class HpfImportController extends YesWikiController
         );
         
         return $updatedEntry;
+    }
+
+    /**
+     * change acls for entry of should not bepublic
+     * @param array $data
+     * @param array $entry
+     */
+    protected function updateAclsIfNeeded(array $data,array $entry)
+    {
+        $publicVisibility = isset($data['canDisplayPublic']) && in_array($data['canDisplayPublic'],['1',1,true,'true'],true);
+        if (!$publicVisibility && !empty($entry['id_fiche'])){
+            $newReadAcl = "%\n@".self::ADMIN_GROUPNAME;
+            $this->aclService->save($entry['id_fiche'],'read',$newReadAcl);
+        }
     }
 }

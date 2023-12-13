@@ -153,6 +153,7 @@ return [
     'HPF_POSTAL_CODE_BADLY_FORMATTED' => 'Postal code badly formatted',
     'HPF_PROCESS' => 'Proceed data',
     'HPF_PROCESSING' => 'Processing data',
+    'HPF_PUBLIC_VISIBILITY' => 'Public visibility?',
     'HPF_STANDARD' => 'Standard',
     'HPF_SUPPORT' => 'Support',
     'HPF_TOWN' => 'Town',

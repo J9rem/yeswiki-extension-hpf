@@ -63,9 +63,9 @@ const calculateEuros = (value) => {
 }
 
 window.hpfImportTableWrapper = {
-    toogleCheckbox(event,name,key){
+    toggleCheckbox(event,name,key){
         const {mainVue} = getVue(event)
-        mainVue.toogleCheckbox(key,name)
+        mainVue.toggleCheckbox(key,name)
     },
     updateCents(event,key){
         const {elem,mainVue} = getVue(event)
@@ -154,73 +154,15 @@ export default {
                 this.$set(this.rows,idx,formattedData)
             })
         },
-        appendCheckBoxforEntryCreation(data,width){
+        appendCheckBox(data,width,dataName,translation,renderFunc){
             data.columns.push({
                 ...{
-                    data: 'processEntry',
-                    title: TemplateRenderer.render('HpfImportTable',this,'taddentryorpayment'),
+                    data: dataName,
+                    title: TemplateRenderer.render('HpfImportTable',this,translation),
                     footer: '',
                     render: (data,type,row)=>{
                         if (type === 'display'){
-                            let error = ''
-                            let appendPart = ''
-                            const defaultError = TemplateRenderer.render('HpfImportTable',this,'tcreateentrynotpossible')
-                            if (!this.checkEmail(row)){
-                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailbadlyformatted')
-                            } else if (!this.checkPostalCode(row)){
-                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tpostalcodebadlyformatted')
-                            } else if (this.getAssociatedId(row.id).length > 0){
-                                this.values[row.id].associatedEntryId = this.getAssociatedId(row.id)
-                                const warning = TemplateRenderer.render('HpfImportTable',this,'tappendinsteadofcreate')
-                                appendPart = `
-                                    <a
-                                        href="${window.wiki.url(`?${this.values[row.id].associatedEntryId}/iframe`)}"
-                                        style="color:orange;text-decoration: none;"
-                                        class="modalbox"
-                                        data-toggle="tooltip"
-                                        data-placement="right"
-                                        data-iframe="1"
-                                        data-size="modal-lg"
-                                        title="${warning}"
-                                        onMouseover="if(!this.hasAttribute('data-original-title')){$(this).tooltip('show');};this.removeAttribute('onMouseover')"
-                                        >❗</a>
-                                `
-                            } else if (this.values.filter((v,idx)=>idx < row.id && v.email == row.email).length > 0){
-                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailalreadyused')
-                            } else if (row?.isGroup === 'x' && !(row?.groupName?.length > 0)){
-                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tgroupnameempty')
-                            } else if (row?.isGroup !== 'x' && !(row?.firstname?.length > 0)){
-                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tfirstnameempty')
-                            } else if (row?.isGroup !== 'x' && !(row?.name?.length > 0)){
-                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tnameempty')
-                            }
-                            const input = `
-                                <span ${(this.processing === true || error.length > 0) ? '' : `onClick="hpfImportTableWrapper.toogleCheckbox(event,'processEntry',${row.id})"`}>
-                                    <input 
-                                        type="checkbox"
-                                        ${(data === true && error.length == 0) ? ' checked' : ''}
-                                        ${(this.processing === true || error.length > 0) ? ' disabled' : ''}
-                                    />
-                                    <span></span>
-                                </span>
-                                `
-                            if (error.length > 0){
-                                this.values[row.id].canAdd = false
-                                return  `
-                                        <div>
-                                            ${input}${appendPart} <span
-                                                style="color:red;"
-                                                data-toggle="tooltip"
-                                                data-placement="right"
-                                                title="${error}"
-                                                onMouseover="if(!this.hasAttribute('data-original-title')){$(this).tooltip('show');};this.removeAttribute('onMouseover')"
-                                                >⚠</span>
-                                        </div>
-                                        `
-                            } else {
-                                this.values[row.id].canAdd = true
-                                return input+appendPart
-                            }
+                            return renderFunc(data,type,row)
                         } else if (type == 'sort'){
                             return row?.id ?? data
                         }
@@ -229,6 +171,83 @@ export default {
                     orderable: false
                 },
                 ...width
+            })
+        },
+        appendCheckBoxforEntryCreation(data,width){
+            this.appendCheckBox(data,width,'processEntry','taddentryorpayment',(data,type,row)=>{
+                let error = ''
+                let appendPart = ''
+                const defaultError = TemplateRenderer.render('HpfImportTable',this,'tcreateentrynotpossible')
+                if (!this.checkEmail(row)){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailbadlyformatted')
+                } else if (!this.checkPostalCode(row)){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tpostalcodebadlyformatted')
+                } else if (this.getAssociatedId(row.id).length > 0){
+                    this.values[row.id].associatedEntryId = this.getAssociatedId(row.id)
+                    const warning = TemplateRenderer.render('HpfImportTable',this,'tappendinsteadofcreate')
+                    appendPart = `
+                        <a
+                            href="${window.wiki.url(`?${this.values[row.id].associatedEntryId}/iframe`)}"
+                            style="color:orange;text-decoration: none;"
+                            class="modalbox"
+                            data-toggle="tooltip"
+                            data-placement="right"
+                            data-iframe="1"
+                            data-size="modal-lg"
+                            title="${warning}"
+                            onMouseover="if(!this.hasAttribute('data-original-title')){$(this).tooltip('show');};this.removeAttribute('onMouseover')"
+                            >❗</a>
+                    `
+                } else if (this.values.filter((v,idx)=>idx < row.id && v.email == row.email).length > 0){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailalreadyused')
+                } else if (row?.isGroup === 'x' && !(row?.groupName?.length > 0)){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tgroupnameempty')
+                } else if (row?.isGroup !== 'x' && !(row?.firstname?.length > 0)){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tfirstnameempty')
+                } else if (row?.isGroup !== 'x' && !(row?.name?.length > 0)){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tnameempty')
+                }
+                const input = `
+                    <span ${(this.processing === true || error.length > 0) ? '' : `onClick="hpfImportTableWrapper.toggleCheckbox(event,'processEntry',${row.id})"`}>
+                        <input 
+                            type="checkbox"
+                            ${(data === true && error.length == 0) ? ' checked' : ''}
+                            ${(this.processing === true || error.length > 0) ? ' disabled' : ''}
+                        />
+                        <span></span>
+                    </span>
+                    `
+                if (error.length > 0){
+                    this.values[row.id].canAdd = false
+                    return  `
+                            <div>
+                                ${input}${appendPart} <span
+                                    style="color:red;"
+                                    data-toggle="tooltip"
+                                    data-placement="right"
+                                    title="${error}"
+                                    onMouseover="if(!this.hasAttribute('data-original-title')){$(this).tooltip('show');};this.removeAttribute('onMouseover')"
+                                    >⚠</span>
+                            </div>
+                            `
+                } else {
+                    this.values[row.id].canAdd = true
+                    return input+appendPart
+                }
+            })
+        },
+        appendCheckBoxforEntryVisibility(data,width){
+            this.appendCheckBox(data,width,'canDisplayPublic','tvisibility',(data,type,row)=>{
+                return `
+                <span ${this.processing === true ? '' : `onClick="hpfImportTableWrapper.toggleCheckbox(event,'canDisplayPublic',${row.id})"`}>
+                    <input 
+                        type="checkbox"
+                        ${data === true ? ' checked' : ''}
+                        ${this.processing === true  ? ' disabled' : ''}
+                    />
+                    <span></span>
+                </span>
+                `
             })
         },
         appendColumn(name,data,width,canEdit=true,maxSize=15){
@@ -384,6 +403,7 @@ export default {
                 this.appendCheckBoxforEntryCreation(data,width)
                 this.appendColumn('firstname',data,width)
                 this.appendColumn('name',data,width)
+                this.appendCheckBoxforEntryVisibility(data,width)
                 this.appendColumn('postalcode',data,width,true,5)
                 this.appendColumn('town',data,width)
                 this.appendColumn('email',data,width)
@@ -540,9 +560,10 @@ export default {
                 this.values[k].processEntry = true
                 this.values[k].canAdd = true
                 this.values[k].canAppend = true
+                this.values[k].canDisplayPublic = (this.values[k].visibility === 'x')
             })
         },
-        toogleCheckbox(key,name){
+        toggleCheckbox(key,name){
             const sanitizedKey = Number(key)
             if (sanitizedKey >= 0 && sanitizedKey < this.values.length){
                 const previous = this.values[sanitizedKey]?.[name] ?? false
