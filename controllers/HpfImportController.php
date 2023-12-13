@@ -330,7 +330,7 @@ class HpfImportController extends YesWikiController
                 $params[] = [
                     function ($field) use($isGroup) {return $field instanceof SelectEntryField
                         && $field->getName() === ($isGroup ? 'bf_structure_locale_adhesion_groupe' :'bf_structure_locale_adhesion');},
-                    function ($field) use($deptcode){
+                    function ($field) use($deptcode,$wantedStructure){
                         return $this->structureFinder->findStructureFromDeptAndField($deptcode,$field,$wantedStructure);
                     },
                 ];

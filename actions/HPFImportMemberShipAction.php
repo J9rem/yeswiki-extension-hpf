@@ -324,9 +324,9 @@ class HPFImportMemberShipAction extends YesWikiAction
                 ]);
                 $data[$key]['dept'] = empty($deptcode) ? '' : $deptcode;
             }
-            if (empty($data[$key]['wantedStructure']) && !empty($data[$key]['deptcode'])){
+            if (empty($data[$key]['wantedStructure']) && !empty($data[$key]['dept'])){
                 $data[$key]['wantedStructure'] = $this->structureFinder->findStructureFromDept(
-                    $data[$key]['deptcode'],
+                    $data[$key]['dept'],
                     $data[$key]['isGroup'] === 'x'
                         ? $this->arguments['college2']
                         : $this->arguments['college1']

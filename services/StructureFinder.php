@@ -70,6 +70,7 @@ class StructureFinder
         }
         if (!array_key_exists($formId,$this->cache['fields'])){
             $this->cache['fields'][$formId] = null;
+            $form = $this->formManager->getOne($formId);
             if (!empty($form['prepared'])){
                 foreach($form['prepared'] as $field){
                     if (empty($this->cache['fields'][$formId])
