@@ -112,7 +112,7 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
             ]
         ],
         'visibility' => [
-            'search' => "/^\s*(visibilit)\s*$/i",
+            'search' => "/^\s*(visibilit).*$/i",
             'post' => [
                 'trim',
                 'strtolower',
