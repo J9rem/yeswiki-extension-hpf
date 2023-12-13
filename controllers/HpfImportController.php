@@ -63,7 +63,6 @@ class HpfImportController extends YesWikiController
     ) {
         $this->aclService = $aclService;
         $this->areaManager = $areaManager;
-        $this->areaManager = $areaManager;
         $this->csrfTokenController = $csrfTokenController;
         $this->entryManager = $entryManager;
         $this->eventDispatcher = $eventDispatcher;
@@ -197,16 +196,17 @@ class HpfImportController extends YesWikiController
             : 'libre' ;
         $value = strval($data['value'] ?? 0);
         $postalcode = strval($data['postalcode'] ?? '');
+        $deptcode = strval($data['dept'] ?? '');
         $town = strval($data['town'] ?? '');
             
-        if (!empty($postalcode)){
+        if (empty($deptcode) && !empty($postalcode)){
             $deptcode = $this->areaManager->extractAreaFromPostalCode([
                 $this->areaManager->getPostalCodeFieldName() => $postalcode
             ]);
-            if (!empty($deptcode)){
-                $associations = $this->areaManager->getAssociations();
-                $areacode = $associations['depts'][$deptcode][0] ?? '';
-            }
+        }
+        if (!empty($deptcode)){
+            $associations = $this->areaManager->getAssociations();
+            $areacode = $associations['depts'][$deptcode][0] ?? '';
         }
 
         if ($isGroup){

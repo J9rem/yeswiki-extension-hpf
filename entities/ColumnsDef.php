@@ -62,6 +62,17 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
             'filter' => "/^\s*([0-9][0-9AB] ?[0-9]{0,3})\s*$/",
             'prop' => 'bf_code_postal'
         ],
+        'dept' => [
+            'search' => "/^\s*(?:bf_)?(?:dept|d.parte?ments?)\s*$/i",
+            'filter' => "/^\s*([0-9][0-9AB][0-9]?)\s*$/"
+        ],
+        'wantedStructure' => [
+            'search' => "/^\s*structures?.*$/i",
+            'filter' => "/^\s*(.*)\s*$/",
+            'post' => [
+                'trim'
+            ]
+        ],
         'value' => [
             'search' => "/^\s*(?:bf_)?(?:adh(?:é|e)sions?|montants?|sommes?|total).*$/i",
             'filter' => "/^\s*([0-9]+((?:\.|,)[0-9]+)?).*\s*$/",

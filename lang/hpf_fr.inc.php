@@ -134,6 +134,7 @@ return [
     'HPF_COMMENT' => 'Commentaire',
     'HPF_CREATE_ENTRY_NOT_POSSIBLE' => 'Création impossible :',
     'HPF_DATE' => 'Date',
+    'HPF_DEPT' => 'Département',
     'HPF_EMAIL' => 'E-mail',
     'HPF_EMAIL_ALREADY_USED' => 'E-mail déjà utilisé',
     'HPF_EMAIL_BADLY_FORMATTED' => 'E-mail mal formatté',
@@ -143,6 +144,14 @@ return [
     'HPF_GROUP_MEMBERSHIP' => 'Adhésion de groupe',
     'HPF_GROUP_NAME' => 'Nom du groupe',
     'HPF_GROUP_NAME_EMPTY' => 'le nom du groupe est vide',
+    'HPF_IMPORT_HELP' => "Les données importées sont rattachées au département qui correspond au code postal.\n".
+        "Si un département est donné, il sera pris en priorité sur le code postal.\n".
+        "Si une structure est trouvée pour ce département, elle sera sélectionnée.\n".
+        "Si plusieurs structures sont disponibles pour le département, aucune structure ne sera sélectionnée.\n".
+        "Un fonctionnement identique est appliqué pour la région associé au département.\n".
+        "Aucune structure n'est vraiment associé au paiement. Il est supposé que le paiement de type structure a été encaissé par la structure liée.\n".
+        "S'il y a une structure régionale et une structure départementale, il n'est pas possible de savoir laquelle a reçu le paiment.\n".
+        "Il est possible d'indiquer le nom de la structure à préférer dans la colonne dédiée. Celle-ci n'est prise en compte que si la structure fait partie des structures du département sélectionné.",
     'HPF_IS_GROUP' => 'Type d\'adhésion',
     'HPF_MEMBERSHIP_TYPE' => 'Type de montant',
     'HPF_NAME' => 'Nom',

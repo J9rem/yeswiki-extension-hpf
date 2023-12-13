@@ -19,6 +19,7 @@ use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Core\YesWikiAction;
 use YesWiki\Hpf\Entity\ColumnsDef;
+use YesWiki\Hpf\Service\AreaManager;
 
 class HPFImportMemberShipAction extends YesWikiAction
 {
@@ -312,6 +313,13 @@ class HPFImportMemberShipAction extends YesWikiAction
             $data[$key]['associatedEntryId'] = $this->searchEntryId($newValue, ['email'], $data[$key]['isGroup']);
             if (empty($data[$key]['associatedEntryId'])){
                 $data[$key]['associatedEntryId'] = $this->searchEntryId($newValue, ['name','firstname'], $data[$key]['isGroup']);
+            }
+            $areaManager = $this->getService(AreaManager::class);
+            if (empty($data[$key]['dept']) && !empty($data[$key]['postalcode'])){
+                $deptcode = $areaManager->extractAreaFromPostalCode([
+                    $areaManager->getPostalCodeFieldName() => $data[$key]['postalcode']
+                ]);
+                $data[$key]['dept'] = empty($deptcode) ? '' : $deptcode;
             }
         }
         return $data;

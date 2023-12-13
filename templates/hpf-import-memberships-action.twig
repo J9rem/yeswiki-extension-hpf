@@ -46,6 +46,8 @@
     {{ include_javascript('javascripts/vendor/datatables-full/jquery.dataTables.min.js') }} 
     {{ include_javascript('tools/hpf/javascripts/hpf-import-memberships-action.js',false,true) }}
 
+    <div class="alert alert-info">{{ _t('HPF_IMPORT_HELP')|nl2br }}</div>
+
     <b>{{ _t('HPF_IMPORT_DATA_FROM',{file:fileName}) }}</b><a 
         class="btn btn-xs btn-info btn-icon"
         href="{{ url({params:{}}) }}"
@@ -61,6 +63,7 @@
             <template #tcreateentrynotpossible>{{ _t('HPF_CREATE_ENTRY_NOT_POSSIBLE') }}</template>
             <template #tcomment>{{ _t('HPF_COMMENT') }}</template>
             <template #tdate>{{ _t('HPF_DATE') }}</template>
+            <template #tdept>{{ _t('HPF_DEPT') }}</template>
             <template #temail>{{ _t('HPF_EMAIL') }}</template>
             <template #temailalreadyused>{{ _t('HPF_EMAIL_ALREADY_USED') }}</template>
             <template #temailbadlyformatted>{{ _t('HPF_EMAIL_BADLY_FORMATTED') }}</template>

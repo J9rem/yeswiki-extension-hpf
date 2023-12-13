@@ -406,6 +406,7 @@ export default {
                 this.appendCheckBoxforEntryVisibility(data,width)
                 this.appendColumn('postalcode',data,width,true,5)
                 this.appendColumn('town',data,width)
+                this.appendColumn('dept',data,width,true,3)
                 this.appendColumn('email',data,width)
                 this.appendColumn('number',data,width)
                 this.appendColumnEuros('value',data,width)
