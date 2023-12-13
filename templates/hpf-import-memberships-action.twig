@@ -46,6 +46,8 @@
     {{ include_javascript('javascripts/vendor/datatables-full/jquery.dataTables.min.js') }} 
     {{ include_javascript('tools/hpf/javascripts/hpf-import-memberships-action.js',false,true) }}
 
+    <div class="alert alert-info">{{ _t('HPF_IMPORT_HELP')|nl2br }}</div>
+
     <b>{{ _t('HPF_IMPORT_DATA_FROM',{file:fileName}) }}</b><a 
         class="btn btn-xs btn-info btn-icon"
         href="{{ url({params:{}}) }}"
@@ -55,12 +57,14 @@
     <div class="dynamic-hpf-import-memberships-action">
         <hpf-import-table data-values="{{ data|json_encode }}" v-model="isLoading" data-params="{{ params|json_encode }}">
             <template #tadjustedmembership>{{ _t('HPF_ADJUSTED') }}</template>
-            <template #tappendpayment>{{ _t('HPF_APPEND_PAYMENT') }}</template>
             <template #tbtntxt>{{ _t('HPF_PROCESS') }}</template>
-            <template #tcreateentry>{{ _t('HPF_CREATE_ENTRY') }}</template>
+            <template #taddentryorpayment>{{ _t('HPF_ADD_ENTRY_OR_PAYMENT') }}</template>
+            <template #talreadyappended>{{ _t('HPF_ALREADY_APPENDED') }}</template>
+            <template #tappendinsteadofcreate>{{ _t('HPF_APPEND_INSTEAD_OF_CREATE') }}</template>
             <template #tcreateentrynotpossible>{{ _t('HPF_CREATE_ENTRY_NOT_POSSIBLE') }}</template>
             <template #tcomment>{{ _t('HPF_COMMENT') }}</template>
             <template #tdate>{{ _t('HPF_DATE') }}</template>
+            <template #tdept>{{ _t('HPF_DEPT') }}</template>
             <template #temail>{{ _t('HPF_EMAIL') }}</template>
             <template #temailalreadyused>{{ _t('HPF_EMAIL_ALREADY_USED') }}</template>
             <template #temailbadlyformatted>{{ _t('HPF_EMAIL_BADLY_FORMATTED') }}</template>
@@ -81,8 +85,11 @@
             <template #tsupportmembership>{{ _t('HPF_SUPPORT') }}</template>
             <template #tpostalcode>{{ _t('HPF_POSTAL_CODE') }}</template>
             <template #tpostalcodebadlyformatted>{{ _t('HPF_POSTAL_CODE_BADLY_FORMATTED') }}</template>
+            <template #tpostalcodeordeptmissing>{{ _t('HPF_POSTAL_CODE_OR_DEPT_MISSING') }}</template>
             <template #ttown>{{ _t('HPF_TOWN') }}</template>
             <template #tvalue>{{ _t('HPF_VALUE') }}</template>
+            <template #tvisibility>{{ _t('HPF_PUBLIC_VISIBILITY') }}</template>
+            <template #twantedstructure>{{ _t('HPF_WANTED_STRUCTURE') }}</template>
             <template #tyear>{{ _t('HPF_YEAR') }}</template>
         </hpf-import-table>
         <spinner-loader v-if="isLoading" class="overlay super-overlay" :height="500"></spinner-loader>

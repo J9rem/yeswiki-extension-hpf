@@ -63,9 +63,9 @@ const calculateEuros = (value) => {
 }
 
 window.hpfImportTableWrapper = {
-    toogleCheckbox(event,name,key){
+    toggleCheckbox(event,name,key){
         const {mainVue} = getVue(event)
-        mainVue.toogleCheckbox(key,name)
+        mainVue.toggleCheckbox(key,name)
     },
     updateCents(event,key){
         const {elem,mainVue} = getVue(event)
@@ -154,57 +154,15 @@ export default {
                 this.$set(this.rows,idx,formattedData)
             })
         },
-        appendCheckBoxforEntryCreation(data,width){
+        appendCheckBox(data,width,dataName,translation,renderFunc){
             data.columns.push({
                 ...{
-                    data: 'createEntry',
-                    title: TemplateRenderer.render('HpfImportTable',this,'tcreateentry'),
+                    data: dataName,
+                    title: TemplateRenderer.render('HpfImportTable',this,translation),
                     footer: '',
                     render: (data,type,row)=>{
                         if (type === 'display'){
-                            let error = ''
-                            const defaultError = TemplateRenderer.render('HpfImportTable',this,'tcreateentrynotpossible')
-                            if (!this.checkEmail(row)){
-                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailbadlyformatted')
-                            } else if (!this.checkPostalCode(row)){
-                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tpostalcodebadlyformatted')
-                            } else if (this.getAssociatedId(row.id).length > 0
-                                || this.values.filter((v,idx)=>idx < row.id && v.email == row.email).length > 0){
-                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailalreadyused')
-                                if (this.getAssociatedId(row.id).length > 0){
-                                    this.values[row.id].associatedEntryId = this.getAssociatedId(row.id)
-                                }
-                            } else if (row?.isGroup === 'x' && !(row?.groupName?.length > 0)){
-                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tgroupnameempty')
-                            } else if (row?.isGroup !== 'x' && !(row?.firstname?.length > 0)){
-                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tfirstnameempty')
-                            } else if (row?.isGroup !== 'x' && !(row?.name?.length > 0)){
-                                error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tnameempty')
-                            }
-                            const input = `
-                                <span onClick="hpfImportTableWrapper.toogleCheckbox(event,'createEntry',${row.id})">
-                                    <input 
-                                        type="checkbox"
-                                        ${data === true ? ' checked' : ''}
-                                        ${(this.processing === true || error.length > 0) ? ' disabled' : ''}
-                                    />
-                                    <span></span>
-                                <span>
-                                `
-                            if (error.length > 0){
-                                this.values[row.id].canAdd = false
-                                return  `
-                                        <div>
-                                            ${input}<br/>
-                                            <span style="color:red;">
-                                                ${error}
-                                            </span>
-                                        </div>
-                                        `
-                            } else {
-                                this.values[row.id].canAdd = true
-                                return input
-                            }
+                            return renderFunc(data,type,row)
                         } else if (type == 'sort'){
                             return row?.id ?? data
                         }
@@ -215,61 +173,107 @@ export default {
                 ...width
             })
         },
-        appendCheckBoxToAppendPayment(data,width){
-            data.columns.push({
-                ...{
-                    data: 'appendPayment',
-                    title: TemplateRenderer.render('HpfImportTable',this,'tappendpayment'),
-                    footer: '',
-                    render: (data,type,row)=>{
-                        if (!(row?.email?.length > 0)){
-                            return ''
-                        }
-                        const associatedId = this.getAssociatedId(row.id)
-                        if (!(associatedId.length > 0)){
-                            return ''
-                        }
-                        if (type === 'display'){
-                            let error = ''
-                            const input = `
-                                <span onClick="hpfImportTableWrapper.toogleCheckbox(event,'appendPayment',${row.id})">
-                                    <input 
-                                        type="checkbox"
-                                        ${data === true ? ' checked' : ''}
-                                        ${(this.processing === true || error.length > 0) ? ' disabled' : ''}
-                                    />
-                                    <span></span>
-                                </span>
-                                <a
-                                    href="${window.wiki.url(`?${associatedId}/iframe`)}"
-                                    data-iframe="1"
-                                    data-size="modal-lg"
-                                    class="modalbox"
-                                    title="${associatedId}"
-                                    >${associatedId}</a>
-                                `
-                            if (error.length > 0){
-                                this.values[row.id].canAppend = false
-                                return  `
-                                        <div>
-                                            ${input}<br/>
-                                            <span style="color:red;">
-                                                ${error}
-                                            </span>
-                                        </div>
-                                        `
-                            } else {
-                                this.values[row.id].canAppend = true
-                                return input
-                            }
-                        } else if (type == 'sort'){
-                            return row?.id ?? data
-                        }
-                        return data
-                    },
-                    orderable: false
-                },
-                ...width
+        appendCheckBoxforEntryCreation(data,width){
+            this.appendCheckBox(data,width,'processEntry','taddentryorpayment',(data,type,row)=>{
+                let error = ''
+                let appendPart = ''
+                const defaultError = TemplateRenderer.render('HpfImportTable',this,'tcreateentrynotpossible')
+                const associatedId = this.getAssociatedId(row.id)
+                if (!this.checkEmail(row)){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailbadlyformatted')
+                } else if (row?.postalcode?.length > 0 && !this.checkPostalCode(row)){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tpostalcodebadlyformatted')
+                } else if (!(row?.postalcode?.length > 0) && !(row?.dept?.length > 0)){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tpostalcodeordeptmissing')
+                } else if (associatedId?.length > 0){
+                    this.values[row.id].associatedEntryId = associatedId
+                    this.values[row.id].canAdd = false
+                    if (this.values[row.id]?.registeredPayments?.includes(row?.number ?? '')){
+                        appendPart = `
+                            <a
+                                href="${window.wiki.url(`?${associatedId}/iframe`)}"
+                                style="color:green;text-decoration: none;"
+                                class="modalbox"
+                                data-toggle="tooltip"
+                                data-placement="right"
+                                data-iframe="1"
+                                data-size="modal-lg"
+                                title="${TemplateRenderer.render('HpfImportTable',this,'talreadyappended')}"
+                                onMouseover="if(!this.hasAttribute('data-original-title')){$(this).tooltip('show');};this.removeAttribute('onMouseover')"
+                                >✅</a>
+                        `
+                        this.values[row.id].canAppend = false
+                    } else {
+                        this.values[row.id].canAppend = true
+                        const warning = TemplateRenderer.render('HpfImportTable',this,'tappendinsteadofcreate')
+                        appendPart = `
+                            <a
+                                href="${window.wiki.url(`?${associatedId}/iframe`)}"
+                                style="color:orange;text-decoration: none;"
+                                class="modalbox"
+                                data-toggle="tooltip"
+                                data-placement="right"
+                                data-iframe="1"
+                                data-size="modal-lg"
+                                title="${warning}"
+                                onMouseover="if(!this.hasAttribute('data-original-title')){$(this).tooltip('show');};this.removeAttribute('onMouseover')"
+                                >❗</a>
+                        `
+                    }
+                } else if (this.values.filter((v,idx)=>idx < row.id && v.email == row.email).length > 0){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'temailalreadyused')
+                } else if (row?.isGroup === 'x' && !(row?.groupName?.length > 0)){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tgroupnameempty')
+                } else if (row?.isGroup !== 'x' && !(row?.firstname?.length > 0)){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tfirstnameempty')
+                } else if (row?.isGroup !== 'x' && !(row?.name?.length > 0)){
+                    error = defaultError + TemplateRenderer.render('HpfImportTable',this,'tnameempty')
+                }
+                const input = `
+                    <span ${(this.processing === true || error.length > 0) ? '' : `onClick="hpfImportTableWrapper.toggleCheckbox(event,'processEntry',${row.id})"`}>
+                        <input 
+                            type="checkbox"
+                            ${(data === true && error.length == 0) ? ' checked' : ''}
+                            ${(this.processing === true || error.length > 0 || (this.values[row.id].canAppend === false && associatedId?.length > 0)) ? ' disabled' : ''}
+                        />
+                        <span></span>
+                    </span>
+                    `
+                if (error.length > 0){
+                    this.values[row.id].canAdd = false
+                    this.values[row.id].canAppend = false
+                    this.values[row.id].processEntry = false
+                    return  `
+                            <div>
+                                ${input}${appendPart} <span
+                                    style="color:red;"
+                                    data-toggle="tooltip"
+                                    data-placement="right"
+                                    title="${error}"
+                                    onMouseover="if(!this.hasAttribute('data-original-title')){$(this).tooltip('show');};this.removeAttribute('onMouseover')"
+                                    >⚠</span>
+                            </div>
+                            `
+                } else {
+                    if (this.values[row.id].canAppend === false && !(associatedId?.length > 0)){
+                        this.values[row.id].canAdd = true
+                    }
+                    return input+appendPart
+                }
+            })
+        },
+        appendCheckBoxforEntryVisibility(data,width){
+            this.appendCheckBox(data,width,'canDisplayPublic','tvisibility',(data,type,row)=>{
+                return `
+                <span ${this.processing === true ? '' : `onClick="hpfImportTableWrapper.toggleCheckbox(event,'canDisplayPublic',${row.id})"`}>
+                    <input 
+                        type="checkbox"
+                        ${data === true ? ' checked' : ''}
+                        ${this.processing === true  ? ' disabled' : ''}
+                    />
+                    <span></span>
+                </span>
+                `
             })
         },
         appendColumn(name,data,width,canEdit=true,maxSize=15){
@@ -409,6 +413,9 @@ export default {
                     )
         },
         getAssociatedId(key){
+            if (this.values?.[key]?.associatedEntryId?.length > 0){
+                return this.values[key].associatedEntryId
+            }
             if (this.values?.[key]?.email?.length > 0){
                 return this.cache[this.getCollegeForCache(key)].email?.[this.values[key].email] ?? ''
             }
@@ -423,11 +430,13 @@ export default {
                 const defaultcolumnwidth = '100px';
                 const width = defaultcolumnwidth.length > 0 ? {width:defaultcolumnwidth}: {}
                 this.appendCheckBoxforEntryCreation(data,width)
-                this.appendCheckBoxToAppendPayment(data,width)
                 this.appendColumn('firstname',data,width)
                 this.appendColumn('name',data,width)
+                this.appendCheckBoxforEntryVisibility(data,width)
                 this.appendColumn('postalcode',data,width,true,5)
                 this.appendColumn('town',data,width)
+                this.appendColumn('dept',data,width,true,3)
+                this.appendColumn('wantedStructure',data,width)
                 this.appendColumn('email',data,width)
                 this.appendColumn('number',data,width)
                 this.appendColumnEuros('value',data,width)
@@ -476,41 +485,52 @@ export default {
                     this.message = TemplateRenderer.render('HpfImportTable',this,`tprocessing`)
                     for (let key = 0; key < this.values.length; key++) {
                         const v = this.values[key];
-                        if (v.canAdd && v.createEntry){
-                            await this.addEntryOrAppend(v,false)
-                                .then((entry)=>{
-                                    if (entry?.id_fiche?.length > 0){
-                                        this.appendMessage(`✅ ajout OK pour <a href="${window.wiki.url(`?${entry.id_fiche}`)}" class="newtab">${entry.id_fiche}</a>`)
-                                        this.values[key].canAdd = false
-                                        this.values[key].createEntry = false
-                                        this.values[key].associatedEntryId = entry.id_fiche
-                                        this.cache[this.getCollegeForCache(key)].email[v.email] = entry.id_fiche
-                                        return entry.id_fiche
-                                    } else {
-                                        throw new Error('empty entryId')
-                                    }
-                                })
-                                .catch((error)=>{
-                                    this.asyncHelper.manageError(error)
-                                    this.appendMessage(`❌ la fiche avec l'e-mail '${v.email}' n'a pas été ajoutée !`)
-                                })
-                        } else if (v.canAppend && v.appendPayment){
-                            const entryId = this.getAssociatedId(key)
-                            await this.addEntryOrAppend(v,true)
-                                .then((entry)=>{
-                                    if (entry?.id_fiche?.length > 0){
-                                        this.appendMessage(`✅ ajout du paiment fait pour <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a>`)
-                                        this.values[key].canAppend = false
-                                        this.values[key].appendPayment = false
-                                        return true
-                                    } else {
-                                        throw new Error('payment not added')
-                                    }
-                                })
-                                .catch((error)=>{
-                                    this.asyncHelper.manageError(error)
-                                    this.appendMessage(`❌ le paiment n'a pas été ajouté pour la fiche <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a> !`)
-                                })
+                        if (v.processEntry){
+                            if (v.canAdd){
+                                await this.addEntryOrAppend(v,false)
+                                    .then((entry)=>{
+                                        if (entry?.id_fiche?.length > 0){
+                                            this.appendMessage(`✅ ajout OK pour <a href="${window.wiki.url(`?${entry.id_fiche}`)}" class="newtab">${entry.id_fiche}</a>`)
+                                            this.values[key].canAdd = false
+                                            this.values[key].processEntry = false
+                                            this.values[key].associatedEntryId = entry.id_fiche
+                                            this.values[key].registeredPayments.push(v.number)
+                                            this.cache[this.getCollegeForCache(key)].email[v.email] = entry.id_fiche
+                                            return entry.id_fiche
+                                        } else {
+                                            throw new Error('empty entryId')
+                                        }
+                                    })
+                                    .catch((error)=>{
+                                        this.asyncHelper.manageError(error)
+                                        this.appendMessage(`❌ la fiche avec l'e-mail '${v.email}' n'a pas été ajoutée !`)
+                                    })
+                            } else if (v.canAppend){
+                                const entryId = this.getAssociatedId(key)
+                                await this.addEntryOrAppend(v,true)
+                                    .then((entry)=>{
+                                        if (entry?.id_fiche?.length > 0){
+                                            this.appendMessage(`✅ ajout du paiment fait pour <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a>`)
+                                            this.values[key].canAppend = false
+                                            this.values[key].processEntry = false
+                                            this.values[key].registeredPayments.push(v.number)
+                                            return true
+                                        } else {
+                                            throw new Error('payment not added')
+                                        }
+                                    })
+                                    .catch((error)=>{
+                                        if (error?.errorMsg === 'existing payment'){
+                                            this.values[key].canAppend = false
+                                            this.values[key].processEntry = false
+                                            this.values[key].registeredPayments.push(v.number)
+                                            this.appendMessage(`🚧 le paiment n'a pas été ajouté pour la fiche <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a> car il existe déjà !`)
+                                        } else {
+                                            this.asyncHelper.manageError(error)
+                                            this.appendMessage(`❌ le paiment n'a pas été ajouté pour la fiche <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a> !`)
+                                        }
+                                    })
+                            }
                         }
                     }
                     this.appendMessage('✅ Fin')
@@ -534,7 +554,7 @@ export default {
             },5000)
         },
         refreshCanProceed(){
-            this.canProceed = this.values?.some((v)=>(v.canAdd && v.createEntry) || (v.canAppend && v.appendPayment)) ?? false
+            this.canProceed = this.values?.some((v)=>(v.processEntry && (v.canAdd || v.canAppend))) ?? false
         },
         setDefaultValues(){
             this.values.forEach((v,k)=>{
@@ -577,13 +597,14 @@ export default {
                 if (v?.associatedEntryId?.length > 0 && v?.email?.length > 0){
                     this.cache[this.getCollegeForCache(k)].email[v.email] = v.associatedEntryId
                 }
-                this.values[k].createEntry = false
-                this.values[k].appendPayment = false
+                this.values[k].processEntry = true
                 this.values[k].canAdd = true
                 this.values[k].canAppend = true
+                this.values[k].canDisplayPublic = (this.values[k].visibility === 'x')
+                this.values[k].registeredPayments = []
             })
         },
-        toogleCheckbox(key,name){
+        toggleCheckbox(key,name){
             const sanitizedKey = Number(key)
             if (sanitizedKey >= 0 && sanitizedKey < this.values.length){
                 const previous = this.values[sanitizedKey]?.[name] ?? false

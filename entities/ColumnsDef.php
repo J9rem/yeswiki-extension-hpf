@@ -62,6 +62,17 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
             'filter' => "/^\s*([0-9][0-9AB] ?[0-9]{0,3})\s*$/",
             'prop' => 'bf_code_postal'
         ],
+        'dept' => [
+            'search' => "/^\s*(?:bf_)?(?:dept|d.parte?ments?)\s*$/i",
+            'filter' => "/^\s*([0-9][0-9AB][0-9]?)\s*$/"
+        ],
+        'wantedStructure' => [
+            'search' => "/^\s*structures?.*$/i",
+            'filter' => "/^\s*(.*)\s*$/",
+            'post' => [
+                'trim'
+            ]
+        ],
         'value' => [
             'search' => "/^\s*(?:bf_)?(?:adh(?:é|e)sions?|montants?|sommes?|total).*$/i",
             'filter' => "/^\s*([0-9]+((?:\.|,)[0-9]+)?).*\s*$/",
@@ -84,7 +95,7 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
             'post' => [
                 'trim',
                 'strtolower',
-                '\\'.self::class.'::extractGroup'
+                '\\'.self::class.'::extractX'
             ]
         ],
         'groupName' => [
@@ -98,6 +109,14 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
             'search' => "/^\s*(Date|bf_date)\s*$/i",
             'post' => [
                 '\\'.self::class.'::formatDate'
+            ]
+        ],
+        'visibility' => [
+            'search' => "/^\s*(visibilit).*$/i",
+            'post' => [
+                'trim',
+                'strtolower',
+                '\\'.self::class.'::extractX'
             ]
         ]
     ];
@@ -210,7 +229,7 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
     {
         return is_string($input) ? ucwords($input,"-,. \t\r\n\f\v") : '';
     }
-    public static function extractGroup($input): string
+    public static function extractX($input): string
     {
         return (is_string($input) && strlen($input) > 0) ? 'x' : '';
     }

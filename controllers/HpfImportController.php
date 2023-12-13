@@ -29,39 +29,50 @@ use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\ApiResponse;
 use YesWiki\Core\Controller\CsrfTokenController;
+use YesWiki\Core\Service\AclService;
 use YesWiki\Core\Service\EventDispatcher;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Core\YesWikiController;
+use YesWiki\Hpf\Exception\PaymentAlreadyExistingException;
 use YesWiki\Hpf\Service\AreaManager;
 use YesWiki\Hpf\Service\HpfService;
+use YesWiki\Hpf\Service\StructureFinder;
 use YesWiki\Wiki;
 
 class HpfImportController extends YesWikiController
 {
+    public const ADMIN_GROUPNAME = 'AdminsDesStructures';
+
+    protected $aclService;
     protected $areaManager;
     protected $csrfTokenController;
     protected $entryManager;
     protected $eventDispatcher;
     protected $formManager;
     protected $hpfService;
+    protected $structureFinder;
     protected $userManager;
 
     public function __construct(
+        AclService $aclService,
         AreaManager $areaManager,
         CsrfTokenController $csrfTokenController,
         EntryManager $entryManager,
         EventDispatcher $eventDispatcher,
         FormManager $formManager,
         HpfService $hpfService,
+        StructureFinder $structureFinder,
         UserManager $userManager,
         Wiki $wiki
     ) {
+        $this->aclService = $aclService;
         $this->areaManager = $areaManager;
         $this->csrfTokenController = $csrfTokenController;
         $this->entryManager = $entryManager;
         $this->eventDispatcher = $eventDispatcher;
         $this->formManager = $formManager;
         $this->hpfService = $hpfService;
+        $this->structureFinder = $structureFinder;
         $this->userManager = $userManager;
         $this->wiki = $wiki;
     }
@@ -109,6 +120,7 @@ class HpfImportController extends YesWikiController
                 if (empty($newEntry) || !is_array($newEntry)){
                     throw new Exception("entry not created");
                 }
+                $this->updateAclsIfNeeded($data,$newEntry);
                 $data['associatedEntryId'] = $newEntry['id_fiche'];
             } catch (Throwable $th) {
                 return new ApiResponse(
@@ -118,7 +130,14 @@ class HpfImportController extends YesWikiController
             }
         }
         
-        $updatedEntry = $this->appendPaymentIfPossible($data,$form);
+        try {
+            $updatedEntry = $this->appendPaymentIfPossible($data,$form);
+        } catch (PaymentAlreadyExistingException $th) {
+            return new ApiResponse(
+                ['error'=>'existing payment'],
+                400
+            );
+        }
         if (empty($updatedEntry) || !is_array($updatedEntry)){
             if ($appendMode){
                 throw new Exception("entry not updated");
@@ -189,16 +208,18 @@ class HpfImportController extends YesWikiController
             : 'libre' ;
         $value = strval($data['value'] ?? 0);
         $postalcode = strval($data['postalcode'] ?? '');
+        $deptcode = strval($data['dept'] ?? '');
+        $wantedStructure = strval($data['wantedStructure'] ?? '');
         $town = strval($data['town'] ?? '');
             
-        if (!empty($postalcode)){
+        if (empty($deptcode) && !empty($postalcode)){
             $deptcode = $this->areaManager->extractAreaFromPostalCode([
                 $this->areaManager->getPostalCodeFieldName() => $postalcode
             ]);
-            if (!empty($deptcode)){
-                $associations = $this->areaManager->getAssociations();
-                $areacode = $associations['depts'][$deptcode][0] ?? '';
-            }
+        }
+        if (!empty($deptcode)){
+            $associations = $this->areaManager->getAssociations();
+            $areacode = $associations['depts'][$deptcode][0] ?? '';
         }
 
         if ($isGroup){
@@ -310,25 +331,7 @@ class HpfImportController extends YesWikiController
                     function ($field) use($isGroup) {return $field instanceof SelectEntryField
                         && $field->getName() === ($isGroup ? 'bf_structure_locale_adhesion_groupe' :'bf_structure_locale_adhesion');},
                     function ($field) use($deptcode){
-                        $options = $field->getOptions();
-                        $entries = array_map(
-                            function($entryId){
-                                return $this->entryManager->getOne($entryId);
-                            },
-                            array_keys($options)
-                        );
-                        $entries = array_filter(
-                            $entries,
-                            function($e) use ($deptcode){
-                                return !empty($e['checkboxListeDepartementsFrancais'])
-                                    && in_array($deptcode,explode(',',$e['checkboxListeDepartementsFrancais']));
-                            }
-                        );
-                        if (empty($entries) || count($entries) > 1) {
-                            return '';
-                        }
-                        $e = array_pop($entries);
-                        return $e['id_fiche'];
+                        return $this->structureFinder->findStructureFromDeptAndField($deptcode,$field,$wantedStructure);
                     },
                 ];
             }
@@ -570,7 +573,7 @@ class HpfImportController extends YesWikiController
         if (!empty($paymentContent)){
             $currentPayments = $this->hpfService->convertStringToPayments($paymentContent);
             if (array_key_exists($proposedPaymentId,$currentPayments)){
-                throw new Exception('Payment already defined !');
+                throw new PaymentAlreadyExistingException('Payment already defined !');
             }
         }
         foreach (['date','value','year'] as $key) {
@@ -594,5 +597,19 @@ class HpfImportController extends YesWikiController
         );
         
         return $updatedEntry;
+    }
+
+    /**
+     * change acls for entry of should not bepublic
+     * @param array $data
+     * @param array $entry
+     */
+    protected function updateAclsIfNeeded(array $data,array $entry)
+    {
+        $publicVisibility = isset($data['canDisplayPublic']) && in_array($data['canDisplayPublic'],['1',1,true,'true'],true);
+        if (!$publicVisibility && !empty($entry['id_fiche'])){
+            $newReadAcl = "%\n@".self::ADMIN_GROUPNAME;
+            $this->aclService->save($entry['id_fiche'],'read',$newReadAcl);
+        }
     }
 }
