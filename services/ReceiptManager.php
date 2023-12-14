@@ -48,6 +48,7 @@ class ReceiptManager
         $this->aclService = $aclService;
         $this->entryManager = $entryManager;
         $this->formManager = $formManager;
+        $this->hpfService = $hpfService;
         $this->securityController = $securityController;
         $this->tripleStore = $tripleStore;
         $this->wiki = $wiki;
@@ -82,7 +83,7 @@ class ReceiptManager
      * @param string $paymentId
      * @return string $receiptPath
      */
-    public function getExistingReceiptForEntryIdAndNumber(string $entryId,string $paymentId):array
+    public function getExistingReceiptForEntryIdAndNumber(string $entryId,string $paymentId):string
     {
         return '';
     }
@@ -93,14 +94,18 @@ class ReceiptManager
      * @param string $paymentId
      * @return string $receiptPath
      */
-    public function generateReceiptForEntryIdAndNumber(string $entryId, string $paymentId):array
+    public function generateReceiptForEntryIdAndNumber(string $entryId, string $paymentId):string
     {
         $hpfParams = $this->hpfService->getHpfParams();
-        if (empty($hpfParams['hpfData']) || empty($entryId) || empty($paymentId)){
+        if (empty($hpfParams) || empty($entryId) || empty($paymentId)){
             return '';
         }
-        // TODO define in config.yaml params and import here
+        $structureInfo = $this->hpfService->getHpfStructureInfo();
         // extract data from entry
+        $entry = $this->entryManager->getOne($entryId);
+        if (empty($entry)){
+            return '';
+        }
         // check paymentId existing
         // get uniqId
         // render via twig

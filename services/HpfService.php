@@ -272,6 +272,43 @@ class HpfService
     }
 
     /**
+     * Feature UUID : hpf-receipts-creation
+     * @return array
+     * @throws Exception
+     */
+    public function getHpfStructureInfo(): array
+    {
+        $this->getHpfParams();
+        foreach([
+            'name' => true,
+            'address' => true,
+            'addressComplement' => false,
+            'postalCode' => true,
+            'town' => true,
+            'email' => true,
+            'website' => true
+        ] as $key => $testIfEmpty){
+            if ($testIfEmpty && empty($this->hpfParams['structureInfo'][$key])) {
+                throw new Exception("hpf['structureInfo']['$key'] param should be defined !");
+            }
+            if (!empty($this->hpfParams['structureInfo'][$key])
+                && !is_string($this->hpfParams['structureInfo'][$key])){
+                throw new Exception("hpf['structureInfo']['$key'] param should be a string !");
+            }
+        }
+        
+        if (empty(filter_var($this->hpfParams['structureInfo']['email'],FILTER_VALIDATE_EMAIL,FILTER_NULL_ON_FAILURE))){
+            throw new Exception("hpf['structureInfo']['email'] param should be an email !");
+        }
+        if (empty(filter_var($this->hpfParams['structureInfo']['website'],FILTER_VALIDATE_URL,FILTER_NULL_ON_FAILURE)) ||
+            !preg_match('/^https?:\/\/.*/',$this->hpfParams['structureInfo']['website'])){
+            throw new Exception("hpf['structureInfo']['website'] param should be an url !");
+        }
+
+        return $this->hpfParams['structureInfo'];
+    }
+
+    /**
      * search CalcFields in $contribForm (filtered on $names optionnally)
      * @param string $formId
      * @param array $names

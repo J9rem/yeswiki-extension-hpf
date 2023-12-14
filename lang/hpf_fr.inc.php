@@ -116,6 +116,14 @@ return [
     'EDIT_CONFIG_HINT_FORMIDAREATODEPARTMENT' => 'Numero du formulaire de correspondance entre région et département',
     'EDIT_CONFIG_HINT_GROUPSADMINSSUFFIXFOREMAILS' => 'Suffix des groupes admins qui peuvent envoyer des e-mails',
     'EDIT_CONFIG_HINT_POSTALCODEFIELDNAME' => 'Nom du champ avec le code postal',
+    // Feature UUID : hpf-receipts-creation
+    'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][NAME]' => 'Nom de la structure pour les reçus',
+    'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][ADDRESS]' => 'Adresse de la structure pour les reçus',
+    'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][ADDRESSCOMPLEMENT]' => 'Complément d\'adresse de la structure pour les reçus',
+    'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][POSTALCODE]' => 'Code postal de la structure pour les reçus',
+    'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][TOWN]' => 'Ville de la structure pour les reçus',
+    'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][EMAIL]' => 'E-mail de la structure pour les reçus',
+    'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][WEBSITE]' => 'Lien vers le site internet de la structure pour les reçus',
 
     // docs/actions/bazarliste.yaml via templates/aceditor/actions-builder.tpl.html
     // Feature UUID : hpf-area-management
