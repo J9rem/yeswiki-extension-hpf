@@ -19,6 +19,7 @@ use YesWiki\Core\ApiResponse;
 use YesWiki\Core\Controller\CsrfTokenController;
 use YesWiki\Core\Service\UserManager; // Feature UUID : hpf-payment-status-action
 use YesWiki\Core\YesWikiController;
+use YesWiki\Hpf\Controller\HpfController; // Feature UUID : hpf-register-payment-action
 use YesWiki\Hpf\Controller\HpfImportController; // Feature UUID : hpf-import-payments
 use YesWiki\Hpf\Exception\ApiException; // Feature UUID : hpf-payment-status-action
 use YesWiki\Hpf\Service\HpfService;
@@ -154,7 +155,7 @@ class ApiController extends YesWikiController
     {
         $csrfTokenController = $this->getService(CsrfTokenController::class);
         $csrfTokenController->checkToken('payment-admin', 'POST', 'anti-csrf-token');
-        return new ApiResponse($this->getService(HpfService::class)->findHelloAssoPayments($date,$amount),200);
+        return new ApiResponse($this->getService(HpfController::class)->findHelloAssoPayments($date,$amount),200);
     }
 
     /**
@@ -165,7 +166,7 @@ class ApiController extends YesWikiController
     {
         $csrfTokenController = $this->getService(CsrfTokenController::class);
         $csrfTokenController->checkToken('payment-admin', 'POST', 'anti-csrf-token');
-        return new ApiResponse($this->getService(HpfService::class)->deletePaymentInEntry($entryId,$paymentId),200);
+        return new ApiResponse($this->getService(HpfController::class)->deletePaymentInEntry($entryId,$paymentId),200);
     }
 
     /**
@@ -202,7 +203,7 @@ class ApiController extends YesWikiController
             $data['year'] = $_POST['year'] ?? '';
         }
         return new ApiResponse(
-            $this->getService(HpfService::class)->addPaymentInEntry(
+            $this->getService(HpfController::class)->addPaymentInEntry(
                 $entryId,
                 $data['date'],
                 $data['total'],
