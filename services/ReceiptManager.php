@@ -26,6 +26,7 @@ class ReceiptManager
     public const RECEIPT_UNIQ_ID_HPF_RESOURCE = 'ReceiptUniqId';
     public const RECEIPT_UNIQ_ID_HPF_PROPERTY = 'https://www.habitatparticipatif-france.fr/ReceiptUniqId';
     public const LOCALIZATION = 'private/receipts/';
+    public const NB_CHARS = 9;
 
     protected $aclService;
     protected $entryManager;
@@ -62,7 +63,7 @@ class ReceiptManager
         if (empty($nextUniqId)){
             $nextUniqId = $this->getNextUniqIdFromFiles();
         }
-        return empty($nextUniqId) ? '0000001' : $nextUniqId;
+        return empty($nextUniqId) ? $this->convertUniqIdFromInt(1) : $nextUniqId;
     }
 
     /**
@@ -126,7 +127,7 @@ class ReceiptManager
      */
     public function convertUniqIdFromInt(int $value):string
     {
-        return $value <= 0 ? '' : str_pad(strval($value),7,'0',STR_PAD_LEFT);
+        return $value <= 0 ? '' : str_pad(strval($value),self::NB_CHARS,'0',STR_PAD_LEFT);
     }
 
     /**
@@ -136,11 +137,12 @@ class ReceiptManager
     protected function getNextUniqIdFromFiles(): string
     {
         $this->prepareDirectory();
-        $files = glob(self::LOCALIZATION.'*/*-[0-9][0-9][0-9][0-9][0-9][0-9][0-9]-*.pdf');
+        $files = glob(self::LOCALIZATION.'*/*-*-*.pdf');
         $ids = [];
         $quotedBasePath = preg_quote(self::LOCALIZATION,'/');
         $quotedSeparator = preg_quote('/','/');
-        $pregSearch = "/.*$quotedBasePath(.+)$quotedSeparator([^]+)-([0-9]{7})-.+\\.pdf/";
+        $nbChars = self::NB_CHARS;
+        $pregSearch = "/.*$quotedBasePath(.+)$quotedSeparator([^]+)-([0-9]{9,$nbChars})-.+\\.pdf/";
         foreach ($files as $filePath) {
             $filename = pathinfo($filePath)['filename'];
             $maches = [];

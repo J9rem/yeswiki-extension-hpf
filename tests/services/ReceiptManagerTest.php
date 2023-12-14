@@ -32,6 +32,26 @@ class ReceiptManagerTest extends YesWikiTestCase
     }
 
     /**
+     * reset value
+     * @param array $services
+     * @param string $testingValue
+     * @param null|string $oldValue
+     */
+    protected function resetTripleValue(array $services,string $testingValue,?string $oldValue)
+    {
+        $defaultValue = $services['receiptManager']->convertUniqIdFromInt(0);
+        $tripleStore = $services['wiki']->services->get(TripleStore::class);
+        $tripleStore->update(
+            ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE,
+            ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY,
+            $testingValue,
+            empty($oldValue) ? $defaultValue : $oldValue,
+            '',
+            ''
+        );
+    }
+
+    /**
      * @depends testReceiptManagerExisting
      * @covers ReceiptManager::getNextUniqId
      * @param array $services [$wiki,$receiptManager]
@@ -41,27 +61,28 @@ class ReceiptManagerTest extends YesWikiTestCase
         array $services
     ) {
         $thrown = false;
+        $testingValue = $services['receiptManager']->convertUniqIdFromInt(30004);
         $uniqId = '';
         $tripleStore = $services['wiki']->services->get(TripleStore::class);
         try{
             $uniqId = $services['receiptManager']->getNextUniqId();
             $value = $tripleStore->getOne(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE,ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY,'','');
             if (empty($value)){
-                $tripleStore->create(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE,ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY,'0030004','','');
+                $tripleStore->create(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE,ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY,$testingValue,'','');
             } else {
-                $tripleStore->update(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE,ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY,$value,'0030004','','');
+                $tripleStore->update(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE,ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY,$value,$testingValue,'','');
             }
             $uniqId2 = $services['receiptManager']->getNextUniqId();
-            $tripleStore->update(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE,ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY,'0030004',empty($value) ? '0000000' : $value,'','');
+            $this->resetTripleValue($services,$testingValue,$value);
         } catch (Throwable $th){
             $thrown = true;
         }
         $this->assertFalse($thrown,'An exception has benn thrown !');
         $this->assertIsString($uniqId,'uniqId should be a string');
-        $this->assertMatchesRegularExpression('/^[0-9]{7}$/',$uniqId,'uniqId should be a string of 7 digits');
+        $this->assertMatchesRegularExpression('/^[0-9]{'.ReceiptManager::NB_CHARS.'}$/',$uniqId,'uniqId should be a string of '.ReceiptManager::NB_CHARS.' digits');
         $this->assertIsString($uniqId2,'uniqId2 should be a string');
-        $this->assertMatchesRegularExpression('/^[0-9]{7}$/',$uniqId2,'uniqId2 should be a string of 7 digits');
-        $this->assertEquals(30005,intval($uniqId2),'bad calculation of uniqId');
+        $this->assertMatchesRegularExpression('/^[0-9]{'.ReceiptManager::NB_CHARS.'}$/',$uniqId2,'uniqId2 should be a string of '.ReceiptManager::NB_CHARS.' digits');
+        $this->assertEquals(intval($testingValue)+1,intval($uniqId2),'bad calculation of uniqId');
         return $services;
     }
 
@@ -85,7 +106,7 @@ class ReceiptManagerTest extends YesWikiTestCase
             $uniqId2 = $services['receiptManager']->getNextUniqId();
             $goodResult = $services['receiptManager']->saveLastestUniqId($uniqId);
             $uniqId3 = $services['receiptManager']->getNextUniqId();
-            $tripleStore->update(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE,ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY,$uniqId,empty($value) ? '0000000' : $value,'','');
+            $this->resetTripleValue($services,$uniqId,$value);
         } catch (Throwable $th){
             $thrown = true;
         }
