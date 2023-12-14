@@ -7,6 +7,7 @@
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
+ * Feature UUID : hpf-receipts-creation
  */
 
 namespace YesWiki\Hpf\Service;
@@ -102,7 +103,7 @@ class ReceiptManager
         // check paymentId existing
         // get uniqId
         // render via twig
-        // use Mpdf to render pdf TODO clean font to keep only needed
+        // use Mpdf to render pdf
         // save file
         // save UniqId
         return '';
