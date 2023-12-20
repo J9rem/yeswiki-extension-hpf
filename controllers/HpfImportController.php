@@ -605,7 +605,7 @@ class HpfImportController extends YesWikiController
                 throw new PaymentAlreadyExistingException('Payment already defined !');
             }
         }
-        foreach (['date','value','year'] as $key) {
+        foreach (['date','value','year','paymentType'] as $key) {
             if (empty($data[$key]) || !is_string($data[$key])){
                 throw new Exception("\"$key\" should be a not empty string !");
             }
@@ -620,7 +620,7 @@ class HpfImportController extends YesWikiController
             $data['associatedEntryId'],
             $date,
             $data['value'],
-            'structure',
+            in_array($data['paymentType'],['structure','cheque','virement','especes']) ? $data['paymentType'] : 'structure',
             $data['number'],
             $data['year']
         );

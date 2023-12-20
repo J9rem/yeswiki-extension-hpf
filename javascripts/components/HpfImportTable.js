@@ -458,6 +458,12 @@ export default {
                 this.appendColumn('number',data,width)
                 this.appendColumnEuros('value',data,width)
                 this.appendColumn('date',data,width,true,10)
+                this.appendColumnSelect('paymentType',data,width,{
+                    'structure': TemplateRenderer.render('HpfImportTable',this,`tstructurepaymenttype`),
+                    'cheque': TemplateRenderer.render('HpfImportTable',this,`tchequepaymenttype`),
+                    'virement': TemplateRenderer.render('HpfImportTable',this,`tvirementpaymenttype`),
+                    'especes': TemplateRenderer.render('HpfImportTable',this,`tespecespaymenttype`)
+                })
                 this.appendColumnSelect('year',data,width,Object.fromEntries(
                     [-2,-1,0,1].map((offset)=>{
                         const year = String(Number(currentYear) + offset)
@@ -619,6 +625,9 @@ export default {
                 this.values[k].canAppend = true
                 this.values[k].canDisplayPublic = (this.values[k].visibility === 'x')
                 this.values[k].registeredPayments = []
+                this.values[k].paymentType = (this.values[k].receivedbyhpf === 'x')
+                    ? 'cheque'
+                    : 'structure'
             })
         },
         toggleCheckbox(key,name){

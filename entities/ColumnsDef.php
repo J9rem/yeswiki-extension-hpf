@@ -126,7 +126,16 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
                 'trim',
                 'strtolower'
             ]
-        ]
+            ],
+        'receivedbyhpf' => [
+            'search' => "/^\s*(?:Encaiss(?:é|e|.+)s? par HPF).*\s*$/i",
+            'filter' => "/^\s*(.*)\s*$/",
+            'post' => [
+                'trim',
+                'strtolower',
+                '\\'.self::class.'::extractX'
+            ]
+        ],
     ];
 
     /**
