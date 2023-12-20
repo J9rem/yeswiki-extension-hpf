@@ -13,6 +13,8 @@
 namespace YesWiki\Hpf\Controller;
 
 use Exception;
+use Symfony\Component\Security\Csrf\CsrfTokenManager;
+use Symfony\Component\Security\Csrf\Exception\TokenNotFoundException;
 use Throwable;
 use YesWiki\Alternativeupdatej9rem\Field\CustomSendMailField;
 use YesWiki\Bazar\Field\BazarField;
@@ -46,6 +48,7 @@ class HpfImportController extends YesWikiController
     protected $aclService;
     protected $areaManager;
     protected $csrfTokenController;
+    protected $csrfTokenManager;
     protected $entryManager;
     protected $eventDispatcher;
     protected $formManager;
@@ -57,6 +60,7 @@ class HpfImportController extends YesWikiController
         AclService $aclService,
         AreaManager $areaManager,
         CsrfTokenController $csrfTokenController,
+        CsrfTokenManager $csrfTokenManager,
         EntryManager $entryManager,
         EventDispatcher $eventDispatcher,
         FormManager $formManager,
@@ -68,6 +72,7 @@ class HpfImportController extends YesWikiController
         $this->aclService = $aclService;
         $this->areaManager = $areaManager;
         $this->csrfTokenController = $csrfTokenController;
+        $this->csrfTokenManager = $csrfTokenManager;
         $this->entryManager = $entryManager;
         $this->eventDispatcher = $eventDispatcher;
         $this->formManager = $formManager;
@@ -75,6 +80,20 @@ class HpfImportController extends YesWikiController
         $this->structureFinder = $structureFinder;
         $this->userManager = $userManager;
         $this->wiki = $wiki;
+    }
+
+    /**
+     * get anti-csrf token
+     * @return ApiResponse
+     */
+    public function getToken(): ApiResponse
+    {
+        return new ApiResponse(
+            [
+                'anti-csrf-token' => $this->csrfTokenManager->getToken('hpf-import')->getValue()
+            ],
+            200
+        );
     }
     
     /**
@@ -87,7 +106,17 @@ class HpfImportController extends YesWikiController
      */
     public function createEntryOrAppendPaymentForMemberShip(string $mode,string $type,string $formId): ApiResponse
     {
-        $this->csrfTokenController->checkToken('hpf-import', 'POST', 'anti-csrf-token',false);
+        try {
+            $this->csrfTokenController->checkToken('hpf-import', 'POST', 'anti-csrf-token',false);
+        } catch (TokenNotFoundException $th) {
+            return new ApiResponse(
+                [
+                    'error' => 'badToken',
+                    'errorRaw' => $th->getMessage()
+                ],
+                400
+            );
+        }
 
         if(empty($_POST['data'])
             || !is_array($_POST['data'])) {

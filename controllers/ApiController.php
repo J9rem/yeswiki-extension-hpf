@@ -223,4 +223,13 @@ class ApiController extends YesWikiController
     {
         return $this->getService(HpfImportController::class)->createEntryOrAppendPaymentForMemberShip($mode,$type,$formId);
     }
+
+    /**
+     * @Route("/api/hpf/importmembership/gettoken", methods={"POST"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-import-payments
+     */
+    public function getHpfImportToken()
+    {
+        return $this->getService(HpfImportController::class)->getToken();
+    }
 }

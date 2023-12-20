@@ -132,7 +132,7 @@ export default {
         },
     },
     methods:{
-        async addEntryOrAppend(data,append = false){
+        async addEntryOrAppend(data,append = false,catchBadToken = true){
             const type = data.isGroup === 'x' ? 'college2' : 'college1'
             const formId = this.params[type]
             const mode  = append === true ? 'appendPayment' : 'createEntry'
@@ -143,7 +143,24 @@ export default {
                     data,
                     'anti-csrf-token': this.token
                 }
-            )
+            ).catch(async (error)=>{
+                if (catchBadToken && error?.errorMsg === 'badToken'){
+                    // get newToken
+                    const tokenRaw = await this.asyncHelper.fetch(
+                        window.wiki.url(`?api/hpf/importmembership/gettoken`),
+                        'post',
+                        {}
+                    )
+                    if (!(tokenRaw?.['anti-csrf-token']?.length > 0)){
+                        console.error('new token not found')
+                    } else {
+                        this.token = tokenRaw['anti-csrf-token']
+                        // retry once 
+                        return await this.addEntryOrAppend(data,append,false)
+                    }
+                }
+                return Promise.reject(error)
+            })
         },
         addRows(){
             this.values.forEach((value,idx)=>{
