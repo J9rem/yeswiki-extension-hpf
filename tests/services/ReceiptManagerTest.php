@@ -77,7 +77,7 @@ class ReceiptManagerTest extends YesWikiTestCase
         } catch (Throwable $th){
             $thrown = true;
         }
-        $this->assertFalse($thrown,'An exception has benn thrown !');
+        $this->assertFalse($thrown,'An exception has been thrown !');
         $this->assertIsString($uniqId,'uniqId should be a string');
         $this->assertMatchesRegularExpression('/^[0-9]{'.ReceiptManager::NB_CHARS.'}$/',$uniqId,'uniqId should be a string of '.ReceiptManager::NB_CHARS.' digits');
         $this->assertIsString($uniqId2,'uniqId2 should be a string');
@@ -115,5 +115,128 @@ class ReceiptManagerTest extends YesWikiTestCase
         $this->assertTrue($goodResult,'Should save the following value !');
         $this->assertEquals($uniqId2+1,$uniqId3,'Should save the same values !');
         return $services;
+    }
+
+    /**
+     * @depends testSaveLastestUniqId
+     * @covers ReceiptManager::getExistingReceiptsForEntryId
+     * @param array $services [$wiki,$receiptManager]
+     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager]
+     */
+    public function testGetExistingReceiptsForEntryId(
+        array $services
+    ) {
+        $thrown = false;
+        $uniqId = '';
+        try{
+        } catch (Throwable $th){
+            $thrown = true;
+        }
+        $this->assertFalse($thrown,'An exception has been thrown and it is not waited !');
+        // TODO test other results
+        return $services;
+    }
+
+    /**
+     * @depends testGetExistingReceiptsForEntryId
+     * @covers ReceiptManager::getExistingReceiptForEntryIdAndNumber
+     * @param array $services [$wiki,$receiptManager]
+     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager]
+     */
+    public function testGetExistingReceiptForEntryIdAndNumber(
+        array $services
+    ) {
+        $thrown = false;
+        $uniqId = '';
+        try{
+        } catch (Throwable $th){
+            $thrown = true;
+        }
+        $this->assertFalse($thrown,'An exception has been thrown and it is not waited !');
+        // TODO test other results
+        return $services;
+    }
+
+    /**
+     * @depends testGetExistingReceiptForEntryIdAndNumber
+     * @dataProvider generateReceiptForEntryIdAndNumberProvider
+     * @covers ReceiptManager::generateReceiptForEntryIdAndNumber
+     * @param string $entryId
+     * @param string $paymentId
+     * @param bool $waitedtThrown
+     * @param string $errorMsgRegExp
+     * @param array $services [$wiki,$receiptManager]
+     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager]
+     */
+    public function testGenerateReceiptForEntryIdAndNumber(
+        string $entryId,
+        string $paymentId,
+        bool $waitedtThrown,
+        string $errorMsgRegExp,
+        array $services
+    ) {
+        $thrown = false;
+        $uniqId = '';
+        try{
+            $results = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entryId,$paymentId);
+        } catch (Throwable $th){
+            $thrown = true;
+        }
+        if ($waitedtThrown){
+            $this->assertTrue($thrown,'An exception has not been thrown and it is not waited !');
+        } else {
+            $this->assertFalse($thrown,'An exception has been thrown and it is not waited !');
+            // format of response
+            $this->assertIsArray($results);
+            $this->assertCount(2,$results);
+            if (!empty($errorMsgRegExp)){
+                $this->assertNotEmpty($results[1],'Error message should not be empty');
+                $this->assertIsString($results[1],'Error message should be a string');
+                $this->assertMatchesRegularExpression($errorMsgRegExp,$results[1],'Wrong error message !');
+            } else {
+                $this->assertEmpty($results[1],'Error message should be empty');
+                $this->assertNotEmpty($results[0],'Receipt Path should not be empty');
+                $this->assertIsString($results[0],'Receipt Path should be a string');
+                $this->asserFileExiste($results[0]);
+            }
+        }
+        return $services;
+    }
+
+    /**
+     * provide list of sets to test ReceiptManager::generateReceiptForEntryIdAndNumber
+     */
+    public function generateReceiptForEntryIdAndNumberProvider(): array
+    {
+        $sets = [];
+
+        $defaults = [
+            'entryId' => 'unknown entryId',
+            'paymentId' => 'unknown paymentId',
+            'waitedtThrown' => false,
+            'errorMsgRegExp' => ''
+        ];
+
+        // empty entryId
+        $set = $defaults; // copy
+        // update
+        $set['entryId'] = '';
+        $set['errorMsgRegExp'] = '/entryId should not be empty/';
+        $sets[] = $set; // append
+
+        // empty paymentId
+        $set = $defaults; // copy
+        // update
+        $set['paymentId'] = '';
+        $set['errorMsgRegExp'] = '/paymentId should not be empty/';
+        $sets[] = $set; // append
+
+        // unkown entryId
+        $set = $defaults; // copy
+        // update
+        $set['errorMsgRegExp'] = '/not found entry/';
+        $sets[] = $set; // append
+        
+        return $sets;
     }
 }

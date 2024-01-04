@@ -23,7 +23,6 @@ use YesWiki\Hpf\Controller\HpfController; // Feature UUID : hpf-register-payment
 use YesWiki\Hpf\Controller\HpfImportController; // Feature UUID : hpf-import-payments
 use YesWiki\Hpf\Exception\ApiException; // Feature UUID : hpf-payment-status-action
 use YesWiki\Hpf\Service\HpfService;
-use YesWiki\Hpf\Service\ReceiptManager; // Feature UUID : hpf-receipts-creation
 use YesWiki\Shop\Controller\ApiController as ShopApiController; // Feature UUID : hpf-api-helloasso-token-triggered
 
 class ApiController extends YesWikiController
@@ -233,27 +232,5 @@ class ApiController extends YesWikiController
     public function getHpfImportToken()
     {
         return $this->getService(HpfImportController::class)->getToken();
-    }
-
-    /**
-     * @Route("/api/hpf/receipts/tests/generatereceipt", methods={"GET"},options={"acl":{"public","@admins"}})
-     * Feature UUID : hpf-receipts-creation
-     * 
-     * This public method is only for tests.
-     * TODO : DELETE IT before merge
-     */
-    public function testGenerateReceipt()
-    {
-        $hpfService = $this->getService(HpfService::class);
-        $contribIds = $hpfService->getCurrentPaymentsFormIds();
-        
-        echo json_encode($contribIds);
-        return new ApiResponse(
-            [
-                'action' => 'test ReceiptManager::generateReceiptForEntryIdAndNumber',
-                'result' => $this->getService(ReceiptManager::class)->generateReceiptForEntryIdAndNumber('unknown-entry','12345678AA')
-            ],
-            200
-        );
     }
 }
