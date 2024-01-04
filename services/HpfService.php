@@ -272,6 +272,7 @@ class HpfService
     }
 
     /**
+     * get Hpf Structure Info but throws exception if format is not correct
      * Feature UUID : hpf-receipts-creation
      * @return array
      * @throws Exception

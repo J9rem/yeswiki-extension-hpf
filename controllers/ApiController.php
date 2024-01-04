@@ -238,6 +238,9 @@ class ApiController extends YesWikiController
     /**
      * @Route("/api/hpf/receipts/tests/generatereceipt", methods={"GET"},options={"acl":{"public","@admins"}})
      * Feature UUID : hpf-receipts-creation
+     * 
+     * This public method is only for tests.
+     * TODO : DELETE IT before merge
      */
     public function testGenerateReceipt()
     {

@@ -8,6 +8,8 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  * Feature UUID : hpf-receipts-creation
+ * 
+ * This class defines scripts to launch by composer to clean not needed mpdf's files (fonts)
  */
 
 namespace YesWiki\Hpf\Service;

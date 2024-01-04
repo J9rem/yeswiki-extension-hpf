@@ -12,6 +12,7 @@ parameters:
   departmentListName: 'ListeDepartementsFrancais' # Feature UUID : hpf-area-management
   formIdAreaToDepartment: ''             # Feature UUID : hpf-area-management
   hpf:
+    # define parameters to store all needed data to display on receipt
     structureInfo:                         # Feature UUID : hpf-receipts-creation
       name: ''
       address: ''
@@ -25,6 +26,7 @@ parameters:
       - contribFormIds
       - paymentsFormUrls
       - paymentMessageEntry
+      # make the structureInfo editable by admins
       - structureInfo:                # Feature UUID : hpf-receipts-creation
         - 'name'
         - 'address'
