@@ -178,7 +178,8 @@ class ReceiptManagerTest extends YesWikiTestCase
      * @covers ReceiptManager::generateReceiptForEntryIdAndNumber
      * @param string $entryId
      * @param string $paymentId
-     * @param bool $waitedtThrown
+     * @param string $originOfPayment
+     * @param bool $waitedThrown
      * @param string $errorMsgRegExp
      * @param array $services [$wiki,$receiptManager,$hpfController]
      * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager,'hpfController'=>$hpfController]
@@ -186,7 +187,8 @@ class ReceiptManagerTest extends YesWikiTestCase
     public function testGenerateReceiptForEntryIdAndNumber(
         string $entryId,
         string $paymentId,
-        bool $waitedtThrown,
+        string $originOfPayment,
+        bool $waitedThrown,
         string $errorMsgRegExp,
         array $services
     ) {
@@ -194,7 +196,7 @@ class ReceiptManagerTest extends YesWikiTestCase
         $thString = '';
         $uniqId = ''; 
         if ($entryId === Helper::ENTRY_ID){
-            $entry = $this->getExistingEntry($services);
+            $entry = $this->getExistingEntry($services,$originOfPayment);
             $entryId = $entry['id_fiche'] ?? '';
         }
         try{
@@ -203,7 +205,7 @@ class ReceiptManagerTest extends YesWikiTestCase
             $thrown = true;
             $thString = $services['hpfController']->formatThrowableStringForExport($th);
         }
-        if ($waitedtThrown){
+        if ($waitedThrown){
             $this->assertTrue($thrown,'An exception has not been thrown and it is not waited !');
         } else {
             $this->assertFalse($thrown,"An exception has been thrown and it is not waited ! : $thString");
@@ -234,7 +236,8 @@ class ReceiptManagerTest extends YesWikiTestCase
         $defaults = [
             'entryId' => 'unknown entryId',
             'paymentId' => 'unknown paymentId',
-            'waitedtThrown' => false,
+            'originOfPayment' => 'virement',
+            'waitedThrown' => false,
             'errorMsgRegExp' => ''
         ];
 
@@ -265,6 +268,15 @@ class ReceiptManagerTest extends YesWikiTestCase
         $set['errorMsgRegExp'] = '/not found payment\'s id/';
         $sets[] = $set; // append
 
+        // payment via structure
+        $set = $defaults; // copy
+        // update
+        $set['entryId'] = Helper::ENTRY_ID;
+        $set['paymentId'] = Helper::DEFAULT_PAYMENT_ID;
+        $set['originOfPayment'] = 'structure';
+        $set['errorMsgRegExp'] = '/It is not possible to generate a receipt for structure\'s payment !/';
+        $sets[] = $set; // append
+
         // not ready
         $set = $defaults; // copy
         // update
@@ -279,9 +291,10 @@ class ReceiptManagerTest extends YesWikiTestCase
     /**
      * get an existing entry from a contrib form
      * @param array $services [$wiki,$receiptManager,$hpfController]
+     * @param string $originOfPayment
      * @return array $entry
      */
-    public function getExistingEntry(array $services): array
+    public function getExistingEntry(array $services,string $originOfPayment): array
     {
         // get services
         $entryManager = $services['wiki']->services->get(EntryManager::class);
@@ -290,12 +303,18 @@ class ReceiptManagerTest extends YesWikiTestCase
 
         // get entry 
         $rawentry = $entryManager->getOne(Helper::ENTRY_ID, false, null, false, true); // no cache
+        if (!empty($rawentry[HpfService::PAYMENTS_FIELDNAME])
+            && strpos($rawentry[HpfService::PAYMENTS_FIELDNAME],"\"origin\":\"$originOfPayment\"") === false){
+            // delete previous
+            Helper::updateEntry(false,[],$services['wiki'],self::$cache['currentFormId'] ?? '');
+            $rawentry = [];
+        }
         if (empty($rawentry)){
             // create entry
             Helper::updateEntry(true,[
                 HpfService::PAYMENTS_FIELDNAME => json_encode([
                     Helper::DEFAULT_PAYMENT_ID => [
-                        'origin' => 'virement',
+                        'origin' => $originOfPayment,
                         'total' => '50',
                         'date' => '2024-01-01',
                         'don' => ['2024' => '50']

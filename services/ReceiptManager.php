@@ -122,6 +122,15 @@ class ReceiptManager
         if (!array_key_exists($paymentId,$existingPayments)){
             return ['','not found payment\'s id'];
         }
+        // check if receipt is existing
+        $existingReceiptPath = $this->getExistingReceiptForEntryIdAndNumber($entryId,$paymentId);
+        if (!empty($existingReceiptPath)){
+            return [$existingReceiptPath,'receipt alreay existing !'];
+        }
+        $payment = $existingPayments[$paymentId];
+        if ($payment['origin'] == 'structure'){
+            return ['','It is not possible to generate a receipt for structure\'s payment !'];
+        }
         // get uniqId
         // render via twig
         // use Mpdf to render pdf
