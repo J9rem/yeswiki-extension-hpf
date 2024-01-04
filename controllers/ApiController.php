@@ -241,6 +241,10 @@ class ApiController extends YesWikiController
      */
     public function testGenerateReceipt()
     {
+        $hpfService = $this->getService(HpfService::class);
+        $contribIds = $hpfService->getCurrentPaymentsFormIds();
+        
+        echo json_encode($contribIds);
         return new ApiResponse(
             [
                 'action' => 'test ReceiptManager::generateReceiptForEntryIdAndNumber',

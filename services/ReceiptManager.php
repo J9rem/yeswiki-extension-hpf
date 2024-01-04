@@ -12,6 +12,7 @@
 
 namespace YesWiki\Hpf\Service;
 
+use Throwable;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\Service\AclService;
@@ -92,19 +93,32 @@ class ReceiptManager
      * generate a receipt
      * @param string $entryId
      * @param string $paymentId
-     * @return string $receiptPath
+     * @return array [string $receiptPath,string $errorMsg]
      */
-    public function generateReceiptForEntryIdAndNumber(string $entryId, string $paymentId):string
+    public function generateReceiptForEntryIdAndNumber(string $entryId, string $paymentId):array
     {
         $hpfParams = $this->hpfService->getHpfParams();
-        if (empty($hpfParams) || empty($entryId) || empty($paymentId)){
-            return '';
+        if (empty($hpfParams)){
+            return ['','empty HpfParams'];
         }
-        $structureInfo = $this->hpfService->getHpfStructureInfo();
+        if (empty($entryId)){
+            return ['','entryId should not be empty'];
+        }
+        if (empty($paymentId)){
+            return ['','paymentId should not be empty'];
+        }
+        try {
+            $structureInfo = $this->hpfService->getHpfStructureInfo();
+        } catch (Throwable $th) {
+            $filePath = $th->getFile();
+            $dir = basename(dirname($filePath));
+            $filename = basename($filePath);
+            return ['',"{$th->getMessage()} in $dir/$filename (line {$th->getLine()})"];
+        }
         // extract data from entry
         $entry = $this->entryManager->getOne($entryId);
         if (empty($entry)){
-            return '';
+            return ['','not found entry'];
         }
         // check paymentId existing
         // get uniqId
@@ -112,7 +126,7 @@ class ReceiptManager
         // use Mpdf to render pdf
         // save file
         // save UniqId
-        return '';
+        return ['','not ready'];
     }
 
     /**
