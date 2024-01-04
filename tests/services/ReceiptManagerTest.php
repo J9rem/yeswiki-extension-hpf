@@ -12,23 +12,38 @@
 
 namespace YesWiki\Test\Hpf\Service;
 
+use Throwable;
+use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Core\Service\TripleStore;
+use YesWiki\Hpf\Controller\HpfController;
+use YesWiki\Hpf\Service\HpfService;
 use YesWiki\Hpf\Service\ReceiptManager;
 use YesWiki\Test\Core\YesWikiTestCase;
+use YesWiki\Test\Hpf\Service\Helper;
 
 require_once 'tests/YesWikiTestCase.php';
+require_once 'tools/hpf/tests/services/Helper.php';
 
 class ReceiptManagerTest extends YesWikiTestCase
 {
+    private static $cache;
+    private static $myWiki;
+
     /**
      * @covers ReceiptManager::__construct
-     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager]
+     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager,'hpfController'=>$hpfController]
      */
     public function testReceiptManagerExisting(): array
     {
         $wiki = $this->getWiki();
+        self::$myWiki = $wiki;
+        self::$cache = [];
         $this->assertTrue($wiki->services->has(ReceiptManager::class));
-        return ['wiki' => $wiki,'receiptManager' => $wiki->services->get(ReceiptManager::class)];
+        return [
+            'wiki' => $wiki,
+            'receiptManager' => $wiki->services->get(ReceiptManager::class),
+            'hpfController' => $wiki->services->get(HpfController::class)
+        ];
     }
 
     /**
@@ -54,8 +69,8 @@ class ReceiptManagerTest extends YesWikiTestCase
     /**
      * @depends testReceiptManagerExisting
      * @covers ReceiptManager::getNextUniqId
-     * @param array $services [$wiki,$receiptManager]
-     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager]
+     * @param array $services [$wiki,$receiptManager,$hpfController]
+     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager,'hpfController'=>$hpfController]
      */
     public function testGetNextUniqId(
         array $services
@@ -90,8 +105,8 @@ class ReceiptManagerTest extends YesWikiTestCase
     /**
      * @depends testGetNextUniqId
      * @covers ReceiptManager::saveLastestUniqId
-     * @param array $services [$wiki,$receiptManager]
-     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager]
+     * @param array $services [$wiki,$receiptManager,$hpfController]
+     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager,'hpfController'=>$hpfController]
      */
     public function testSaveLastestUniqId(
         array $services
@@ -120,8 +135,8 @@ class ReceiptManagerTest extends YesWikiTestCase
     /**
      * @depends testSaveLastestUniqId
      * @covers ReceiptManager::getExistingReceiptsForEntryId
-     * @param array $services [$wiki,$receiptManager]
-     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager]
+     * @param array $services [$wiki,$receiptManager,$hpfController]
+     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager,'hpfController'=>$hpfController]
      */
     public function testGetExistingReceiptsForEntryId(
         array $services
@@ -140,8 +155,8 @@ class ReceiptManagerTest extends YesWikiTestCase
     /**
      * @depends testGetExistingReceiptsForEntryId
      * @covers ReceiptManager::getExistingReceiptForEntryIdAndNumber
-     * @param array $services [$wiki,$receiptManager]
-     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager]
+     * @param array $services [$wiki,$receiptManager,$hpfController]
+     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager,'hpfController'=>$hpfController]
      */
     public function testGetExistingReceiptForEntryIdAndNumber(
         array $services
@@ -165,8 +180,8 @@ class ReceiptManagerTest extends YesWikiTestCase
      * @param string $paymentId
      * @param bool $waitedtThrown
      * @param string $errorMsgRegExp
-     * @param array $services [$wiki,$receiptManager]
-     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager]
+     * @param array $services [$wiki,$receiptManager,$hpfController]
+     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager,'hpfController'=>$hpfController]
      */
     public function testGenerateReceiptForEntryIdAndNumber(
         string $entryId,
@@ -176,16 +191,22 @@ class ReceiptManagerTest extends YesWikiTestCase
         array $services
     ) {
         $thrown = false;
-        $uniqId = '';
+        $thString = '';
+        $uniqId = ''; 
+        if ($entryId === Helper::ENTRY_ID){
+            $entry = $this->getExistingEntry($services);
+            $entryId = $entry['id_fiche'] ?? '';
+        }
         try{
             $results = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entryId,$paymentId);
         } catch (Throwable $th){
             $thrown = true;
+            $thString = $services['hpfController']->formatThrowableStringForExport($th);
         }
         if ($waitedtThrown){
             $this->assertTrue($thrown,'An exception has not been thrown and it is not waited !');
         } else {
-            $this->assertFalse($thrown,'An exception has been thrown and it is not waited !');
+            $this->assertFalse($thrown,"An exception has been thrown and it is not waited ! : $thString");
             // format of response
             $this->assertIsArray($results);
             $this->assertCount(2,$results);
@@ -231,12 +252,77 @@ class ReceiptManagerTest extends YesWikiTestCase
         $set['errorMsgRegExp'] = '/paymentId should not be empty/';
         $sets[] = $set; // append
 
-        // unkown entryId
+        // unknown entryId
         $set = $defaults; // copy
         // update
         $set['errorMsgRegExp'] = '/not found entry/';
         $sets[] = $set; // append
+
+        // unknown paymentId
+        $set = $defaults; // copy
+        // update
+        $set['entryId'] = Helper::ENTRY_ID;
+        $set['errorMsgRegExp'] = '/not found payment\'s id/';
+        $sets[] = $set; // append
+
+        // not ready
+        $set = $defaults; // copy
+        // update
+        $set['entryId'] = Helper::ENTRY_ID;
+        $set['paymentId'] = Helper::DEFAULT_PAYMENT_ID;
+        $set['errorMsgRegExp'] = '/not ready/';
+        $sets[] = $set; // append
         
         return $sets;
+    }
+
+    /**
+     * get an existing entry from a contrib form
+     * @param array $services [$wiki,$receiptManager,$hpfController]
+     * @return array $entry
+     */
+    public function getExistingEntry(array $services): array
+    {
+        // get services
+        $entryManager = $services['wiki']->services->get(EntryManager::class);
+        // set GLOBALS for bazar.fonct.php:44
+        $GLOBALS['wiki'] = $services['wiki'];
+
+        // get entry 
+        $rawentry = $entryManager->getOne(Helper::ENTRY_ID, false, null, false, true); // no cache
+        if (empty($rawentry)){
+            // create entry
+            Helper::updateEntry(true,[],$services['wiki'],self::$cache['currentFormId'] ?? '');
+            $rawentry = $entryManager->getOne(Helper::ENTRY_ID, false, null, false, true); // no cache
+        }
+        return empty($rawentry) ? [] : $rawentry;
+    }
+
+    /**
+     * setup a list and form for other tests
+     */
+    protected function setUp(): void
+    {
+        if (empty(self::$myWiki)){
+            return;
+        }
+        // create List
+        Helper::updateList(true,self::$myWiki);
+        // create Form
+        self::$cache['currentFormId'] = Helper::updateForm(true,self::$myWiki,self::$cache['currentFormId'] ?? '');
+    }
+    
+    /**
+     * remove list and form for other tests
+     */
+    public static function tearDownAfterClass(): void
+    {
+        if (empty(self::$myWiki)){
+            return;
+        }
+        // remove List
+        Helper::updateList(false,self::$myWiki);
+        // remove Form
+        self::$cache['currentFormId'] = Helper::updateForm(false,self::$myWiki,self::$cache['currentFormId'] ?? '');
     }
 }

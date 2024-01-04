@@ -15,6 +15,7 @@ namespace YesWiki\Hpf\Controller;
 use DateInterval;
 use DateTime;
 use Exception;
+use Throwable;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\YesWikiController;
@@ -195,5 +196,18 @@ class HpfController extends YesWikiController
             'updatedEntry' => $updatedEntry
         ];
 
+    }
+
+    /**
+     * format cleaned string from Throwable
+     * @param Throwable $th
+     * @return string
+     */
+    public function formatThrowableStringForExport(Throwable $th): string
+    {
+        $filePath = $th->getFile();
+        $dir = basename(dirname($filePath));
+        $filename = basename($filePath);
+        return "{$th->getMessage()} in $dir/$filename (line {$th->getLine()})";
     }
 }

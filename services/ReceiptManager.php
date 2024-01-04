@@ -97,6 +97,7 @@ class ReceiptManager
      * @param string $entryId
      * @param string $paymentId
      * @return array [string $receiptPath,string $errorMsg]
+     * @throws Exception
      */
     public function generateReceiptForEntryIdAndNumber(string $entryId, string $paymentId):array
     {
@@ -110,14 +111,7 @@ class ReceiptManager
         if (empty($paymentId)){
             return ['','paymentId should not be empty'];
         }
-        try {
-            $structureInfo = $this->hpfService->getHpfStructureInfo();
-        } catch (Throwable $th) {
-            $filePath = $th->getFile();
-            $dir = basename(dirname($filePath));
-            $filename = basename($filePath);
-            return ['',"{$th->getMessage()} in $dir/$filename (line {$th->getLine()})"];
-        }
+        $structureInfo = $this->hpfService->getHpfStructureInfo();
         // extract data from entry
         $entry = $this->entryManager->getOne($entryId);
         if (empty($entry)){
