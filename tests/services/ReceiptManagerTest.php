@@ -220,7 +220,7 @@ class ReceiptManagerTest extends YesWikiTestCase
                 $this->assertEmpty($results[1],'Error message should be empty');
                 $this->assertNotEmpty($results[0],'Receipt Path should not be empty');
                 $this->assertIsString($results[0],'Receipt Path should be a string');
-                $this->asserFileExiste($results[0]);
+                $this->assertFileExists($results[0]);
             }
         }
         return $services;
@@ -282,7 +282,7 @@ class ReceiptManagerTest extends YesWikiTestCase
         // update
         $set['entryId'] = Helper::ENTRY_ID;
         $set['paymentId'] = Helper::DEFAULT_PAYMENT_ID;
-        $set['errorMsgRegExp'] = '/not ready/';
+        $set['errorMsgRegExp'] = '';
         $sets[] = $set; // append
         
         return $sets;

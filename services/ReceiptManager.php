@@ -15,7 +15,10 @@
 
 namespace YesWiki\Hpf\Service;
 
+use attach;
+use Exception;
 use Throwable;
+use Mpdf\Mpdf;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\Service\AclService;
@@ -24,15 +27,19 @@ use YesWiki\Hpf\Service\HpfService;
 use YesWiki\Security\Controller\SecurityController;
 use YesWiki\Wiki;
 
+require_once 'tools/attach/libs/attach.lib.php';
+
 class ReceiptManager
 {
 
     public const RECEIPT_UNIQ_ID_HPF_RESOURCE = 'ReceiptUniqId';
     public const RECEIPT_UNIQ_ID_HPF_PROPERTY = 'https://www.habitatparticipatif-france.fr/ReceiptUniqId';
     public const LOCALIZATION = 'private/receipts/';
+    public const LOCALIZATION_CACHE = 'private/receipts/cache';
     public const NB_CHARS = 9;
 
     protected $aclService;
+    protected $attach;
     protected $entryManager;
     protected $formManager;
     protected $hpfService;
@@ -56,6 +63,7 @@ class ReceiptManager
         $this->securityController = $securityController;
         $this->tripleStore = $tripleStore;
         $this->wiki = $wiki;
+        $this->attach = new attach($wiki);
     }
 
     /**
@@ -78,7 +86,29 @@ class ReceiptManager
      */
     public function getExistingReceiptsForEntryId(string $entryId):array
     {
-        return [];
+        $sanitizedEntryId = $this->attach->sanitizeFilename($entryId);
+        $receipts = array_map(
+            function($result){
+                return [
+                    'date' => $result['match'][1],
+                    'uniqId' => $result['match'][2],
+                    'origin' => $result['match'][3],
+                    'paymentId' => $result['match'][4],
+                    'filePath' => $result['filePath']
+                ];
+            },
+            array_filter(
+                $this->extractListOfFiles("$sanitizedEntryId/*-*-*-*",'/([^-]+)-([0-9]+)-([^-]+)-([^-]+)/'),
+                function($result){
+                    return !empty($result['match'][1]) && !empty($result['match'][2]) && !empty($result['match'][3]) && !empty($result['match'][4]);
+                }
+            )
+        );
+        $results = [];
+        foreach ($receipts as $result) {
+            $results[$result['paymentId']] = $result;
+        }
+        return $results;
     }
 
     /**
@@ -89,7 +119,8 @@ class ReceiptManager
      */
     public function getExistingReceiptForEntryIdAndNumber(string $entryId,string $paymentId):string
     {
-        return '';
+        $receipts = $this->getExistingReceiptsForEntryId($entryId);
+        return empty($receipts[$paymentId]['filePath']) ? '' : $receipts[$paymentId]['filePath'];
     }
 
     /**
@@ -125,18 +156,44 @@ class ReceiptManager
         // check if receipt is existing
         $existingReceiptPath = $this->getExistingReceiptForEntryIdAndNumber($entryId,$paymentId);
         if (!empty($existingReceiptPath)){
-            return [$existingReceiptPath,'receipt alreay existing !'];
+            return [$existingReceiptPath,'receipt already existing !'];
         }
         $payment = $existingPayments[$paymentId];
         if ($payment['origin'] == 'structure'){
             return ['','It is not possible to generate a receipt for structure\'s payment !'];
         }
         // get uniqId
+        $uniqId = $this->getNextUniqId();
         // render via twig
-        // use Mpdf to render pdf
-        // save file
+        $html = $this->wiki->render('@hpf/hpf-receipts.twig',compact([
+            'entry',
+            'uniqId',
+            'structureInfo',
+            'paymentId',
+            'payment'
+        ]));
+        if (empty($html)){
+            throw new Exception('error when generating html !');
+        }
+        // use Mpdf to render pdf and save it
+        $filePath = $this->getFilePath(
+            $entryId,
+            $uniqId,
+            $paymentId,
+            $payment
+         );
+        $this->generatePdfFromHtml($html,$filePath);
+        if (!is_file($filePath)){
+            ['','The pdf was not generated'];
+        }
         // save UniqId
-        return ['','not ready'];
+        if ($this->saveLastestUniqId($uniqId)){
+            return [$filePath,''];
+        }
+        if (is_file($filePath)){
+            unlink($filePath);
+        }
+        return ['','not possible to save the new uniq Id'];
     }
 
     /**
@@ -165,21 +222,66 @@ class ReceiptManager
      */
     protected function getNextUniqIdFromFiles(): string
     {
-        $this->prepareDirectory();
-        $files = glob(self::LOCALIZATION.'*/*-*-*.pdf');
-        $ids = [];
-        $quotedBasePath = preg_quote(self::LOCALIZATION,'/');
-        $quotedSeparator = preg_quote('/','/');
         $nbChars = self::NB_CHARS;
-        $pregSearch = "/.*$quotedBasePath(.+)$quotedSeparator([^]+)-([0-9]{9,$nbChars})-.+\\.pdf/";
+        $ids = array_map(
+            function($result){
+                return intval($result['match'][2]);
+            },
+            array_filter(
+                $this->extractListOfFiles('*/*-*-*-*','/([^-]+)-([0-9]{9,$nbChars})-.+/'),
+                function($result){
+                    return !empty($result['match'][2]);
+                }
+            )
+        );
+        return empty($ids) ? '' : $this->convertUniqIdFromInt(max($ids)+1);
+    }
+
+    /**
+     * extract list of files
+     * @param string $globFilter
+     * @param string $regexp
+     * @return array $results
+     */
+    protected function extractListOfFiles(string $globFilter,string $regexp):array
+    {
+        $this->prepareDirectory();
+        $files = glob(self::LOCALIZATION."$globFilter.pdf");
+        $results = [];
         foreach ($files as $filePath) {
             $filename = pathinfo($filePath)['filename'];
-            $maches = [];
-            if (preg_match($pregSearch,$filename,$matches) && !empty($matches[2])){
-                $ids[] = intval($matches[2]);
+            $match = [];
+            if (preg_match($regexp,$filename,$match)){
+                $results[] = compact(['match','filePath']);
             }
         }
-        return empty($ids) ? '' : $this->convertUniqIdFromInt(max($ids)+1);
+        return $results;
+    }
+
+    /**
+     * get file path
+     * @param string $entryId
+     * @param string $uniqId
+     * @param string $paymentId
+     * @param array $paymentData
+     * @return string $filePath
+     */
+    protected function getFilePath(
+        string $entryId,
+        string $uniqId,
+        string $paymentId,
+        array $paymentData
+    ):string
+    {
+        $sanitizedEntryId = $this->attach->sanitizeFilename($entryId);
+        if (!file_exists(self::LOCALIZATION.$sanitizedEntryId)){
+            mkdir(self::LOCALIZATION.$sanitizedEntryId);
+        }
+        $sanitizedOrigin = $this->attach->sanitizeFilename($paymentData['origin']);
+        $date = $this->attach->sanitizeFilename(substr($paymentData['date'],0,10));
+        $sanitizedpaymentId = $this->attach->sanitizeFilename($paymentId);
+        return self::LOCALIZATION
+            ."$sanitizedEntryId/$date-$uniqId-$sanitizedOrigin-$sanitizedpaymentId.pdf";
     }
 
     /**
@@ -189,6 +291,9 @@ class ReceiptManager
     {
         if (!file_exists(self::LOCALIZATION)){
             mkdir(self::LOCALIZATION);
+        }
+        if (!file_exists(self::LOCALIZATION_CACHE)){
+            mkdir(self::LOCALIZATION_CACHE);
         }
     }
 
@@ -206,5 +311,20 @@ class ReceiptManager
         $value = $this->tripleStore->getOne(self::RECEIPT_UNIQ_ID_HPF_RESOURCE,self::RECEIPT_UNIQ_ID_HPF_PROPERTY,'','');
         
         return $this->tripleStore->update(self::RECEIPT_UNIQ_ID_HPF_RESOURCE,self::RECEIPT_UNIQ_ID_HPF_PROPERTY,$value,$nextExpected,'','') === 0;
+    }
+
+    /**
+     * generate pdf from Html in filePath
+     * @param string $html
+     * @param string $filePath
+     */
+    protected function generatePdfFromHtml(string $html,string $filePath)
+    {
+        $this->prepareDirectory();
+        $mpdf = new Mpdf([
+            'tempDir' => self::LOCALIZATION_CACHE
+        ]);
+        $mpdf->WriteHTML($html);
+        $mpdf->OutputFile($filePath);
     }
 }
