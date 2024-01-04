@@ -292,7 +292,18 @@ class ReceiptManagerTest extends YesWikiTestCase
         $rawentry = $entryManager->getOne(Helper::ENTRY_ID, false, null, false, true); // no cache
         if (empty($rawentry)){
             // create entry
-            Helper::updateEntry(true,[],$services['wiki'],self::$cache['currentFormId'] ?? '');
+            Helper::updateEntry(true,[
+                HpfService::PAYMENTS_FIELDNAME => json_encode([
+                    Helper::DEFAULT_PAYMENT_ID => [
+                        'origin' => 'virement',
+                        'total' => '50',
+                        'date' => '2024-01-01',
+                        'don' => ['2024' => '50']
+                    ]
+                ]),
+                'bf_dons_payes_2024' => '50',
+                'checkboxListeHpfTestUniqIdListebf_annees_dons_payes' => '2024'
+            ],$services['wiki'],self::$cache['currentFormId'] ?? '');
             $rawentry = $entryManager->getOne(Helper::ENTRY_ID, false, null, false, true); // no cache
         }
         return empty($rawentry) ? [] : $rawentry;

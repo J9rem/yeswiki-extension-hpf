@@ -113,11 +113,15 @@ class ReceiptManager
         }
         $structureInfo = $this->hpfService->getHpfStructureInfo();
         // extract data from entry
-        $entry = $this->entryManager->getOne($entryId);
+        $entry = $this->entryManager->getOne($entryId,false,null,false,true); // no cache, bypass acls for payments
         if (empty($entry)){
             return ['','not found entry'];
         }
         // check paymentId existing
+        $existingPayments = $this->hpfService->convertStringToPayments($entry[HpfService::PAYMENTS_FIELDNAME] ?? '');
+        if (!array_key_exists($paymentId,$existingPayments)){
+            return ['','not found payment\'s id'];
+        }
         // get uniqId
         // render via twig
         // use Mpdf to render pdf
