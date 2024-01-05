@@ -83,7 +83,7 @@ class ReceiptManager
      * get existing receipts for an entry
      * @param string $entryId
      * @param array $existingPayments
-     * @return array $receipts [$number => $path]
+     * @return array $receipts [$number => array $data]
      */
     public function getExistingReceiptsForEntryId(string $entryId,array $existingPayments):array
     {
@@ -95,21 +95,27 @@ class ReceiptManager
                     'uniqId' => $result['match'][2],
                     'origin' => $result['match'][3],
                     'paymentId' => $result['match'][4],
+                    'md5' => $result['match'][5],
                     'filePath' => $result['filePath']
                 ];
             },
             array_filter(
-                $this->extractListOfFiles("$sanitizedEntryId/*-*-*-*",'/([^-]+)-([0-9]+)-([^-]+)-([^-]+)/'),
+                $this->extractListOfFiles("$sanitizedEntryId/*-*-*-*-*",'/([^-]+)-([0-9]+)-([^-]+)-([^-]+)-([0-9A-Fa-f]+)/'),
                 function($result){
-                    return !empty($result['match'][1]) && !empty($result['match'][2]) && !empty($result['match'][3]) && !empty($result['match'][4]);
+                    return !empty($result['match'][1])
+                        && !empty($result['match'][2])
+                        && !empty($result['match'][3])
+                        && !empty($result['match'][4])
+                        && !empty($result['match'][5]);
                 }
             )
         );
         $results = [];
         foreach ($receipts as $result) {
             if (array_key_exists($result['paymentId'],$existingPayments)){
+                $waitedMD5 = $this->calculateShortMd5($existingPayments[$result['paymentId']]);
                 $results[$result['paymentId']] = $result;
-                $results[$result['paymentId']]['md5'] = $this->calculateShortMd5($existingPayments[$result['paymentId']]);
+                $results[$result['paymentId']]['md5Match'] = ($result['md5'] == $waitedMD5);
             }
         }
         return $results;
@@ -130,12 +136,24 @@ class ReceiptManager
      * @param string $entryId
      * @param string $paymentId
      * @param array $existingPayments
-     * @return string $receiptPath
+     * @param bool $forceNotSameMd5
+     * @return array [string $receiptPath,string $shortMD5]
      */
-    public function getExistingReceiptForEntryIdAndNumber(string $entryId,string $paymentId,array $existingPayments):string
+    public function getExistingReceiptForEntryIdAndNumber(string $entryId,string $paymentId,array $existingPayments,bool $forceNotSameMd5 = false):array
     {
         $receipts = $this->getExistingReceiptsForEntryId($entryId,$existingPayments);
-        return empty($receipts[$paymentId]['filePath']) ? '' : $receipts[$paymentId]['filePath'];
+        return (
+            empty($receipts[$paymentId]['filePath'])
+            || (
+                !$forceNotSameMd5 && 
+                !$receipts[$paymentId]['md5Match']
+            )
+        )
+        ? ['','']
+        : [
+            $receipts[$paymentId]['filePath'],
+            $receipts[$paymentId]['md5']
+        ];
     }
 
     /**
@@ -168,17 +186,41 @@ class ReceiptManager
         if (!array_key_exists($paymentId,$existingPayments)){
             return ['','not found payment\'s id'];
         }
-        // check if receipt is existing
-        $existingReceiptPath = $this->getExistingReceiptForEntryIdAndNumber($entryId,$paymentId,$existingPayments);
-        if (!empty($existingReceiptPath)){
-            return [$existingReceiptPath,'receipt already existing !'];
-        }
         $payment = $existingPayments[$paymentId];
         if ($payment['origin'] == 'structure'){
             return ['','It is not possible to generate a receipt for structure\'s payment !'];
         }
+        // check if receipt is existing
+        list($existingReceiptPath,$existingReceiptMd5) = $this->getExistingReceiptForEntryIdAndNumber($entryId,$paymentId,$existingPayments,true);
+        if (!empty($existingReceiptPath)){
+            $currentMD5 = $this->calculateShortMd5($payment);
+            if ($currentMD5 == $existingReceiptMd5){
+                return [$existingReceiptPath,'receipt already existing !'];
+            } else {
+                $currentDir = dirname($existingReceiptPath);
+                $fileName = basename($existingReceiptPath);
+                if (file_exists("$currentDir/archives/$fileName")){
+                    unlink("$currentDir/archives/$fileName");
+                }
+                if (!is_dir("$currentDir/archives")){
+                    mkdir("$currentDir/archives");
+                }
+                rename($existingReceiptPath,"$currentDir/archives/$fileName");
+            }
+        }
         // get uniqId
         $uniqId = $this->getNextUniqId();
+        $filePath = $this->getFilePath(
+            $entryId,
+            $uniqId,
+            $paymentId,
+            $payment
+        );
+        $archiveFilePath = dirname($filePath).'/archives/'.basename($filePath);
+        if (file_exists($archiveFilePath)){
+            rename($archiveFilePath,$filePath);
+            return [$filePath,'receipt already existing from archive !'];
+        }
         // render via twig
         $html = $this->wiki->render('@hpf/hpf-receipts.twig',compact([
             'entry',
@@ -191,12 +233,6 @@ class ReceiptManager
             throw new Exception('error when generating html !');
         }
         // use Mpdf to render pdf and save it
-        $filePath = $this->getFilePath(
-            $entryId,
-            $uniqId,
-            $paymentId,
-            $payment
-         );
         $this->generatePdfFromHtml($html,$filePath);
         if (!is_file($filePath)){
             ['','The pdf was not generated'];
@@ -305,8 +341,9 @@ class ReceiptManager
         $sanitizedOrigin = $this->attach->sanitizeFilename($paymentData['origin']);
         $date = $this->attach->sanitizeFilename(substr($paymentData['date'],0,10));
         $sanitizedpaymentId = $this->attach->sanitizeFilename($paymentId);
+        $shortMd5 = $this->calculateShortMd5($paymentData);
         return self::LOCALIZATION
-            ."$sanitizedEntryId/$date-$uniqId-$sanitizedOrigin-$sanitizedpaymentId.pdf";
+            ."$sanitizedEntryId/$date-$uniqId-$sanitizedOrigin-$sanitizedpaymentId-$shortMd5.pdf";
     }
 
     /**

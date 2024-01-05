@@ -14,6 +14,7 @@ namespace YesWiki\Test\Hpf\Service;
 
 use Throwable;
 use YesWiki\Bazar\Service\EntryManager;
+use YesWiki\Core\Service\PageManager;
 use YesWiki\Core\Service\TripleStore;
 use YesWiki\Hpf\Controller\HpfController;
 use YesWiki\Hpf\Service\HpfService;
@@ -229,7 +230,7 @@ class ReceiptManagerTest extends YesWikiTestCase
         foreach($results as $result){
             $this->assertIsString($result);
             $this->assertEquals(10,strlen($result),'The returned string should be of 10 characters !');
-            $this->assertMatchesRegularExpression('/^[0-9A-Ea-e]{10}$/',$result,'The string should be hexa !');
+            $this->assertMatchesRegularExpression('/^[0-9A-Fa-f]{10}$/',$result,'The string should be hexa !');
         }
         return $services;
     }
@@ -265,11 +266,10 @@ class ReceiptManagerTest extends YesWikiTestCase
         self::cleanFiles();
         $this->assertFalse($thrown,"An exception has been thrown and it is not waited ($thMsg)!");
         $this->assertIsArray($results);
-        $this->assertCount(2,$results);
         foreach ([
             Helper::DEFAULT_PAYMENT_ID => ['filePath'=>$receipt1Path,'md5'=>$md51],
             Helper::OTHER_PAYMENT_ID => ['filePath'=>$receipt2Path,'md5'=>$md52]
-        ] as $key => $expectedValues) {
+            ] as $key => $expectedValues) {
             $this->assertArrayHasKey($key,$results);
             foreach($expectedValues as $key2 => $expectedValue){
                 $this->assertArrayHasKey($key2,$results[$key]);
@@ -277,6 +277,7 @@ class ReceiptManagerTest extends YesWikiTestCase
                 $this->assertEquals($expectedValue,$results[$key][$key2]);
             }
         }
+        $this->assertCount(2,$results);
         return $services;
     }
 
@@ -299,7 +300,7 @@ class ReceiptManagerTest extends YesWikiTestCase
             // generate receipts
             list($receiptPath) = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entry['id_fiche'],Helper::DEFAULT_PAYMENT_ID);
             // get result
-            $result = $services['receiptManager']->getExistingReceiptForEntryIdAndNumber($entry['id_fiche'],Helper::DEFAULT_PAYMENT_ID,$payments);
+            list($result,$md5) = $services['receiptManager']->getExistingReceiptForEntryIdAndNumber($entry['id_fiche'],Helper::DEFAULT_PAYMENT_ID,$payments);
         } catch (Throwable $th){
             $thrown = true;
         }
@@ -307,6 +308,7 @@ class ReceiptManagerTest extends YesWikiTestCase
         $this->assertFalse($thrown,'An exception has been thrown and it is not waited !');
         $this->assertIsString($result);
         $this->assertEquals($receiptPath,$result);
+        $this->assertIsString($md5);
         return $services;
     }
 
@@ -429,6 +431,15 @@ class ReceiptManagerTest extends YesWikiTestCase
         $set['entryId'] = Helper::ENTRY_ID;
         $set['paymentId'] = Helper::DEFAULT_PAYMENT_ID;
         $set['errorMsgRegExp'] = '/receipt already existing !/';
+        $sets[] = $set; // append
+
+        // payment via cheque to force generation of new md5
+        $set = $defaults; // copy
+        // update
+        $set['entryId'] = Helper::ENTRY_ID;
+        $set['paymentId'] = Helper::DEFAULT_PAYMENT_ID;
+        $set['originOfPayment'] = 'cheque';
+        $set['errorMsgRegExp'] = '';
         $sets[] = $set; // append
         
         return $sets;
@@ -556,6 +567,10 @@ class ReceiptManagerTest extends YesWikiTestCase
         if (is_dir(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID)){
             array_map('unlink',glob(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/*.pdf'));
             try {
+                if (is_dir(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/archives')){
+                    array_map('unlink',glob(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/archives/*.pdf'));
+                    rmdir(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/archives');
+                }
                 rmdir(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID);
             } catch (Throwable $th) {
             }
