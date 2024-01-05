@@ -36,7 +36,7 @@ class ReceiptManager
     public const RECEIPT_UNIQ_ID_HPF_PROPERTY = 'https://www.habitatparticipatif-france.fr/ReceiptUniqId';
     public const LOCALIZATION = 'private/receipts/';
     public const LOCALIZATION_CACHE = 'private/receipts/cache';
-    public const NB_CHARS = 9;
+    public const NB_CHARS = 12;
 
     protected $aclService;
     protected $attach;
@@ -213,7 +213,7 @@ class ReceiptManager
      */
     public function convertUniqIdFromInt(int $value):string
     {
-        return $value <= 0 ? '' : str_pad(strval($value),self::NB_CHARS,'0',STR_PAD_LEFT);
+        return $value < 0 ? '' : str_pad(strval($value),self::NB_CHARS,'0',STR_PAD_LEFT);
     }
 
     /**
@@ -228,7 +228,7 @@ class ReceiptManager
                 return intval($result['match'][2]);
             },
             array_filter(
-                $this->extractListOfFiles('*/*-*-*-*','/([^-]+)-([0-9]{9,$nbChars})-.+/'),
+                $this->extractListOfFiles('*/*-*-*-*','/([^-]+)-([0-9]{12,$nbChars})-.+/'),
                 function($result){
                     return !empty($result['match'][2]);
                 }
