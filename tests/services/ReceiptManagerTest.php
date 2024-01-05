@@ -203,6 +203,39 @@ class ReceiptManagerTest extends YesWikiTestCase
 
     /**
      * @depends testSaveLastestUniqId
+     * @covers ReceiptManager::calculateShortMd5
+     * @param array $services [$wiki,$receiptManager,$hpfController]
+     * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager,'hpfController'=>$hpfController]
+     */
+    public function testCalculateShortMd5(
+        array $services
+    ) {
+        $thrown = false;
+        $thMsg = '';
+        try{
+            $results = [];
+            $results[] = $services['receiptManager']->calculateShortMd5([]);
+            $results[] = $services['receiptManager']->calculateShortMd5([
+                'origin' => 'virement',
+                'total' => '50',
+                'date' => '2024-01-01',
+                'don' => ['2024' => '50']
+            ]);
+        } catch (Throwable $th){
+            $thrown = true;
+            $thMsg = $th->getMessage();
+        }
+        $this->assertFalse($thrown,"An exception has been thrown and it is not waited ($thMsg)!");
+        foreach($results as $result){
+            $this->assertIsString($result);
+            $this->assertEquals(10,strlen($result),'The returned string should be of 10 characters !');
+            $this->assertMatchesRegularExpression('/^[0-9A-Ea-e]{10}$/',$result,'The string should be hexa !');
+        }
+        return $services;
+    }
+
+    /**
+     * @depends testCalculateShortMd5
      * @covers ReceiptManager::getExistingReceiptsForEntryId
      * @param array $services [$wiki,$receiptManager,$hpfController]
      * @return array ['wiki'=> $wiki,'receiptManager' => $receiptManager,'hpfController'=>$hpfController]
@@ -212,29 +245,38 @@ class ReceiptManagerTest extends YesWikiTestCase
     ) {
         $thrown = false;
         self::cleanFiles();
+        $thMsg = '';
         try{
             // create 2 payments
             $entry = $this->getExistingEntry($services,'virement',true);
+            // get payments
+            $payments = $services['receiptManager']->getPaymentsFromEntry($entry);
+            $md51 = $services['receiptManager']->calculateShortMd5($payments[Helper::DEFAULT_PAYMENT_ID]);
+            $md52 = $services['receiptManager']->calculateShortMd5($payments[Helper::OTHER_PAYMENT_ID]);
             // generate receipts
             list($receipt1Path) = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entry['id_fiche'],Helper::DEFAULT_PAYMENT_ID);
             list($receipt2Path) = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entry['id_fiche'],Helper::OTHER_PAYMENT_ID);
             // get results
-            $results = $services['receiptManager']->getExistingReceiptsForEntryId($entry['id_fiche']);
+            $results = $services['receiptManager']->getExistingReceiptsForEntryId($entry['id_fiche'],$payments);
         } catch (Throwable $th){
             $thrown = true;
+            $thMsg = $th->getMessage();
         }
         self::cleanFiles();
-        $this->assertFalse($thrown,'An exception has been thrown and it is not waited !');
+        $this->assertFalse($thrown,"An exception has been thrown and it is not waited ($thMsg)!");
         $this->assertIsArray($results);
         $this->assertCount(2,$results);
-        $this->assertArrayHasKey(Helper::DEFAULT_PAYMENT_ID,$results);
-        $this->assertArrayHasKey(Helper::OTHER_PAYMENT_ID,$results);
-        $this->assertArrayHasKey('filePath',$results[Helper::DEFAULT_PAYMENT_ID]);
-        $this->assertArrayHasKey('filePath',$results[Helper::OTHER_PAYMENT_ID]);
-        $this->assertIsString($results[Helper::DEFAULT_PAYMENT_ID]['filePath']);
-        $this->assertIsString($results[Helper::OTHER_PAYMENT_ID]['filePath']);
-        $this->assertEquals($receipt1Path,$results[Helper::DEFAULT_PAYMENT_ID]['filePath']);
-        $this->assertEquals($receipt2Path,$results[Helper::OTHER_PAYMENT_ID]['filePath']);
+        foreach ([
+            Helper::DEFAULT_PAYMENT_ID => ['filePath'=>$receipt1Path,'md5'=>$md51],
+            Helper::OTHER_PAYMENT_ID => ['filePath'=>$receipt2Path,'md5'=>$md52]
+        ] as $key => $expectedValues) {
+            $this->assertArrayHasKey($key,$results);
+            foreach($expectedValues as $key2 => $expectedValue){
+                $this->assertArrayHasKey($key2,$results[$key]);
+                $this->assertIsString($results[$key][$key2]);
+                $this->assertEquals($expectedValue,$results[$key][$key2]);
+            }
+        }
         return $services;
     }
 
@@ -252,10 +294,12 @@ class ReceiptManagerTest extends YesWikiTestCase
         try{
             // create 1 payment
             $entry = $this->getExistingEntry($services,'virement',false);
+            // get payments
+            $payments = $services['receiptManager']->getPaymentsFromEntry($entry);
             // generate receipts
             list($receiptPath) = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entry['id_fiche'],Helper::DEFAULT_PAYMENT_ID);
             // get result
-            $result = $services['receiptManager']->getExistingReceiptForEntryIdAndNumber($entry['id_fiche'],Helper::DEFAULT_PAYMENT_ID);
+            $result = $services['receiptManager']->getExistingReceiptForEntryIdAndNumber($entry['id_fiche'],Helper::DEFAULT_PAYMENT_ID,$payments);
         } catch (Throwable $th){
             $thrown = true;
         }

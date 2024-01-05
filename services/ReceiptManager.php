@@ -82,9 +82,10 @@ class ReceiptManager
     /**
      * get existing receipts for an entry
      * @param string $entryId
+     * @param array $existingPayments
      * @return array $receipts [$number => $path]
      */
-    public function getExistingReceiptsForEntryId(string $entryId):array
+    public function getExistingReceiptsForEntryId(string $entryId,array $existingPayments):array
     {
         $sanitizedEntryId = $this->attach->sanitizeFilename($entryId);
         $receipts = array_map(
@@ -106,20 +107,34 @@ class ReceiptManager
         );
         $results = [];
         foreach ($receipts as $result) {
-            $results[$result['paymentId']] = $result;
+            if (array_key_exists($result['paymentId'],$existingPayments)){
+                $results[$result['paymentId']] = $result;
+                $results[$result['paymentId']]['md5'] = $this->calculateShortMd5($existingPayments[$result['paymentId']]);
+            }
         }
         return $results;
+    }
+
+    /**
+     * calculate short md5 from payment data
+     * @param array $paymentData
+     * @return string $shortMd5
+     */
+    public function calculateShortMd5(array $paymentData): string
+    {
+        return substr(md5(serialize($paymentData)),0,10);
     }
 
     /**
      * get existing receipt for an entry and a payment number
      * @param string $entryId
      * @param string $paymentId
+     * @param array $existingPayments
      * @return string $receiptPath
      */
-    public function getExistingReceiptForEntryIdAndNumber(string $entryId,string $paymentId):string
+    public function getExistingReceiptForEntryIdAndNumber(string $entryId,string $paymentId,array $existingPayments):string
     {
-        $receipts = $this->getExistingReceiptsForEntryId($entryId);
+        $receipts = $this->getExistingReceiptsForEntryId($entryId,$existingPayments);
         return empty($receipts[$paymentId]['filePath']) ? '' : $receipts[$paymentId]['filePath'];
     }
 
@@ -149,12 +164,12 @@ class ReceiptManager
             return ['','not found entry'];
         }
         // check paymentId existing
-        $existingPayments = $this->hpfService->convertStringToPayments($entry[HpfService::PAYMENTS_FIELDNAME] ?? '');
+        $existingPayments = $this->getPaymentsFromEntry($entry);
         if (!array_key_exists($paymentId,$existingPayments)){
             return ['','not found payment\'s id'];
         }
         // check if receipt is existing
-        $existingReceiptPath = $this->getExistingReceiptForEntryIdAndNumber($entryId,$paymentId);
+        $existingReceiptPath = $this->getExistingReceiptForEntryIdAndNumber($entryId,$paymentId,$existingPayments);
         if (!empty($existingReceiptPath)){
             return [$existingReceiptPath,'receipt already existing !'];
         }
@@ -194,6 +209,16 @@ class ReceiptManager
             unlink($filePath);
         }
         return ['','not possible to save the new uniq Id'];
+    }
+
+    /**
+     * extract payments from entry
+     * @param array $entry
+     * @return array $payments
+     */
+    public function getPaymentsFromEntry(array $entry): array
+    {
+        return $this->hpfService->convertStringToPayments($entry[HpfService::PAYMENTS_FIELDNAME] ?? '');
     }
 
     /**
