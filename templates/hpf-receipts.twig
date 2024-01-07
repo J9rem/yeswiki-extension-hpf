@@ -17,12 +17,34 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width" />
 
-        <title>{{ structureInfo.name ?? '<Nom de la structure>' }} : reçu du paiment {{paymentId}}</title>
+        <title>{{ structureInfo.name ?? '<Nom de la structure>' }} : reçu du paiement {{paymentId}}</title>
 
         {# <link rel="stylesheet" href='styles/file.css'> #}
+        <style>
+          {% block style %}
+            h1{
+                text-align: center;
+                font-size: large;
+            }
+          {% endblock style %}
+        </style>
     </head>
 
     <body>
-        Test
+        <h1>{% block title %}Reçu du paiement {{paymentId}}{% endblock title %}</h1>
+
+        <div class="payment-number">
+          {% block paymentNumber %}
+            Reçu n°{{paymentId}}<br/>
+            <span class="payment-date">
+                Daté d'émission : {{ "now"|date("d/m/Y") }}
+            </span>
+          {% endblock paymentNumber %}
+        </div>
+
+        <div class="payment-destination">
+          {% block paymentDestination %}
+          {% endblock paymentDestination %}
+        </div>
     </body>
 </html>
