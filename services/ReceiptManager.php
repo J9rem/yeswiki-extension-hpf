@@ -232,6 +232,8 @@ class ReceiptManager
         if (empty($html)){
             throw new Exception('error when generating html !');
         }
+        // next line only for tests
+        // file_put_contents(str_replace('.pdf','.html',$filePath),$html);
         // use Mpdf to render pdf and save it
         $this->generatePdfFromHtml($html,$filePath);
         if (!is_file($filePath)){

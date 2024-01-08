@@ -26,12 +26,27 @@
                 text-align: center;
                 font-size: large;
             }
+            .logo {
+                max-height: 80px;
+                max-width: 100%;
+                margin-bottom: 10px;
+            }
+            .logo img {
+                max-height: 80px;
+                width: auto;
+            }
           {% endblock style %}
         </style>
     </head>
 
     <body>
         <h1>{% block title %}Reçu du paiement {{paymentId}}{% endblock title %}</h1>
+
+        {% block logo %}
+            {# <div class="logo">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAAAeSURBVDhPY3gro0I2GtVMIhrVTCIa1UwiGnmaZVQAKzLWYLcYEB8AAAAASUVORK5CYII=" alt="logo de l'organisation"/>
+            </div> #}
+        {% endblock logo %}
 
         <div class="payment-number">
           {% block paymentNumber %}

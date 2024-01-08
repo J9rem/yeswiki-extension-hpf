@@ -566,6 +566,7 @@ class ReceiptManagerTest extends YesWikiTestCase
     {
         if (is_dir(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID)){
             array_map('unlink',glob(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/*.pdf'));
+            array_map('unlink',glob(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/*.html'));
             try {
                 if (is_dir(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/archives')){
                     array_map('unlink',glob(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/archives/*.pdf'));
