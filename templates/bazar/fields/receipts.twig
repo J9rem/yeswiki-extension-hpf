@@ -1,0 +1,24 @@
+{#
+ * This file is part of the YesWiki Extension hpf.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ * Feature UUID : hpf-receipts-creation
+ *#}
+
+{% extends "@bazar/layouts/field.twig" %}
+
+{% set currentId = ((entry.id_fiche is empty) ? random() : entry.id_fiche) ~ "-" ~ field.propertyName ~"-receipts-list" %}
+
+{% block label %}
+  {{ parent() }}
+  {# add button to toggle view #}
+{% endblock %}
+
+{% block value_container %}
+  {# load vue #}
+  {# load js #}
+  {# create base #}
+{% endblock %}

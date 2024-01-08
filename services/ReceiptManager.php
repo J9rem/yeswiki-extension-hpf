@@ -67,6 +67,26 @@ class ReceiptManager
     }
 
     /**
+     * check if possible to see receipts
+     * and generate them
+     * @param string $tag
+     * @return bool
+     */
+    public function canSeeReceipts(string $tag = ''): bool
+    {
+        $acls = '@admins';
+        try {
+            $hpfParams = $this->hpfService->getHpfParams();
+            if (!empty($hpfParams['canViewReceipts']) && $hpfParams['canViewReceipts'] === '%'){
+                $acls = '%';
+            }
+        } catch (Throwable $th) {
+            $acls = '@admins';
+        }
+        return $this->aclService->check($acls,null,true,$tag);
+    }
+
+    /**
      * get next uniq ID on seven digits
      * @return string
      */

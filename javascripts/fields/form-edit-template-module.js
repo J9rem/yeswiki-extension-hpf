@@ -11,3 +11,4 @@ import {defaultMapping} from '../../../bazar/presentation/javascripts/form-edit-
 
 registerFieldAsModuleHpf(getConditionViewField()) // Feature UUID : hpf-condition-view-field
 registerFieldAsModuleHpf(getPaymentsField(defaultMapping)) // Feature UUID : hpf-payments-field
+registerFieldAsModuleHpf(getReceiptsField(defaultMapping)) // Feature UUID : hpf-receipts-creation

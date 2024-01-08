@@ -9,3 +9,4 @@
 
 registerFieldHpf(getConditionViewField()) // Feature UUID : hpf-condition-view-field
 registerFieldHpf(getPaymentsField(defaultMapping)) // Feature UUID : hpf-payments-field
+registerFieldHpf(getReceiptsField(defaultMapping)) // Feature UUID : hpf-receipts-creation

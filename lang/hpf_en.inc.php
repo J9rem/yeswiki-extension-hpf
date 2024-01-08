@@ -117,6 +117,7 @@ return [
     'EDIT_CONFIG_HINT_GROUPSADMINSSUFFIXFOREMAILS' => 'Admins groups suffix which can send emails',
     'EDIT_CONFIG_HINT_POSTALCODEFIELDNAME' => 'Fieldname for postal code',
     // Feature UUID : hpf-receipts-creation
+    'EDIT_CONFIG_HINT_HPF[CANVIEWRECEIPTS]' => 'Who can see receipts ? admins or % (admins and entry\'s owner)',
     // 'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][NAME]' => 'Nom de la structure pour les reçus',
     // 'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][ADDRESS]' => 'Adresse de la structure pour les reçus',
     // 'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][ADDRESSCOMPLEMENT]' => 'Complément d\'adresse de la structure pour les reçus',
@@ -133,6 +134,9 @@ return [
     'HPF_SELECTMEMBERS_HINT' => 'Filter from parent entry (structures) where I am administrator',
     'HPF_SELECTMEMBERS_LABEL' => 'Filter entries',
     'HPF_SELECTMEMBERS_ONLY_MEMBERS' => 'Only members',
+
+    // fields/ReceiptsField.php
+    'HPF_RECEIPTSFIELD_LABEL' => 'Receipts\' list',
 
     // templates/hpf-import-memberships-action.twig
     // Feature UUID : hpf-import-payments

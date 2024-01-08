@@ -117,6 +117,7 @@ return [
     'EDIT_CONFIG_HINT_GROUPSADMINSSUFFIXFOREMAILS' => 'Suffix des groupes admins qui peuvent envoyer des e-mails',
     'EDIT_CONFIG_HINT_POSTALCODEFIELDNAME' => 'Nom du champ avec le code postal',
     // Feature UUID : hpf-receipts-creation
+    'EDIT_CONFIG_HINT_HPF[CANVIEWRECEIPTS]' => 'Qui peut voir les reçu ? admins ou % (admins et propriétaire de la fiche)',
     'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][NAME]' => 'Nom de la structure pour les reçus',
     'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][ADDRESS]' => 'Adresse de la structure pour les reçus',
     'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][ADDRESSCOMPLEMENT]' => 'Complément d\'adresse de la structure pour les reçus',
@@ -133,6 +134,9 @@ return [
     'HPF_SELECTMEMBERS_HINT' => 'Filtre à partir des fiches mères (structures) où je suis administrateur',
     'HPF_SELECTMEMBERS_LABEL' => 'Filtrer les fiches',
     'HPF_SELECTMEMBERS_ONLY_MEMBERS' => 'Uniquement les membres',
+
+    // fields/ReceiptsField.php
+    'HPF_RECEIPTSFIELD_LABEL' => 'Liste des reçus',
     
     // templates/hpf-import-memberships-action.twig
     // Feature UUID : hpf-import-payments
