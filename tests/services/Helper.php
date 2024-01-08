@@ -109,6 +109,11 @@ class Helper
             $choiceListId = self::CHOICELIST_ID;
             $template = <<<TXT
             texte***bf_titre***Nom*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
+            texte***bf_prenom***Prénom*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
+            texte***bf_nom***Nom*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
+            texte***bf_adresse***Adresse*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
+            texte***bf_code_postal***Code postal*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
+            texte***bf_ville***Ville*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
             champs_mail***bf_mail***Email*** *** * *** ***form*** ***1***0*** *** * *** * *** *** *** ***
             liste***$choiceListId***Montant de mon adhésion*** *** *** ***bf_montant_adhesion_college_1*** ***0*** *** *** * *** * *** *** *** ***
             texte***bf_montant_adhesion_mixte_college_1_libre***Montant libre*** *** *** *** ***number***1*** *** *** * *** * *** *** *** ***

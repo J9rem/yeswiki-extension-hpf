@@ -469,38 +469,45 @@ class ReceiptManagerTest extends YesWikiTestCase
         }
         if (empty($rawentry)){
             // create entry
-            $data = (!$twoPayments) 
-                ? [
-                    HpfService::PAYMENTS_FIELDNAME => json_encode([
-                        Helper::DEFAULT_PAYMENT_ID => [
-                            'origin' => $originOfPayment,
-                            'total' => '50',
-                            'date' => '2024-01-01',
-                            'don' => ['2024' => '50']
-                        ]
-                    ]),
-                    'bf_dons_payes_2024' => '50',
-                    'checkboxListeHpfTestUniqIdListebf_annees_dons_payes' => '2024'
-                ] :
-                [
-                    HpfService::PAYMENTS_FIELDNAME => json_encode([
-                        Helper::DEFAULT_PAYMENT_ID => [
-                            'origin' => $originOfPayment,
-                            'total' => '50',
-                            'date' => '2024-01-01',
-                            'don' => ['2024' => '50']
-                        ],
-                        Helper::OTHER_PAYMENT_ID => [
-                            'origin' => $originOfPayment,
-                            'total' => '50',
-                            'date' => '2023-12-01',
-                            'don' => ['2023' => '50']
-                        ]
-                    ]),
-                    'bf_dons_payes_2024' => '50',
-                    'bf_dons_payes_2023' => '50',
-                    'checkboxListeHpfTestUniqIdListebf_annees_dons_payes' => '2023,2024'
-                ];
+            $data = [
+                'bf_prenom' => 'John',
+                'bf_nom' => 'Doe',
+                'bf_adresse' => '1 Rue de Nulle Part',
+                'bf_adresse1' => 'Au fond de l\'impasse',
+                'bf_code_postal' => '75 001',
+                'bf_ville' => 'Paris',
+            ];
+            if(!$twoPayments) {
+                $data[HpfService::PAYMENTS_FIELDNAME] = json_encode([
+                    Helper::DEFAULT_PAYMENT_ID => [
+                        'origin' => $originOfPayment,
+                        'total' => '50',
+                        'date' => '2024-01-01',
+                        'adhesion' => ['2024' => '20'],
+                        'don' => ['2024' => '30']
+                    ]
+                ]);
+                $data['bf_dons_payes_2024'] = '50';
+                $data['checkboxListeHpfTestUniqIdListebf_annees_dons_payes'] = '2024';
+            } else {
+                $data[HpfService::PAYMENTS_FIELDNAME] = json_encode([
+                    Helper::DEFAULT_PAYMENT_ID => [
+                        'origin' => $originOfPayment,
+                        'total' => '50',
+                        'date' => '2024-01-01',
+                        'don' => ['2024' => '50']
+                    ],
+                    Helper::OTHER_PAYMENT_ID => [
+                        'origin' => $originOfPayment,
+                        'total' => '50',
+                        'date' => '2023-12-01',
+                        'don' => ['2023' => '50']
+                    ]
+                ]);
+                $data['bf_dons_payes_2024'] = '50';
+                $data['bf_dons_payes_2023'] = '50';
+                $data['checkboxListeHpfTestUniqIdListebf_annees_dons_payes'] = '2023,2024';
+            }
             Helper::updateEntry(true,$data,$services['wiki'],self::$cache['currentFormId'] ?? '');
             $rawentry = $entryManager->getOne(Helper::ENTRY_ID, false, null, false, true); // no cache
         }
@@ -549,7 +556,7 @@ class ReceiptManagerTest extends YesWikiTestCase
         Helper::updateList(false,self::$myWiki);
         // remove Form
         self::$cache['currentFormId'] = Helper::updateForm(false,self::$myWiki,self::$cache['currentFormId'] ?? '');
-        // self::cleanFiles();
+        self::cleanFiles();
         // reset previous value
         $services = [
             'wiki'=>self::$myWiki,

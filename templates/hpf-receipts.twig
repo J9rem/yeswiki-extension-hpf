@@ -35,6 +35,41 @@
                 max-height: 80px;
                 width: auto;
             }
+            .receipt-block {
+                margin-top: 10px;
+                margin-bottom: 10px;
+            }
+            
+            .receipt-block span.part-title{
+                font-weight: bold;
+            }
+            .payment-recap table{
+                width: 100%;
+                border: 1px solid black;
+                margin-top: 5px;
+                margin-bottom: 5px;
+                border-spacing: 0px;
+            }
+            .payment-recap table td,
+            .payment-recap table th,{
+                border: 1px solid black;
+                padding: 2px;
+            }
+            .payment-recap table td.left,
+            .payment-recap table th.left,{
+                text-align: left;
+            }
+            .payment-recap table td.right,
+            .payment-recap table th.right,{
+                text-align: right;
+            }
+            .payment-recap table td.center,
+            .payment-recap table th.center,{
+                text-align: center;
+            }
+            .payment-recap table tr.last-line td{
+                font-weight: bold;
+            }
           {% endblock style %}
         </style>
     </head>
@@ -48,7 +83,7 @@
             </div> #}
         {% endblock logo %}
 
-        <div class="payment-number">
+        <div class="receipt-block payment-number">
           {% block paymentNumber %}
             Reçu n°{{paymentId}}<br/>
             <span class="payment-date">
@@ -57,9 +92,83 @@
           {% endblock paymentNumber %}
         </div>
 
-        <div class="payment-destination">
+        <div class="receipt-block payment-destination">
           {% block paymentDestination %}
+            <span class="part-title">Bénéficiaire :</span><br/>
+            {{ structureInfo.name ?? '<Nom de la structure>' }}<br/>
+            {{ structureInfo.address ?? '<Adresse de la structure>' }}<br/>
+            {% if structureInfo.addressComplement is not empty %}{{ structureInfo.addressComplement }}<br/>{% endif %}
+            {{ structureInfo.postalCode ?? '<Code postal>' }} {{ structureInfo.town ?? '<Ville de la structure>' }}<br/>
+            {{ structureInfo.email ?? '<E-mail de la structure>' }}
+            {% if structureInfo.website is not empty %}<br/><a href="{{ structureInfo.website }}">{{ structureInfo.website }}</a>{% endif %}
           {% endblock paymentDestination %}
+        </div>
+
+        <div class="receipt-block payer">
+          {% block payer %}
+            <span class="part-title">Contributeur :</span><br/>
+            {% if entry.bf_prenom is not empty
+                and entry.bf_nom is not empty %}
+                {{ entry.bf_prenom ?? '<Prénom>' }} {{ entry.bf_nom ?? '<Nom>' }}<br/>
+            {% else %}
+                {{ entry.bf_titre }}<br/>
+            {% endif %}
+            {% if entry.bf_adresse is not empty %}{{ entry.bf_adresse }}<br/>{% endif %}
+            {% if entry.bf_adresse1 is not empty %}{{ entry.bf_adresse1 }}<br/>{% endif %}
+            {% if entry.bf_adresse2 is not empty %}{{ entry.bf_adresse2 }}<br/>{% endif %}
+            {{ entry.bf_code_postal ?? '<Code postal>' }} {{ entry.bf_ville ?? '<Ville>' }}<br/>
+            {{ entry.bf_mail ?? '<E-mail>' }}
+          {% endblock payer %}
+        </div>
+        
+        <div class="receipt-block payment-data">
+          {% block paymentData %}
+            <span class="part-title">Date du paiement :</span> {{payment.date|date("d/m/Y") }}<br/>
+            <span class="part-title">Mode de versement :</span> {% if payment.origin == "cheque" -%}
+              chèque
+            {%- elseif payment.origin == "virement" -%}
+              virement
+            {%- elseif payment.origin == "especes" -%}
+              espèces
+            {%- elseif payment.origin starts with "helloasso" -%}
+              carte bancaire via <a href="https://www.helloasso.com/">Hello Asso</a>
+            {%- else -%}
+              inconnu
+            {%- endif %}
+          {% endblock paymentData %}
+        </div>
+
+                
+        <div class="receipt-block payment-recap">
+          {% block paymentRecap %}
+            <span class="part-title">Récapitulatif du paiement :</span><br/>
+            <table>
+                <tr>
+                    <th class="left">Désignation</th>
+                    <th class="center">Année</th>
+                    <th class="right">Montant</th>
+                </tr>
+                {% for key,label in {
+                    adhesion:"Adhésion",
+                    adhesion_groupe:"Adhésion de groupe",
+                    don:"Don"
+                  } %}
+                  {% for year,value in payment[key] %}
+                    {% block paymentline %}
+                        <tr>
+                            <td class="left">{{ label }}</td>
+                            <td class="center">{{ year }}</td>
+                            <td class="right">{{ value|number_format(2,","," ") }} €</td>
+                        </tr>
+                    {% endblock paymentline %}
+                  {% endfor %}
+                {% endfor %}
+                <tr class="last-line">
+                    <td colspan="2" class="right">Total</td>
+                    <td class="right">{{ payment.total|number_format(2,","," ") }} €</td>
+                </tr>
+            </table>
+          {% endblock paymentRecap %}
         </div>
     </body>
 </html>
