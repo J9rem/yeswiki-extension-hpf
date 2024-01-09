@@ -126,6 +126,10 @@ return [
     'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][EMAIL]' => 'E-mail de la structure pour les reçus',
     'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][WEBSITE]' => 'Lien vers le site internet de la structure pour les reçus',
 
+    // controllers/ApiController.php
+    // Feature UUID : hpf-receipts-creation
+    'HPF_RECEIPT_API_CAN_NOT_SEE_RECEIPT' => 'Vous n\'avez pas le droit d\'accéder à ce reçu !',
+
     // docs/actions/bazarliste.yaml via templates/aceditor/actions-builder.tpl.html
     // Feature UUID : hpf-area-management
     'HPF_SELECTMEMBERSPARENT_FORM_LABEL' => 'Formulaire parent',
@@ -136,6 +140,7 @@ return [
     'HPF_SELECTMEMBERS_ONLY_MEMBERS' => 'Uniquement les membres',
 
     // fields/ReceiptsField.php
+    // Feature UUID : hpf-receipts-creation
     'HPF_RECEIPTSFIELD_LABEL' => 'Liste des reçus',
     
     // templates/hpf-import-memberships-action.twig
@@ -188,4 +193,10 @@ return [
     'HPF_VIREMENT_TYPE' => 'HPF (par virement)',
     'HPF_WANTED_STRUCTURE' => 'Structure visée',
     'HPF_YEAR' => 'Année d\'adhésion',
+
+    // tempaltes/bazar/fields/receipts.twig
+    // Feature UUID : hpf-receipts-creation
+    'HPF_RECEIPT_GENERATING' => 'Reçu en cours de génération',
+    'HPF_RECEIPT_NOT_EXISTING' => 'Reçu non existant',
+    'HPF_DOWNLOAD_RECEIPT' => 'Télécharger le reçu',
 ];

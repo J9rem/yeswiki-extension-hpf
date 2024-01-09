@@ -43,8 +43,21 @@ class ReceiptsField extends LabelField
                 '@bazar/fields/receipts.twig',
                 [
                     'entry' => $entry,
-                    'existingReceipts' => $receiptManager->getExistingReceiptsForEntryId($entry['id_fiche'],$payments),
-                    'payments' => $payments,
+                    'existingReceipts' => array_keys($receiptManager->getExistingReceiptsForEntryId($entry['id_fiche'],$payments)),
+                    'payments' => array_map(
+                        function ($payment){
+                            return array_intersect_key(
+                                $payment,
+                                ['date'=>1,'total'=>1]
+                            );
+                        },
+                        array_filter(
+                            $payments,
+                            function($p){
+                                return $p['origin'] !== 'structure';
+                            }
+                        )
+                    ),
                 ]
             )
         ;

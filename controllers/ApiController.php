@@ -13,8 +13,9 @@ namespace YesWiki\Hpf\Controller;
 
 use Exception;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Csrf\CsrfTokenManager; // Feature UUID : hpf-register-payment-action
-use YesWiki\Bazar\Service\EntryManager; // Feature UUID : hpf-payment-status-action
+use Symfony\Component\Security\Csrf\CsrfTokenManager; // Feature UUID : hpf-register-payment-action + hpf-receipts-creation
+use Symfony\Component\Security\Csrf\Exception\TokenNotFoundException; // Feature UUID : hpf-receipts-creation
+use YesWiki\Bazar\Service\EntryManager; // Feature UUID : hpf-payment-status-action + hpf-receipts-creation
 use YesWiki\Core\ApiResponse;
 use YesWiki\Core\Controller\CsrfTokenController;
 use YesWiki\Core\Service\UserManager; // Feature UUID : hpf-payment-status-action
@@ -23,6 +24,7 @@ use YesWiki\Hpf\Controller\HpfController; // Feature UUID : hpf-register-payment
 use YesWiki\Hpf\Controller\HpfImportController; // Feature UUID : hpf-import-payments
 use YesWiki\Hpf\Exception\ApiException; // Feature UUID : hpf-payment-status-action
 use YesWiki\Hpf\Service\HpfService;
+use YesWiki\Hpf\Service\ReceiptManager; // Feature UUID : hpf-receipts-creation
 use YesWiki\Shop\Controller\ApiController as ShopApiController; // Feature UUID : hpf-api-helloasso-token-triggered
 
 class ApiController extends YesWikiController
@@ -232,5 +234,65 @@ class ApiController extends YesWikiController
     public function getHpfImportToken()
     {
         return $this->getService(HpfImportController::class)->getToken();
+    }
+
+    /**
+     * @Route("api/hpf/receipts/generate/{entryId}/{id}", methods={"POST"},options={"acl":{"public","+"}})
+     * Feature UUID : hpf-receipts-creation
+     */
+    public function generateReceipt(string $entryId,string $id)
+    {
+        // check inputs
+        if (empty($entryId)){
+            throw new Exception('$entryId should not be empty !');
+        }
+        if (empty($id)){
+            throw new Exception('$id should not be empty !');
+        }
+
+        // check token
+        $csrfTokenController = $this->getService(CsrfTokenController::class);
+        try {
+            $csrfTokenController->checkToken('hpf-receipts', 'POST', 'token');
+        } catch (TokenNotFoundException $th) {
+            return new ApiResponse([
+                'error' => 'bad token'
+            ],400);
+        }
+
+        // get Services
+        $entryManager = $this->getService(EntryManager::class);
+        $receiptManager = $this->getService(ReceiptManager::class);
+        
+
+        if (empty($entryManager->getOne($entryId))){
+            throw new Exception('Not existing entry !');
+        }
+        if (!$receiptManager->canSeeReceipts($entryId)){
+            return new ApiResponse([
+                'error' => _t('HPF_RECEIPT_API_CAN_NOT_SEE_RECEIPT')
+            ],400);
+        }
+        list($path,$errorMsg) = $receiptManager->generateReceiptForEntryIdAndNumber($entryId,$id);
+        if (empty($path)){
+            return new ApiResponse([
+                'error' => $errorMsg
+            ],500);
+        }
+        return new ApiResponse([
+            'ok' => true,
+            'error' => $errorMsg
+        ],200);
+    }
+
+    /**
+     * @Route("/api/hpf/receipts/token", methods={"POST"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-receipts-creation
+     */
+    public function getHpfReceiptToken()
+    {
+        return new ApiResponse([
+            'token' => $this->getService(CsrfTokenManager::class)->getToken('hpf-receipts')->getValue()
+        ],200);;
     }
 }
