@@ -130,12 +130,20 @@ class ReceiptManager
                 }
             )
         );
+        $adjustedKeys = [];
+        foreach ($existingPayments as $key => $data) {
+            $sanitized = $this->attach->sanitizeFilename($key);
+            if (!empty($sanitized)){
+                $adjustedKeys[$sanitized] = $key;
+            }
+        }
         $results = [];
         foreach ($receipts as $result) {
-            if (array_key_exists($result['paymentId'],$existingPayments)){
-                $waitedMD5 = $this->calculateShortMd5($existingPayments[$result['paymentId']]);
-                $results[$result['paymentId']] = $result;
-                $results[$result['paymentId']]['md5Match'] = ($result['md5'] == $waitedMD5);
+            if (array_key_exists($result['paymentId'],$adjustedKeys)){
+                $paymentId = $adjustedKeys[$result['paymentId']];
+                $waitedMD5 = $this->calculateShortMd5($existingPayments[$paymentId]);
+                $results[$paymentId] = $result;
+                $results[$paymentId]['md5Match'] = ($result['md5'] == $waitedMD5);
             }
         }
         return $results;
