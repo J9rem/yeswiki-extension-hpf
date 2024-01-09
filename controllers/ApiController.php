@@ -12,6 +12,8 @@
 namespace YesWiki\Hpf\Controller;
 
 use Exception;
+use Symfony\Component\HttpFoundation\BinaryFileResponse; // Feature UUID : hpf-receipts-creation
+use Symfony\Component\HttpFoundation\Response; // Feature UUID : hpf-receipts-creation
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManager; // Feature UUID : hpf-register-payment-action + hpf-receipts-creation
 use Symfony\Component\Security\Csrf\Exception\TokenNotFoundException; // Feature UUID : hpf-receipts-creation
@@ -265,7 +267,7 @@ class ApiController extends YesWikiController
         $receiptManager = $this->getService(ReceiptManager::class);
         
 
-        if (empty($entryManager->getOne($entryId))){
+        if (empty($entryManager->getOne($entryId,false,null,false,true))){
             throw new Exception('Not existing entry !');
         }
         if (!$receiptManager->canSeeReceipts($entryId)){
@@ -294,5 +296,94 @@ class ApiController extends YesWikiController
         return new ApiResponse([
             'token' => $this->getService(CsrfTokenManager::class)->getToken('hpf-receipts')->getValue()
         ],200);;
+    }
+
+    /**
+     * @Route("api/hpf/receipts/getpdf/{entryId}/{id}", methods={"POST"},options={"acl":{"public","+"}})
+     * Feature UUID : hpf-receipts-creation
+     */
+    public function getPdf(string $entryId,string $id)
+    {
+        // check inputs
+        if (empty($entryId)){
+            throw new Exception('$entryId should not be empty !');
+        }
+        if (empty($id)){
+            throw new Exception('$id should not be empty !');
+        }
+
+        // check token
+        $csrfTokenController = $this->getService(CsrfTokenController::class);
+        try {
+            $csrfTokenController->checkToken('hpf-receipts', 'POST', 'token');
+        } catch (TokenNotFoundException $th) {
+            return new ApiResponse([
+                'error' => 'bad token'
+            ],400);
+        }
+
+        // get Services
+        $entryManager = $this->getService(EntryManager::class);
+        $receiptManager = $this->getService(ReceiptManager::class);
+
+        $entry = $entryManager->getOne($entryId,false,null,false,true); // no cache, bypass acls for payments
+        if (empty($entry)){
+            throw new Exception('Not existing entry !');
+        }
+        
+        if (!$receiptManager->canSeeReceipts($entryId)){
+            return new ApiResponse([
+                'error' => _t('HPF_RECEIPT_API_CAN_NOT_SEE_RECEIPT')
+            ],400);
+        }
+        
+        // check paymentId existing
+        $existingPayments = $receiptManager->getPaymentsFromEntry($entry);
+        if (!array_key_exists($id,$existingPayments)){
+            throw new Exception('paymentId not existing for this entry !');
+        }
+        list($path) = $receiptManager->getExistingReceiptForEntryIdAndNumber($entryId,$id,$existingPayments);
+        if (empty($path) || !is_file($path)){
+            return new ApiResponse([
+                'error' => 'file not found'
+            ],500);
+        }
+        $content = file_get_contents($path);
+        if (empty($content)){
+            return new ApiResponse([
+                'error' => 'empty file'
+            ],500);
+        }
+
+        $payment = $existingPayments[$id];
+        $filename = basename(dirname($path)).'-'.preg_replace('/^([0-9]{8})-[0-9]+-([0-9A-Za-z]+)-([^-]+)-[0-9A-Fa-f]+(\.pdf)$/','$1-$2-$3-$4',basename($path));
+        
+        ob_end_clean();
+        $headers = [
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Credentials' => 'true',
+            'Access-Control-Allow-Headers' => 'X-Requested-With, Location, Slug, Accept, Content-Type',
+            'Access-Control-Expose-Headers' => 'Location, Slug, Accept, Content-Type',
+            'Access-Control-Allow-Methods' => 'GET',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate', // HTTP/1.1
+            'Content-Type' => 'application/octet-stream',
+            'Content-Description' => 'File Transfer',
+        ];
+        $response =  new BinaryFileResponse(
+            $path,
+            Response::HTTP_OK,
+            $headers,
+            true, //public
+            null, //contentDisposition
+            false, // autoEtag
+            true // autoLastModified
+        );
+        try {
+            $response->setContentDisposition('attachment', $filename);
+        } catch (Throwable $th) {
+            // fallback
+            $response->headers->set('Content-Disposition', 'attachment; filename="receipt.pdf"');
+        }
+        return $response;
     }
 }

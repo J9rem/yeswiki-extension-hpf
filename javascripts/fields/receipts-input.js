@@ -22,6 +22,7 @@ let appParams = {
     data(){
         return {
             buttonForCollapse:null,
+            downloadLinks:{},
             entryId:'',
             errors:{},
             existingReceipts:[],
@@ -49,6 +50,51 @@ let appParams = {
             if(!this[arrayName].includes(value)){
                 this[arrayName].push(value)
             }
+        },
+        clickDownload(id){
+            if (!(id in this.downloadLinks)){
+                return false
+            }
+            const elem = this.element.querySelector(`#download-${id}`)
+            if (elem){
+                elem.click()
+                return true
+            }
+            return false
+        },
+        async download(id){
+            if (this.clickDownload(id)){
+                return true
+            }
+            const payment = this.payments[id]
+            const filename = `${this.entryId}-${payment.date.replace(/-/g,'')}-${id.replace(/[^A-Za-z0-9]/g,'')}.pdf`
+            const url = window.wiki.url(`?api/hpf/receipts/getpdf/${this.entryId}/${id}`)
+            await this.loadWithToken(url,true)
+            .then((response)=>{
+                if (!response.ok && response.status != 503){
+                    return Promise.reject(`Not possible to get url `+url+` because response code is not right : '${response.status}' => '${response.statusText}'`)
+                }
+                let headers = response.headers
+                if (!headers.has('Content-Type')){
+                    return Promise.reject(`Bad format of response to url '${url}' : should contain 'Content-Type' header`)
+                }
+                let contentType = headers.get('Content-Type')
+                if (!contentType.match(/^(?:application\/octet-stream|application\/download|application\/pdf).*/)) {
+                    return Promise.reject(`Bad format of response to url '${url}' : 'Content-Type' header should contain 'application/pdf' : ${contentType}`)
+                }
+                return response.blob()
+            })
+            .then((blob)=>{
+                const blobUrl = URL.createObjectURL(new File([blob],filename,{type:'application/octet-stream'}));
+                const elem = this.element.querySelector(`#download-${id}`)
+                if (elem){
+                    elem.setAttribute('href',blobUrl)
+                    elem.click()
+                }
+                this.downloadLinks[id] = blobUrl
+            })
+            .catch((error)=>this.manageError(error,id))
+            .catch(asyncHelper.manageError)
         },
         formatDate(rawDate){
             try {
@@ -126,6 +172,40 @@ let appParams = {
                 console.error(error)
             }
         },
+        async loadWithToken(url,directPost = false){
+            return await this.getToken()
+                .then((token)=>{
+                    return directPost 
+                        ? asyncHelper.post(url,{token})
+                        : asyncHelper.fetch(url,'post',{token})
+                })
+                .then(async (response)=>{
+                    if (directPost && !response.ok){
+                        const json = await response.json()
+                        if (json?.error === 'bad token'){
+                            return Promise.reject({errorMsg:'bad token'})
+                        }
+                    }
+                    return response
+                })
+                .catch(async (error)=>{
+                    if (error?.errorMsg === 'bad token'){
+                        // redo once
+                        return await this.getToken(true)
+                            .then((token)=>directPost 
+                                ? asyncHelper.post(url,{token})
+                                : asyncHelper.fetch(url,'post',{token}))
+                    }
+                    return Promise.reject(error)
+                })
+        },
+        manageError(error,id){
+            if (typeof error === 'object' && 'errorMsg' in error){
+                this.errors[id] = error.errorMsg
+            } else {
+                return Promise.reject(error)
+            }
+        },
         removeInArray(arrayName,value){
             if(this[arrayName].includes(value)){
                 this[arrayName].splice(this[arrayName].indexOf(value),1)
@@ -161,17 +241,7 @@ let appParams = {
             this.loading = true
             const id = this.updating[0]
             /* generate receipt */
-            const url = window.wiki.url(`?api/hpf/receipts/generate/${this.entryId}/${id}`)
-            await this.getToken()
-            .then((token)=>asyncHelper.fetch(url,'post',{token}))
-            .catch(async (error)=>{
-                if (error?.errorMsg === 'bad token'){
-                    // redo once
-                    return await this.getToken(true)
-                        .then((token)=>asyncHelper.fetch(url,'post',{token}))
-                }
-                return Promise.reject(error)
-            })
+            await this.loadWithToken(window.wiki.url(`?api/hpf/receipts/generate/${this.entryId}/${id}`))
             .then((data)=>{
                 if (data?.ok === true && !this.existingReceipts.includes(id)){
                     this.existingReceipts.push(id)
@@ -180,13 +250,7 @@ let appParams = {
             .finally(()=>{
                 this.removeInArray('updating',id)
             })
-            .catch((error)=>{
-                if (typeof error === 'object' && 'errorMsg' in error){
-                    this.errors[id] = error.errorMsg
-                } else {
-                    return Promise.reject(error)
-                }
-            })
+            .catch((error)=>this.manageError(error,id))
             return await this.updateAReceipt()
         },
         async updatingReceipts(){
@@ -244,6 +308,13 @@ let appParams = {
                         </div>
                     </div>
                     <span v-if="paymentData[0] in errors" class="error-message">{{ errors[paymentData[0]] }}</span>
+                    <a
+                      :id="'download-'+paymentData[0]"
+                      v-show="paymentData[0] in downloadLinks"
+                      :href="downloadLinks[paymentData[0]]"
+                      download
+                      style="display:none;"
+                      ></a>
                 </li>
             </ul>
         </div>

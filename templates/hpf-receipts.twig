@@ -85,7 +85,7 @@
 
         <div class="receipt-block payment-number">
           {% block paymentNumber %}
-            Reçu n°{{paymentId}}<br/>
+            Reçu n°{{uniqId}}<br/>
             <span class="payment-date">
                 Daté d'émission : {{ "now"|date("d/m/Y") }}
             </span>
@@ -124,6 +124,7 @@
         <div class="receipt-block payment-data">
           {% block paymentData %}
             <span class="part-title">Date du paiement :</span> {{payment.date|date("d/m/Y") }}<br/>
+            <span class="part-title">Numéro du paiement :</span> {{ paymentId }}<br/>
             <span class="part-title">Mode de versement :</span> {% if payment.origin == "cheque" -%}
               chèque
             {%- elseif payment.origin == "virement" -%}
