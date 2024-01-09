@@ -67,7 +67,7 @@ let appParams = {
                 return true
             }
             const payment = this.payments[id]
-            const filename = `${this.entryId}-${payment.date.replace(/-/g,'')}-${id.replace(/[^A-Za-z0-9]/g,'')}.pdf`
+            const filename = `${this.entryId}-${payment.date.replace(/-/g,'').slice(0,8)}-${id.replace(/[^A-Za-z0-9]/g,'')}.pdf`
             const url = window.wiki.url(`?api/hpf/receipts/getpdf/${this.entryId}/${id}`)
             await this.loadWithToken(url,true)
             .then((response)=>{
