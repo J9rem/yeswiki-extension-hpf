@@ -1,0 +1,41 @@
+{#
+ * This file is part of the YesWiki Extension hpf.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ * Feature UUID : hpf-receipts-creation
+ *#}
+
+{% extends "@bazar/layouts/field.twig" %}
+
+{% block label %}
+  {{ parent() }}
+  {# add button to toggle view #}
+  <button 
+    class="btn btn-info btn-xs collapsed receipts-collapse-button" 
+    type="button" disabled>
+      <i class="fas fa-caret-down show-collapsed"></i>
+      <i class="fas fa-caret-up hide-collapsed" style="display:none;"></i>
+  </button>
+{% endblock %}
+
+{% block value_container %}
+  {# load vue #}
+  {{ include_javascript('javascripts/vendor/vue/vue.js') }}
+  {# load js #}
+  {{ include_javascript('tools/hpf/javascripts/fields/receipts-input.js',false,true) }}
+  {# load css #}
+  {{ include_css('tools/hpf/styles/fields/receipts.css') }}
+  {# create base app #}
+  <div
+    class="receipts-field-app"
+    data-data="{{ {entryId:entry.id_fiche,existingReceipts:existingReceipts,payments:payments}|json_encode }}"
+    data-t="{{ {
+      updating:_t('HPF_RECEIPT_GENERATING'),
+      notExisting:_t('HPF_RECEIPT_NOT_EXISTING'),
+      download:_t('HPF_DOWNLOAD_RECEIPT')}|json_encode }}"
+    >
+  </div>
+{% endblock %}

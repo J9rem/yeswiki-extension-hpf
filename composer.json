@@ -6,6 +6,7 @@
     "minimum-stability": "stable",
     "require": {
         "php": "^7.3 || ^8.0",
+        "mpdf/mpdf": "^8.2",
         "phpoffice/phpspreadsheet": "^1.25"
     },
     "config": {
@@ -14,5 +15,16 @@
           "php": "7.3.0"
       },
       "sort-packages": true
+    },
+    "scripts": {
+      "post-install-cmd": [
+        "YesWiki\\Hpf\\Service\\ComposerScriptsHelper::postInstall"
+      ],
+      "post-update-cmd": [
+        "YesWiki\\Hpf\\Service\\ComposerScriptsHelper::postUpdate"
+      ]
+    },
+    "autoload": {
+        "classmap": ["services/ComposerScriptsHelper.php"]
     }
 }

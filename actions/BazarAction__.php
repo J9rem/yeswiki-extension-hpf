@@ -28,6 +28,8 @@ class BazarAction__ extends YesWikiAction
             $this->wiki->AddJavascriptFile('tools/hpf/javascripts/fields/conditionviewfield.js');
             // Feature UUID : hpf-payments-field
             $this->wiki->AddJavascriptFile('tools/hpf/javascripts/fields/paymentsfield.js');
+            // Feature UUID : hpf-receipts-creation
+            $this->wiki->AddJavascriptFile('tools/hpf/javascripts/fields/receiptsfield.js');
             if (file_exists('tools/bazar/presentation/javascripts/form-edit-template/fields/commons/render-helper.js')){
                 $this->wiki->AddJavascriptFile('tools/hpf/javascripts/fields/form-edit-template-module.js', false, true);
             } else {

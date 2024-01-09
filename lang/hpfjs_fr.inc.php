@@ -18,6 +18,10 @@ return [
     'HPF_CONDITIONVIEW_FIELDNAME' => 'Nom du champ conditionnel',
     'HPF_CONDITIONVIEW_WAITEDVALUE' => 'Valeur attendue',
 
+    // Feature UUID : hpf-receipts-creation
+    // javascripts/fields/receiptsfield.php 
+    'HPF_RECEIPTS_FIELD' => 'Affichage des reçus',
+
     // tools/hpf/javascripts/refresh-link.js
     // Feature UUID : hpf-payment-status-action
     'HPF_ALREADY_REFRESHING' => 'Rafraichissement déjà en cours',

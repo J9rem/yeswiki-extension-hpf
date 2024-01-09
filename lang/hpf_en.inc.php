@@ -116,6 +116,19 @@ return [
     'EDIT_CONFIG_HINT_FORMIDAREATODEPARTMENT' => 'Form id of correspondance between area and department',
     'EDIT_CONFIG_HINT_GROUPSADMINSSUFFIXFOREMAILS' => 'Admins groups suffix which can send emails',
     'EDIT_CONFIG_HINT_POSTALCODEFIELDNAME' => 'Fieldname for postal code',
+    // Feature UUID : hpf-receipts-creation
+    'EDIT_CONFIG_HINT_HPF[CANVIEWRECEIPTS]' => 'Who can see receipts ? admins or % (admins and entry\'s owner)',
+    // 'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][NAME]' => 'Nom de la structure pour les reçus',
+    // 'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][ADDRESS]' => 'Adresse de la structure pour les reçus',
+    // 'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][ADDRESSCOMPLEMENT]' => 'Complément d\'adresse de la structure pour les reçus',
+    // 'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][POSTALCODE]' => 'Code postal de la structure pour les reçus',
+    // 'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][TOWN]' => 'Ville de la structure pour les reçus',
+    // 'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][EMAIL]' => 'E-mail de la structure pour les reçus',
+    // 'EDIT_CONFIG_HINT_HPF[STRUCTUREINFO][WEBSITE]' => 'Lien vers le site internet de la structure pour les reçus',
+
+    // controllers/ApiController.php
+    // Feature UUID : hpf-receipts-creation
+    'HPF_RECEIPT_API_CAN_NOT_SEE_RECEIPT' => 'You can not see this receipt!',
 
     // docs/actions/bazarliste.yaml via templates/aceditor/actions-builder.tpl.html
     // Feature UUID : hpf-area-management 
@@ -125,6 +138,10 @@ return [
     'HPF_SELECTMEMBERS_HINT' => 'Filter from parent entry (structures) where I am administrator',
     'HPF_SELECTMEMBERS_LABEL' => 'Filter entries',
     'HPF_SELECTMEMBERS_ONLY_MEMBERS' => 'Only members',
+
+    // fields/ReceiptsField.php
+    // Feature UUID : hpf-receipts-creation
+    'HPF_RECEIPTSFIELD_LABEL' => 'Receipts\' list',
 
     // templates/hpf-import-memberships-action.twig
     // Feature UUID : hpf-import-payments
@@ -169,4 +186,10 @@ return [
     // 'HPF_VIREMENT_TYPE' => 'HPF (par virement)',
     'HPF_WANTED_STRUCTURE' => 'Wanted organization',
     'HPF_YEAR' => 'Membership year',
+
+    // tempaltes/bazar/fields/receipts.twig
+    // Feature UUID : hpf-receipts-creation
+    'HPF_RECEIPT_GENERATING' => 'Receipt\'s creation in course',
+    'HPF_RECEIPT_NOT_EXISTING' => 'Not existing receipt',
+    'HPF_DOWNLOAD_RECEIPT' => 'Download the receipt',
 ];

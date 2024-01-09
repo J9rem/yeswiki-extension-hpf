@@ -35,6 +35,7 @@ use YesWiki\Core\Service\AclService;
 use YesWiki\Core\Service\EventDispatcher;
 use YesWiki\Core\Service\UserManager;
 use YesWiki\Core\YesWikiController;
+use YesWiki\Hpf\Controller\HpfController;
 use YesWiki\Hpf\Exception\PaymentAlreadyExistingException;
 use YesWiki\Hpf\Service\AreaManager;
 use YesWiki\Hpf\Service\HpfService;
@@ -52,6 +53,7 @@ class HpfImportController extends YesWikiController
     protected $entryManager;
     protected $eventDispatcher;
     protected $formManager;
+    protected $hpfController;
     protected $hpfService;
     protected $structureFinder;
     protected $userManager;
@@ -64,6 +66,7 @@ class HpfImportController extends YesWikiController
         EntryManager $entryManager,
         EventDispatcher $eventDispatcher,
         FormManager $formManager,
+        HpfController $hpfController,
         HpfService $hpfService,
         StructureFinder $structureFinder,
         UserManager $userManager,
@@ -76,6 +79,7 @@ class HpfImportController extends YesWikiController
         $this->entryManager = $entryManager;
         $this->eventDispatcher = $eventDispatcher;
         $this->formManager = $formManager;
+        $this->hpfController = $hpfController;
         $this->hpfService = $hpfService;
         $this->structureFinder = $structureFinder;
         $this->userManager = $userManager;
@@ -616,7 +620,7 @@ class HpfImportController extends YesWikiController
             $date = "{$match[3]}{$match[2]}{$match[1]}";
         }
 
-        list('updatedEntry' => $updatedEntry) = $this->hpfService->addPaymentInEntry(
+        list('updatedEntry' => $updatedEntry) = $this->hpfController->addPaymentInEntry(
             $data['associatedEntryId'],
             $date,
             $data['value'],

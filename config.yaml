@@ -11,11 +11,32 @@ parameters:
   PostalCodeFieldName: 'bf_code_postal'  # Feature UUID : hpf-area-management
   departmentListName: 'ListeDepartementsFrancais' # Feature UUID : hpf-area-management
   formIdAreaToDepartment: ''             # Feature UUID : hpf-area-management
+  hpf:
+    # define parameters to store all needed data to display on receipt
+    structureInfo:                       # Feature UUID : hpf-receipts-creation
+      name: ''
+      address: ''
+      addressComplement: ''
+      postalCode: ''
+      town: ''
+      email: ''
+      website: ''
+    canViewReceipts: 'admins'            # Feature UUID : hpf-receipts-creation
   hpf_editable_config_params:
     - hpf:
       - contribFormIds
       - paymentsFormUrls
       - paymentMessageEntry
+      # make the structureInfo editable by admins
+      - structureInfo:              # Feature UUID : hpf-receipts-creation
+        - 'name'
+        - 'address'
+        - 'addressComplement'
+        - 'postalCode'
+        - 'town'
+        - 'email'
+        - 'website' 
+      - 'canViewReceipts'           # Feature UUID : hpf-receipts-creation
     - 'AreaFieldName'               # Feature UUID : hpf-area-management
     - 'PostalCodeFieldName'         # Feature UUID : hpf-area-management
     - 'GroupsAdminsSuffixForEmails' # Feature UUID : hpf-area-management

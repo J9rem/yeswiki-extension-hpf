@@ -15,29 +15,22 @@ use DateTime;
 use Throwable;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
-use YesWiki\Bazar\Service\ListManager;
-use YesWiki\Core\Controller\AuthController;
 use YesWiki\Core\Service\ConfigurationService;
 use YesWiki\Hpf\Service\HpfService;
 use YesWiki\Shop\Entity\Payment;
 use YesWiki\Shop\Entity\User;
 use YesWiki\Shop\Entity\HelloAssoPayments;
 use YesWiki\Test\Core\YesWikiTestCase;
+use YesWiki\Test\Hpf\Service\Helper;
 use YesWiki\Wiki;
 
 require_once 'tests/YesWikiTestCase.php';
+require_once 'tools/hpf/tests/services/Helper.php';
 
 class HpfServiceTest extends YesWikiTestCase
 {
     private static $cache;
     private static $myWiki;
-    private const FORM_ID = 'HpfTestForm';
-    private const LIST_ID = 'ListeHpfTestUniqIdListe';
-    private const CHOICELIST_ID = 'ListeHpfTestUniqId2Liste';
-    private const ENTRY_ID = 'HpfTestUniqIdEntry';
-    private const ENTRY_EMAIL = 'test@oui-wiki.pro';
-    private const DEFAULT_PAYMENT_ID = '13245768A';
-    private const OTHER_PAYMENT_ID = '13245768B';
 
     /**
      * @covers HpfService::__construct
@@ -164,33 +157,33 @@ class HpfServiceTest extends YesWikiTestCase
     ) 
     {
         // create an entry
-        $this->updateEntry(true,array_intersect_key(
+        Helper::updateEntry(true,array_intersect_key(
             $data,
             array_fill_keys([
                 'bf_montant_adhesion_mixte_college_1_libre',
                 'bf_montant_adhesion_mixte_college_2_libre',
                 'bf_montant_don_ponctuel_libre',
-                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
-                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
-                'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
+                'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+                'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+                'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel'
             ],1)
-        ));
+        ),$services['wiki'],self::$cache['currentFormId'] ?? '');
         
         $entries = $services['hpfService']->getCurrentContribEntries(
             self::$cache['currentFormId'], 
-            self::ENTRY_EMAIL,
-            self::ENTRY_ID);
+            Helper::ENTRY_EMAIL,
+            Helper::ENTRY_ID);
 
         $entry = !empty($entries) ? $entries[array_key_first($entries)] : [];
 
         // delete the entry
-        $this->updateEntry(false,[]);
+        Helper::updateEntry(false,[],$services['wiki'],self::$cache['currentFormId'] ?? '');
 
         // tests
         $this->assertNotEmpty($entry,'entry should not be empty');
         $this->assertIsArray($entry,'entry should be array');
         $this->assertArrayHasKey('bf_mail',$entry,"entry should contain key 'bf_mail'");
-        $this->assertSame(self::ENTRY_EMAIL,$entry['bf_mail'],"entry['bf_mail'] should be ".self::ENTRY_EMAIL);
+        $this->assertSame(Helper::ENTRY_EMAIL,$entry['bf_mail'],"entry['bf_mail'] should be ".Helper::ENTRY_EMAIL);
         foreach([
             'bf_montant_adhesion_mixte_college_1_libre',
             'bf_montant_adhesion_mixte_college_2_libre',
@@ -199,9 +192,9 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_adhesion_groupe_a_payer',
             'bf_don_a_payer',
             'bf_calc',
-            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
-            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
-            'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel'
         ] as $key){
             $this->assertArrayHasKey($key,$entry,"entry should contain key '$key'");
         }
@@ -217,9 +210,9 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_adhesion_groupe_a_payer',
             'bf_don_a_payer',
             'bf_calc',
-            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
-            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
-            'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel'
         ] as $key){
             $this->assertSame($data['waited'][$key],$entry[$key],"entry['$key'] should by {$data['waited'][$key]}");
         }
@@ -234,17 +227,17 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_montant_adhesion_mixte_college_1_libre' => '',
             'bf_montant_adhesion_mixte_college_2_libre' => '',
             'bf_montant_don_ponctuel_libre' => '',
-            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
-            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
-            'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
             'waited' => [
                 'bf_adhesion_a_payer' => '0',
                 'bf_adhesion_groupe_a_payer' => '0',
                 'bf_don_a_payer' => '0',
                 'bf_calc' => '0',
-                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
-                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
-                'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
+                'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
+                'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
+                'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
             ]
         ];
         return [
@@ -342,9 +335,9 @@ class HpfServiceTest extends YesWikiTestCase
                         'bf_montant_adhesion_mixte_college_1_libre',
                         'bf_montant_adhesion_mixte_college_2_libre',
                         'bf_montant_don_ponctuel_libre',
-                        'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
-                        'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
-                        'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
+                        'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+                        'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+                        'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel'
                     ],1)
                 ),[
                     'bf_adhesion_a_payer' => strval(floatval($data['bf_montant_adhesion_mixte_college_1_libre'])),
@@ -369,21 +362,21 @@ class HpfServiceTest extends YesWikiTestCase
         // other payment already defined
         
         $entriesToCheck = $this->prepareEntriesToTest(array_replace_recursive($data,[
-            'bf_payments' => self::OTHER_PAYMENT_ID
+            'bf_payments' => Helper::OTHER_PAYMENT_ID
         ]),$services);
 
         foreach ($entriesToCheck as $type => $entry) {
             $this->testEntry($data,$entry,"$type other payment existing");
             $jsonDecoded = json_decode($entry['bf_payments'],true);
-            $this->assertArrayHasKey(self::OTHER_PAYMENT_ID,$jsonDecoded,"entry['bf_payments'] ($type other payment existing) should be array with key '".self::OTHER_PAYMENT_ID."'");
-            $this->assertIsArray($jsonDecoded[self::OTHER_PAYMENT_ID],"entry['bf_payments'] ($type other payment existing) should be array of array json encoded");
+            $this->assertArrayHasKey(Helper::OTHER_PAYMENT_ID,$jsonDecoded,"entry['bf_payments'] ($type other payment existing) should be array with key '".Helper::OTHER_PAYMENT_ID."'");
+            $this->assertIsArray($jsonDecoded[Helper::OTHER_PAYMENT_ID],"entry['bf_payments'] ($type other payment existing) should be array of array json encoded");
             foreach([
                 'date' => '',
                 'origin' => 'helloasso',
                 'total' => ''
             ] as $key => $waitedValue){
-                $this->assertArrayHasKey($key,$jsonDecoded[self::OTHER_PAYMENT_ID],"entry['bf_payments'] ($type other payment existing) should be array json_encoded with key '$key'");
-                $this->assertSame($waitedValue,$jsonDecoded[self::OTHER_PAYMENT_ID][$key],"entry['bf_payments']['$key'] ($type other payment existing) should be same as '".json_encode($waitedValue)."'");
+                $this->assertArrayHasKey($key,$jsonDecoded[Helper::OTHER_PAYMENT_ID],"entry['bf_payments'] ($type other payment existing) should be array json_encoded with key '$key'");
+                $this->assertSame($waitedValue,$jsonDecoded[Helper::OTHER_PAYMENT_ID][$key],"entry['bf_payments']['$key'] ($type other payment existing) should be same as '".json_encode($waitedValue)."'");
             }
         }
 
@@ -399,21 +392,21 @@ class HpfServiceTest extends YesWikiTestCase
     protected function prepareEntriesToTest(array $data, array $services): array
     {
         // create an entry
-        $this->updateEntry(true,array_intersect_key(
+        Helper::updateEntry(true,array_intersect_key(
             $data,
             array_fill_keys([
                 'bf_montant_adhesion_mixte_college_1_libre',
                 'bf_montant_adhesion_mixte_college_2_libre',
                 'bf_montant_don_ponctuel_libre',
                 'bf_payments',
-                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
-                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
-                'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
+                'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+                'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+                'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel'
             ],1)
-        ));
+        ),$services['wiki'],self::$cache['currentFormId'] ?? '');
 
         $user = new user();
-        $user->email = self::ENTRY_EMAIL;
+        $user->email = Helper::ENTRY_EMAIL;
         $payment = new Payment([
             'id' => $data['paymentId'],
             'payer' => $user,
@@ -427,7 +420,7 @@ class HpfServiceTest extends YesWikiTestCase
         );
 
         $entryManager = $services['wiki']->services->get(EntryManager::class);
-        $rawentry = $entryManager->getOne(self::ENTRY_ID, false, null, false, true); // no cache
+        $rawentry = $entryManager->getOne(Helper::ENTRY_ID, false, null, false, true); // no cache
 
         $entriesToCheck = [];
         $entriesToCheck['calc'] = $services['hpfService']->updateEntryWithPayment($rawentry,$payment);
@@ -435,16 +428,16 @@ class HpfServiceTest extends YesWikiTestCase
         // test refreshPaymentsInfo
         $services['hpfService']->refreshPaymentsInfo(
             self::$cache['currentFormId'],
-            self::ENTRY_EMAIL,
-            self::ENTRY_ID,
+            Helper::ENTRY_EMAIL,
+            Helper::ENTRY_ID,
             $payments
         );
 
         // get bypassing pageManager cache
-        $entriesToCheck['updated'] = $entryManager->getOne(self::ENTRY_ID, false, null, false, true);
+        $entriesToCheck['updated'] = $entryManager->getOne(Helper::ENTRY_ID, false, null, false, true);
 
         // delete the entry
-        $this->updateEntry(false,[]);
+        Helper::updateEntry(false,[],$services['wiki'],self::$cache['currentFormId'] ?? '');
         return $entriesToCheck;
     }
 
@@ -482,9 +475,9 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_adhesion_groupe_a_payer',
             'bf_don_a_payer',
             'bf_calc',
-            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1',
-            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2',
-            'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel'
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1',
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2',
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel'
         ] as $key){
             $this->assertArrayHasKey($key,$entry,"entry ($type) should contain key '$key'");
             $this->assertSame($data['waited'][$key],$entry[$key],"entry['$key'] ($type) should be '{$data['waited'][$key]}'");
@@ -514,10 +507,10 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_montant_adhesion_mixte_college_2_libre' => '',
             'bf_montant_don_ponctuel_libre' => '',
             'bf_payments' => '',
-            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
-            'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
-            'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
-            'paymentId' => self::DEFAULT_PAYMENT_ID,
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
+            'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
+            'paymentId' => Helper::DEFAULT_PAYMENT_ID,
             'paymentAmount' => '0',
             'paymentDate' => $currentDate,
             'waited' => [
@@ -528,9 +521,9 @@ class HpfServiceTest extends YesWikiTestCase
                 'bf_adhesion_groupe_a_payer' => '0',
                 'bf_don_a_payer' => '0',
                 'bf_calc' => '0',
-                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
-                'liste'.self::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
-                'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
+                'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1' => 'standard',
+                'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2' => 'standard',
+                'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'standard',
                 'bf_payment' => [
                     'date' => $currentDate,
                     'origin' => "helloasso:{formId}",
@@ -667,7 +660,7 @@ class HpfServiceTest extends YesWikiTestCase
                     'bf_montant_don_ponctuel_libre' => '7',
                     'bf_don_a_payer' => '7',
                     'bf_calc' => '7',
-                    'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'libre',
+                    'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'libre',
                     'bf_payment' => [
                         'total' => '10',
                         'don' => [
@@ -682,7 +675,7 @@ class HpfServiceTest extends YesWikiTestCase
                 'paymentAmount' => '18',
                 'waited' => [
                     'bf_montant_don_ponctuel_libre' => '0',
-                    'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'libre',
+                    'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'libre',
                     'bf_payment' => [
                         'total' => '18',
                         'don' => [
@@ -697,7 +690,7 @@ class HpfServiceTest extends YesWikiTestCase
                 'paymentAmount' => '30.9',
                 'waited' => [
                     'bf_montant_don_ponctuel_libre' => '0',
-                    'liste'.self::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'libre',
+                    'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel' => 'libre',
                     'bf_payment' => [
                         'total' => '30.9',
                         'don' => [
@@ -715,11 +708,14 @@ class HpfServiceTest extends YesWikiTestCase
      */
     protected function setUp(): void
     {
+        if (empty(self::$myWiki)){
+            return;
+        }
         if ((self::$cache['canSetList'] ?? false) === true){
             // create List
-            self::updateList(true);
+            Helper::updateList(true,self::$myWiki);
             // create Form
-            self::updateForm(true);
+            self::$cache['currentFormId'] = Helper::updateForm(true,self::$myWiki,self::$cache['currentFormId'] ?? '');
         }
     }
     
@@ -728,178 +724,14 @@ class HpfServiceTest extends YesWikiTestCase
      */
     public static function tearDownAfterClass(): void
     {
+        if (empty(self::$myWiki)){
+            return;
+        }
         // remove List
-        self::updateList(false);
+        Helper::updateList(false,self::$myWiki);
         // remove Form
-        self::updateForm(false);
+        self::$cache['currentFormId'] = Helper::updateForm(false,self::$myWiki,self::$cache['currentFormId'] ?? '');
     }
 
-    /**
-     * update a list
-     * @param bool $install
-     */
-    public static function updateList(bool $install)
-    {
-        self::updateListInternal(self::LIST_ID,$install,function(){
-            $values = [];
-            $currentYear = (new DateTime())->format('Y');
-            $values[strval($currentYear-1)] = strval($currentYear-1);
-            $values[strval($currentYear)] = strval($currentYear);
-            return $values;
-        });
-        
-        self::updateListInternal(self::CHOICELIST_ID,$install,function(){
-            return [
-                'standard' => 'Standard',
-                'soutient' => 'Soutient',
-                'libre' => 'Montant libre',
-            ];
-        });
-    }
 
-    public static function updateListInternal(string $id,bool $install,$getValues)
-    {
-        if (empty(self::$myWiki)){
-            return;
-        }
-        $GLOBALS['wiki'] = self::$myWiki;
-
-        $listManager = self::$myWiki->services->get(ListManager::class);
-        $list = $listManager->getOne($id);
-        if ($install && empty($list)){
-            $listManager->create(substr($id,5),$getValues());
-        } elseif (!$install && !empty($list)){
-            self::actAsAdmin(function() use($listManager,$id){
-                $listManager->delete($id);
-            });
-        }
-    }
-
-    /**
-     * update a form
-     * @param bool $install
-     */
-    public static function updateForm(bool $install)
-    {
-        if (empty(self::$myWiki)){
-            return;
-        }
-        $GLOBALS['wiki'] = self::$myWiki;
-        $formManager = self::$myWiki->services->get(FormManager::class);
-
-        $id = self::$cache['currentFormId'] ?? '';
-        $form = null;
-        if (!empty($id)){
-            $form = $formManager->getOne($id);
-        }
-        if ($install && empty($form)){
-            if (empty(self::$cache['currentFormId'])){
-                $newId = $formManager->findNewId();
-                self::$cache['currentFormId'] = $newId;
-            }
-            $name = self::FORM_ID;
-            $currentYear = strval((new DateTime())->format('Y'));
-            $previousYear = strval(intval($currentYear)-1);
-            $listId = self::LIST_ID;
-            $choiceListId = self::CHOICELIST_ID;
-            $template = <<<TXT
-            texte***bf_titre***Nom*** *** *** *** ***text***1*** *** *** * *** * *** *** *** ***
-            champs_mail***bf_mail***Email*** *** * *** ***form*** ***1***0*** *** * *** * *** *** *** ***
-            liste***$choiceListId***Montant de mon adhésion*** *** *** ***bf_montant_adhesion_college_1*** ***0*** *** *** * *** * *** *** *** ***
-            texte***bf_montant_adhesion_mixte_college_1_libre***Montant libre*** *** *** *** ***number***1*** *** *** * *** * *** *** *** ***
-            liste***$choiceListId***Montant de l'adhésion de mon groupe*** *** *** ***bf_montant_adhesion_college_2*** ***0*** *** *** * *** * *** *** *** ***
-            texte***bf_montant_adhesion_mixte_college_2_libre***Montant libre*** *** *** *** ***number***1*** *** *** * *** * *** *** *** ***
-            liste***$choiceListId***Montant de mon don ponctuel*** *** *** ***bf_montant_don_ponctuel*** ***0*** *** *** * *** * *** *** *** ***
-            texte***bf_montant_don_ponctuel_libre***Montant libre*** *** *** *** ***number***1*** *** *** * *** * *** *** *** ***
-            texte***bf_adhesion_payee_$previousYear***Adhésion payée en $previousYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
-            texte***bf_adhesion_payee_$currentYear***Adhésion payée en $currentYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
-            texte***bf_adhesion_groupe_payee_$previousYear***Adhésion groupe payée en $previousYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
-            texte***bf_adhesion_groupe_payee_$currentYear***Adhésion groupe payée en $currentYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
-            texte***bf_dons_payes_$previousYear***Dons payé en $previousYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
-            texte***bf_dons_payes_$currentYear***Dons payé en $currentYear*** *** *** *** ***text***0*** *** *** * *** * *** *** *** ***
-            checkbox***$listId***Années adhésions payées*** *** *** ***bf_annees_adhesions_payees*** ***0*** *** *** * *** * *** *** *** ***
-            checkbox***$listId***Années adhésions groupe payées*** *** *** ***bf_annees_adhesions_groupe_payees*** ***0*** *** *** * *** * *** *** *** ***
-            checkbox***$listId***Années dons payés*** *** *** ***bf_annees_dons_payes*** ***0*** *** *** * *** * *** *** *** ***
-            calc***bf_adhesion_a_payer***Adhésion brute*** ***{value} €***(abs(bf_montant_adhesion_mixte_college_1_libre) - abs(bf_adhesion_payee_$currentYear) + abs(abs(bf_montant_adhesion_mixte_college_1_libre) - abs(bf_adhesion_payee_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
-            calc***bf_adhesion_groupe_a_payer***Adhésion groupe brute*** ***{value} €***(abs(bf_montant_adhesion_mixte_college_2_libre) - abs(bf_adhesion_groupe_payee_$currentYear) + abs(abs(bf_montant_adhesion_mixte_college_2_libre) - abs(bf_adhesion_groupe_payee_$currentYear)))/2*** *** *** *** *** *** * *** *** *** *** ***
-            calc***bf_don_a_payer***Don brut*** ***{value} €***(bf_montant_don_ponctuel_libre + abs(bf_montant_don_ponctuel_libre))/2*** *** *** *** *** *** * *** *** *** *** ***
-            calc***bf_calc***Reste à payer*** ***{value} €***bf_adhesion_a_payer+bf_adhesion_groupe_a_payer+bf_don_a_payer*** *** *** *** *** *** * *** *** *** *** ***
-            payments***bf_payments***Liste des paiements*** *** *** *** *** *** *** *** *** *** *** *** *** ***
-            TXT;
-            $formManager->create([
-                'bn_id_nature' => self::$cache['currentFormId'],
-                'bn_label_nature' => $name,
-                'bn_template' => $template,
-                'bn_description' => 'template de test',
-                'bn_sem_context' => false,
-                'bn_sem_type' => '',
-                'bn_condition' => '',
-            ]);
-        } elseif (!$install && !empty($form) && !empty($id)){
-            $formManager->delete($id);
-            self::$cache['currentFormId'] = '';
-        }
-    }
-
-    /**
-     * act as admin
-     * @param callable $callback
-     */
-    public static function actAsAdmin($callback)
-    {
-        if (empty(self::$myWiki)){
-            return;
-        }
-        $authController = self::$myWiki->services->get(AuthController::class);
-        
-        $previousUser = $authController->getLoggedUser();
-        if (!empty($previousUser['name'])){
-            $authController->logout();
-        }
-        $firstAdmin = $authController->connectFirstAdmin();
-        $callback();
-        $authController->logout();
-        if (!empty($previousUser['name'])){
-            $authController->logout();
-            $authController->login($previousUser);
-        }
-    }
-
-    /**
-     * update an entry
-     * @param bool $install
-     * @param array $data
-     */
-    protected function updateEntry(bool $install, array $data)
-    {
-        $wiki = $this->getWiki();
-        $GLOBALS['wiki'] = $wiki;
-        $GLOBALS['_BAZAR_'] = []; // reset cache
-
-        $entryManager = $wiki->services->get(EntryManager::class);
-
-        $id = self::ENTRY_ID;
-        $entry = $entryManager->getOne($id, false, null, false, true); // no cache
-        if ($install && empty($entry)){
-            if (!empty(self::$cache['currentFormId'])){
-                $entryManager->create(
-                    self::$cache['currentFormId'],
-                    array_merge(
-                        $data,
-                        [
-                        'antispam' => 1,
-                        'bf_titre' => $id,
-                        'id_fiche' => $id,
-                        'bf_mail' => self::ENTRY_EMAIL
-                        ]
-                    )
-                );
-
-            }
-        } elseif (!$install && !empty($entry)){
-            self::actAsAdmin(function() use($entryManager,$id){
-                $entryManager->delete($id);
-            });
-        }
-    }
 }
