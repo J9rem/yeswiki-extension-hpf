@@ -15,6 +15,7 @@
 
 namespace YesWiki\Hpf;
 
+use YesWiki\Core\Service\AssetsManager;
 use YesWiki\Core\YesWikiAction;
 
 class __LinkstyleAction extends YesWikiAction
@@ -22,6 +23,7 @@ class __LinkstyleAction extends YesWikiAction
     public function run()
     {
         $baseUrl = $this->wiki->getBaseUrl();
+        $this->getService(AssetsManager::class)->AddCSSFile('tools/hpf/styles/fields/payments.css');
         return <<<HTML
         <script type="importmap">
             {
