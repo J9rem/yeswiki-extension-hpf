@@ -13,12 +13,15 @@
 {% block label %}
   {{ parent() }}
   {# add button to toggle view #}
-  <button 
-    class="btn btn-info btn-xs collapsed receipts-collapse-button" 
-    type="button" disabled>
+  <a 
+    class="btn btn-info btn-xs collapsed receipts-collapse-button modalbox" 
+    data-iframe="1"
+    data-size="modal-lg"
+    title="{{ _t('BAZ_SEE_ENTRY') }} {{ entry.bf_titre ?? entry.id_fiche }}"
+    type="button" href="{{ url({tag:entry.id_fiche,handler:'iframe'}) }}">
       <i class="fas fa-caret-down show-collapsed"></i>
       <i class="fas fa-caret-up hide-collapsed" style="display:none;"></i>
-  </button>
+  </a>
 {% endblock %}
 
 {% block value_container %}

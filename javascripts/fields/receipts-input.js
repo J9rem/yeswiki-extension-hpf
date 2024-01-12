@@ -213,11 +213,21 @@ let appParams = {
         },
         setEventsOnButton(){
             if (this.buttonForCollapse === null){
-                const btn = this.element.parentNode.querySelector('span.BAZ_label button.receipts-collapse-button')
+                const btn = this.element.parentNode.querySelector('span.BAZ_label a.receipts-collapse-button')
                 if (btn){
-                    this.buttonForCollapse = btn
-                    btn.removeAttribute('disabled')
-                    btn.addEventListener('click',()=>{
+                    if (btn.classList.contains('modalbox')){
+                        btn.classList.remove('modalbox')
+                    }
+                    const sanitizedBtn = document.createElement('btn')
+                    sanitizedBtn.setAttribute('class',btn.getAttribute('class'))
+                    sanitizedBtn.setAttribute('type','button')
+                    for (const child of btn.children) {
+                        sanitizedBtn.append(child.cloneNode(true))
+                    }
+                    this.buttonForCollapse = sanitizedBtn
+                    btn.parentNode.append(sanitizedBtn)
+                    btn.remove()
+                    sanitizedBtn.addEventListener('click',()=>{
                         this.show = !this.show
                     })
                 }
