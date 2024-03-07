@@ -26,7 +26,8 @@ return [
     'AB_hpf_hpfpaymentstatus_view_label' => 'Type de vue',
     'AB_hpf_hpfpaymentstatus_view_buttonHelloAsso_label' => 'Bouton HelloASso',
     'AB_hpf_hpfpaymentstatus_view_button_label' => 'Bouton YesWiki',
-    'AB_hpf_hpfpaymentstatus_view_iframe_label' => 'Iframe Hello ASso',
+    'AB_hpf_hpfpaymentstatus_view_handler_label' => 'Paiement direct Hello Asso',
+    'AB_hpf_hpfpaymentstatus_view_iframe_label' => 'Iframe Hello Asso',
     'AB_hpf_hpfpaymentstatus_pay_button_title_label' => 'Texte pour le bouton YesWiki',
     'AB_hpf_hpfpaymentstatus_formid_label' => 'Formulaire associé',
     // Feature UUID : hpf-bazar-template-list-no-empty
