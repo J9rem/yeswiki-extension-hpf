@@ -143,6 +143,12 @@ return [
     // fields/ReceiptsField.php
     // Feature UUID : hpf-receipts-creation
     'HPF_RECEIPTSFIELD_LABEL' => 'Liste des reçus',
+
+    // handlers/DirectPaymentHandler.php
+    // Feature UUID : hpf-direct-payment-helloasso
+    'HPF_NOTHING_TO_PAY' => 'Vous n\'avez rien à payer pour cette fiche.',
+    'HPF_SHOULD_BE_AN_ENTRY' => 'Cet handler n\'est utilisable que pour les fiches.',
+    'HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT' => 'Cette fiche n\'est pas associée à un formulaire de paiment.',
     
     // templates/hpf-import-memberships-action.twig
     // Feature UUID : hpf-import-payments
