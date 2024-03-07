@@ -27,6 +27,8 @@ actions:
           buttonHelloAsso: _t(AB_hpf_hpfpaymentstatus_view_buttonHelloAsso_label)
           buttonYW: _t(AB_hpf_hpfpaymentstatus_view_button_label)
           iframe: _t(AB_hpf_hpfpaymentstatus_view_iframe_label)
+          # Feature UUID : hpf-direct-payment-helloasso
+          handler: _t(AB_hpf_hpfpaymentstatus_view_handler_label)
       pay_button_title: 
         label: _t(AB_hpf_hpfpaymentstatus_pay_button_title_label)
         type: text

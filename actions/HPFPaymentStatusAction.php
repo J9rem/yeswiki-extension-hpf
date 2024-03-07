@@ -8,6 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  * Feature UUID : hpf-payment-status-action
+ * Feature UUID : hpf-direct-payment-helloasso
  */
 
 namespace YesWiki\Hpf;
@@ -35,7 +36,12 @@ class HPFPaymentStatusAction extends YesWikiAction
             'empty_message' => $arg['empty_message'] ?? "",
             'pay_button_title' => $arg['pay_button_title'] ?? _t('HPF_PAY'),
             'nothing_to_pay_message' => $arg['nothing_to_pay_message'] ?? "",
-            'view' => (empty($arg['view']) || !in_array($arg['view'], ['buttonHelloAsso','buttonYW','iframe'], true)) ? "buttonHelloAsso" : $arg['view'],
+            'view' => (empty($arg['view']) || !in_array($arg['view'], [
+                'buttonHelloAsso',
+                'buttonYW',
+                'iframe',
+                'handler' // Feature UUID : hpf-direct-payment-helloasso
+            ], true)) ? "buttonHelloAsso" : $arg['view'],
             'entry_id' => isset($arg['entry_id']) && is_string($arg['entry_id']) ? $arg['entry_id'] : "",
             'formid' => isset($arg['formid']) && is_string($arg['formid']) && (strval($arg['formid']) == strval(intval($arg['formid']))) ? strval($arg['formid']) : "",
         ]);
@@ -128,6 +134,10 @@ class HPFPaymentStatusAction extends YesWikiAction
                     $html = $this->hpfService->getPaymentFormIframeHtml();
                     $instruction = _t('HPF_IFRAME_INSTRUCTION');
                     break;
+                case 'handler': // Feature UUID : hpf-direct-payment-helloasso
+                    $url = $this->wiki->href('directpayment', $contribEntry['id_fiche']);
+                    $instruction = _t('HPF_CLICK_BUTTON_BOTTOM');
+                    break;
                 case 'buttonHelloASso':
                 default:
                     $html = $this->hpfService->getPaymentFormButtonHtml();
@@ -139,6 +149,7 @@ class HPFPaymentStatusAction extends YesWikiAction
             if ($linkToHelloAsso) {
                 switch ($this->arguments['view']) {
                     case 'buttonYW':
+                    case 'handler': // Feature UUID : hpf-direct-payment-helloasso
                         return $paymentMessage.$this->callAction('button', [
                             'class' => 'btn-primary new-window',
                             'icon' => 'far fa-credit-card',
