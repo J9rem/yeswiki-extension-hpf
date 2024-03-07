@@ -15,6 +15,8 @@ namespace YesWiki\Hpf;
 use Exception;
 use Throwable;
 use YesWiki\Bazar\Service\EntryManager;
+use YesWiki\Bazar\Service\FormManager;
+use YesWiki\Core\Controller\AuthController;
 use YesWiki\Core\Service\AclService;
 use YesWiki\Core\YesWikiHandler;
 use YesWiki\Hpf\Service\HpfService;
@@ -22,17 +24,27 @@ use YesWiki\Hpf\Service\HpfService;
 class DirectPaymentHandler extends YesWikiHandler
 {
     protected $aclService;
+    protected $authController;
     protected $entryManager;
+    protected $formManager;
     protected $hpfService;
 
     public function run()
     {
         // get services
         $this->aclService = $this->getService(AclService::class);
+        $this->authController = $this->getService(AuthController::class);
         $this->entryManager = $this->getService(EntryManager::class);
+        $this->formManager = $this->getService(FormManager::class);
         $this->hpfService = $this->getService(HpfService::class);
 
-        extract($this->check());
+        list(
+            'status' => $status,
+            'errorMsg' => $errorMsg,
+            'errorType' => $errorType,
+            'entry' => $entry,
+            'formId' => $formId
+            ) = $this->check();
 
         if (!$status){
             return $this->finalRender($this->render('@templates/alert-message.twig',[
@@ -41,18 +53,22 @@ class DirectPaymentHandler extends YesWikiHandler
             ]));
         }
 
-        $valueToPay = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
-        if ($valueToPay <= 0) {
+        $data = $this->extractData($entry);
+
+        list(
+            'status' => $status,
+            'errorMsg' => $errorMsg,
+            'errorType' => $errorType
+            ) = $this->checkData($data);
+
+        if (!$status){
             return $this->finalRender($this->render('@templates/alert-message.twig',[
-                'type' => 'success',
-                'message' => _t('HPF_NOTHING_TO_PAY')
+                'type' => $errorType,
+                'message' => $errorMsg
             ]));
         }
 
-        return $this->finalRender($this->render('@templates/alert-message.twig',[
-            'type' => 'success',
-            'message' => 'test'
-        ]));
+        return $this->finalRender($this->callAction('helloassodirectpayment',$data));
     }
 
     protected function finalRender(string $content, bool $includePage = true): string
@@ -84,7 +100,7 @@ class DirectPaymentHandler extends YesWikiHandler
             'errorMsg' => 'error',
             'errorType' => 'danger',
             'entry' => [],
-            'formId' => '',
+            'formId' => ''
         ];
 
         try {
@@ -110,6 +126,11 @@ class DirectPaymentHandler extends YesWikiHandler
                 throw new Exception(_t('HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT'));
             }
 
+            $form = $this->formManager->getOne($output['formId']);
+            if (empty($form['bn_only_one_entry']) || $form['bn_only_one_entry'] !== 'Y'){
+                throw new Exception(_t('HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER'));
+            }
+
             // all is Right
             $output['status'] = true;
         } catch (Throwable $th) {
@@ -118,5 +139,83 @@ class DirectPaymentHandler extends YesWikiHandler
         }
 
         return $output;
+    }
+
+    /**
+     * check if all is right in data
+     * @param array $data
+     * @return array [
+     *  'status' => boolean, 
+     *  'errorMsg' => string,
+     *  'errorType' => string
+     * ]
+     */
+    protected function checkData(array $data): array
+    {
+        $output = [
+            'status' => false,
+            'errorMsg' => 'error',
+            'errorType' => 'danger'
+        ];
+
+        try {
+            if ($data['total'] <= 0) {
+                $output['errorType'] = 'info';
+                throw new Exception(_t('HPF_NOTHING_TO_PAY'));
+            }
+
+            $user = $this->authController->getLoggedUser();
+            if (
+                empty($user['email'])
+                || empty($data['email']) 
+                || $user['email'] != $data['email']
+                ){
+                    throw new Exception(_t('HPF_CURRENT_USER_SHOULD_HAVE_SAME_EMAIL_AS_ENTRY'));
+            }
+
+            // all is Right
+            $output['status'] = true;
+        } catch (Throwable $th) {
+            $output['status'] = false;
+            $output['errorMsg'] = $th->getMessage();
+        }
+
+        return $output;
+    }
+
+    /**
+     * extract useful data from entry
+     * @param array $entry
+     * @return array [
+     *  'firstname' => string,
+     *  'name' => string,
+     *  'postalcode' => string,
+     *  'town' => string,
+     *  'email' => string,
+     *  'total' => float
+     * ]
+     */
+    protected function extractData(array $entry): array
+    {
+        $associations = [
+            'firstname' => 'bf_prenom',
+            'name' => 'bf_name',
+            'postalcode' => 'bf_code_postal',
+            'town' => 'bf_ville',
+            'email' => 'bf_mail'
+        ];
+        $data = [];
+        foreach ($associations as $key => $wantedFieldName) {
+            $data[$key] = empty($entry[$wantedFieldName])
+                ? ''
+                : $entry[$wantedFieldName];
+        }
+
+        // payment
+        foreach (['total','membership','donation','group_membership'] as $key) {
+            $data[str_replace('_','',$key)] = floatval($entry[HpfService::CALC_FIELDNAMES[$key]] ?? 0);
+        }
+
+        return $data;
     }
 }
