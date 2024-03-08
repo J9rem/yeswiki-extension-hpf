@@ -19,6 +19,7 @@ use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\Controller\AuthController;
 use YesWiki\Core\Service\AclService;
 use YesWiki\Core\YesWikiHandler;
+use YesWiki\Hpf\Exception\ExceptionWithMessage;
 use YesWiki\Hpf\Service\HpfService;
 
 class DirectPaymentHandler extends YesWikiHandler
@@ -38,33 +39,17 @@ class DirectPaymentHandler extends YesWikiHandler
         $this->formManager = $this->getService(FormManager::class);
         $this->hpfService = $this->getService(HpfService::class);
 
-        list(
-            'status' => $status,
-            'errorMsg' => $errorMsg,
-            'errorType' => $errorType,
-            'entry' => $entry,
-            'formId' => $formId
-            ) = $this->check();
+        try {
+            list(
+                'entry' => $entry,
+                'formId' => $formId
+                ) = $this->getEntryAndFormIdSecured();
+            $data = $this->extractData($entry);
 
-        if (!$status){
+        } catch (ExceptionWithMessage $ex) {
             return $this->finalRender($this->render('@templates/alert-message.twig',[
-                'type' => $errorType,
-                'message' => $errorMsg
-            ]));
-        }
-
-        $data = $this->extractData($entry);
-
-        list(
-            'status' => $status,
-            'errorMsg' => $errorMsg,
-            'errorType' => $errorType
-            ) = $this->checkData($data);
-
-        if (!$status){
-            return $this->finalRender($this->render('@templates/alert-message.twig',[
-                'type' => $errorType,
-                'message' => $errorMsg
+                'type' => $ex->getTypeForMessage(),
+                'message' => $ex->getMessage()
             ]));
         }
 
@@ -84,58 +69,44 @@ class DirectPaymentHandler extends YesWikiHandler
     }
 
     /**
-     * check if all is right
+     * get entry and FormId secured
      * @return array [
-     *  'status' => boolean, 
-     *  'errorMsg' => string,
-     *  'errorType' => string,
      *  'entry' => array,
      *  'formId' => string
      * ]
+     * @throws ExceptionWithMessage
      */
-    protected function check(): array
+    protected function getEntryAndFormIdSecured(): array
     {
         $output = [
-            'status' => false,
-            'errorMsg' => 'error',
-            'errorType' => 'danger',
             'entry' => [],
             'formId' => ''
         ];
+        // check current user is owner
+        if (!$this->aclService->hasAccess('read')){
+            throw new ExceptionWithMessage(_t('DENY_READ'));
+        }
+        // check current user is owner
+        if (!$this->aclService->check('%')){
+            throw new ExceptionWithMessage(_t('DELETEPAGE_NOT_OWNER'));
+        }
+        // check if current page is an entry
+        $tag = $this->wiki->GetPageTag();
+        if (empty($tag) || !$this->entryManager->isEntry($tag)) {
+            throw new ExceptionWithMessage(_t('HPF_SHOULD_BE_AN_ENTRY'));
+        }
+        // prepare for action
+        $output['entry'] = $this->entryManager->getOne($tag);
+        $output['formId'] = $output['entry']['id_typeannonce'] ?? '';
 
-        try {
-            // check current user is owner
-            if (!$this->aclService->hasAccess('read')){
-                throw new Exception(_t('DENY_READ'));
-            }
-            // check current user is owner
-            if (!$this->aclService->check('%')){
-                throw new Exception(_t('DELETEPAGE_NOT_OWNER'));
-            }
-            // check if current page is an entry
-            $tag = $this->wiki->GetPageTag();
-            if (empty($tag) || !$this->entryManager->isEntry($tag)) {
-                throw new Exception(_t('HPF_SHOULD_BE_AN_ENTRY'));
-            }
-            // prepare for action
-            $output['entry'] = $this->entryManager->getOne($tag);
-            $output['formId'] = $output['entry']['id_typeannonce'] ?? '';
+        $contribFormIds = $this->hpfService->getCurrentPaymentsFormIds();
+        if (!in_array($output['formId'], $contribFormIds)) {
+            throw new ExceptionWithMessage(_t('HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT'));
+        }
 
-            $contribFormIds = $this->hpfService->getCurrentPaymentsFormIds();
-            if (!in_array($output['formId'], $contribFormIds)) {
-                throw new Exception(_t('HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT'));
-            }
-
-            $form = $this->formManager->getOne($output['formId']);
-            if (empty($form['bn_only_one_entry']) || $form['bn_only_one_entry'] !== 'Y'){
-                throw new Exception(_t('HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER'));
-            }
-
-            // all is Right
-            $output['status'] = true;
-        } catch (Throwable $th) {
-            $output['status'] = false;
-            $output['errorMsg'] = $th->getMessage();
+        $form = $this->formManager->getOne($output['formId']);
+        if (empty($form['bn_only_one_entry']) || $form['bn_only_one_entry'] !== 'Y'){
+            throw new ExceptionWithMessage(_t('HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER'));
         }
 
         return $output;
@@ -144,43 +115,24 @@ class DirectPaymentHandler extends YesWikiHandler
     /**
      * check if all is right in data
      * @param array $data
-     * @return array [
-     *  'status' => boolean, 
-     *  'errorMsg' => string,
-     *  'errorType' => string
-     * ]
+     * @throws ExceptionWithMessage
      */
-    protected function checkData(array $data): array
+    protected function checkData(array $data)
     {
-        $output = [
-            'status' => false,
-            'errorMsg' => 'error',
-            'errorType' => 'danger'
-        ];
-
-        try {
-            if ($data['total'] <= 0) {
-                $output['errorType'] = 'info';
-                throw new Exception(_t('HPF_NOTHING_TO_PAY'));
-            }
-
-            $user = $this->authController->getLoggedUser();
-            if (
-                empty($user['email'])
-                || empty($data['email']) 
-                || $user['email'] != $data['email']
-                ){
-                    throw new Exception(_t('HPF_CURRENT_USER_SHOULD_HAVE_SAME_EMAIL_AS_ENTRY'));
-            }
-
-            // all is Right
-            $output['status'] = true;
-        } catch (Throwable $th) {
-            $output['status'] = false;
-            $output['errorMsg'] = $th->getMessage();
+        if ($data['total'] <= 0) {
+            throw new ExceptionWithMessage(_t('HPF_NOTHING_TO_PAY'), 'info');
         }
 
-        return $output;
+        $user = $this->authController->getLoggedUser();
+        if (
+            empty($user['email'])
+            || empty($data['email']) 
+            || $user['email'] != $data['email']
+            ){
+                throw new ExceptionWithMessage(_t('HPF_CURRENT_USER_SHOULD_HAVE_SAME_EMAIL_AS_ENTRY'));
+        }
+
+        // all is Right
     }
 
     /**
@@ -194,6 +146,7 @@ class DirectPaymentHandler extends YesWikiHandler
      *  'email' => string,
      *  'total' => float
      * ]
+     * @throws ExceptionWithMessage
      */
     protected function extractData(array $entry): array
     {
@@ -216,6 +169,7 @@ class DirectPaymentHandler extends YesWikiHandler
             $data[str_replace('_','',$key)] = floatval($entry[HpfService::CALC_FIELDNAMES[$key]] ?? 0);
         }
 
+        $this->checkData($data);
         return $data;
     }
 }
