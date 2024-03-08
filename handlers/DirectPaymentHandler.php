@@ -24,6 +24,9 @@ use YesWiki\Hpf\Service\HpfService;
 
 class DirectPaymentHandler extends YesWikiHandler
 {
+    public const KEY_IN_GET_FOR_AMOUNT = 'amountInCents';
+    public const KEY_IN_GET_FOR_STATUS = 'status';
+
     protected $aclService;
     protected $authController;
     protected $entryManager;
@@ -44,16 +47,27 @@ class DirectPaymentHandler extends YesWikiHandler
                 'entry' => $entry,
                 'formId' => $formId
                 ) = $this->getEntryAndFormIdSecured();
+
             $data = $this->extractData($entry);
+            $data = appendDataForPayment($entry, $data);
+
+            $headersData = $this->extractHeadersFromGet($_GET ?? [], $entry, $data);
+
+            if ($headersData['checkData']){
+                $this->checkData($data, true);
+            }
+
+            $output = $headersData['headerContent']
+                .$this->callAction('helloassodirectpayment',$data);
 
         } catch (ExceptionWithMessage $ex) {
-            return $this->finalRender($this->render('@templates/alert-message.twig',[
+            $output = $this->render('@templates/alert-message.twig',[
                 'type' => $ex->getTypeForMessage(),
                 'message' => $ex->getMessage()
-            ]));
+            ]);
         }
 
-        return $this->finalRender($this->callAction('helloassodirectpayment',$data));
+        return $this->finalRender($output);
     }
 
     protected function finalRender(string $content, bool $includePage = true): string
@@ -66,6 +80,89 @@ class DirectPaymentHandler extends YesWikiHandler
             HTML
             : $content;
         return $this->wiki->Header().$content.$this->wiki->Footer() ;
+    }
+
+    /**
+     * extract params from $_GET and set message if needed
+     * @param array $get
+     * @param array $entry
+     * @param array $data
+     * @return array [
+     *  'checkData' => boolean,
+     *  'headerContent' => string
+     * ]
+     * @throws ExceptionWithMessage
+     */
+    protected function extractHeadersFromGet(array $get, array $entry, array $data): array
+    {
+        $headersData = [
+                'checkData' => true,
+                'headerContent' => ''
+            ];
+        if (!empty($get[self::KEY_IN_GET_FOR_STATUS])
+            && in_array($get[self::KEY_IN_GET_FOR_STATUS], ['success', 'error', 'cancel'], true)){
+
+            $headersData['checkData'] = false;
+            $this->checkData($data, false);
+
+            $amountInCents = (
+                    empty($get[self::KEY_IN_GET_FOR_AMOUNT])
+                    || !is_scalar($get[self::KEY_IN_GET_FOR_AMOUNT])
+                    || (intval($get[self::KEY_IN_GET_FOR_AMOUNT]) <= 0)
+                ) ? 0
+                : intval($get[self::KEY_IN_GET_FOR_AMOUNT]);
+
+            if ($amountInCents == 0){
+                if ($data['totalInCents'] > 0){
+                    $amountInCents = $data['totalInCents'];
+                } else {
+                    $amountInCents = $this->getLastPaymentFromEntry($entry);
+                }
+            }
+
+            switch ($get[self::KEY_IN_GET_FOR_STATUS]) {
+                case 'success':
+                    $type = 'success';
+                    $message = 'test';
+                    $isDirect = true;
+                    if ($amountInCents != 0){
+                        $message .= 'rafraichir pour MaJ';
+                    }
+                    break;
+                case 'cancel':
+                    $type = 'info';
+                    $message = 'test';
+                    if ($amountInCents == 0){
+                        $isDirect = true;
+                        $message .= 'rien à payer';
+                    } else {
+                        $isDirect = false;
+                    }
+                    break;
+                    
+                case 'error':
+                default:
+                    $type = 'danger';
+                    $message = 'test';
+                    if ($amountInCents == 0){
+                        $isDirect = true;
+                        $message .= 'rien à payer';
+                    } else {
+                        $isDirect = false;
+                    }
+                    break;
+            }
+
+            if ($isDirect){
+                throw new ExceptionWithMessage($message, $type);
+            } else {
+                $headersData['headerContent'] = $this->render('@templates/alert-message.twig',[
+                    'type' => $type,
+                    'message' => $message
+                ]);
+            }
+        }
+        return $headersData;
     }
 
     /**
@@ -115,11 +212,12 @@ class DirectPaymentHandler extends YesWikiHandler
     /**
      * check if all is right in data
      * @param array $data
+     * @param bool $checkIfEmpty
      * @throws ExceptionWithMessage
      */
-    protected function checkData(array $data)
+    protected function checkData(array $data, bool $checkIfEmpty)
     {
-        if ($data['total'] <= 0) {
+        if ($checkIfEmpty && $data['totalInCents'] <= 0) {
             throw new ExceptionWithMessage(_t('HPF_NOTHING_TO_PAY'), 'info');
         }
 
@@ -144,17 +242,19 @@ class DirectPaymentHandler extends YesWikiHandler
      *  'postalcode' => string,
      *  'town' => string,
      *  'email' => string,
-     *  'total' => float
+     *  'totalInCents' => integer,
+     *  'membershipInCents' => integer,
+     *  'groupmembershipInCents' => integer,
+     *  'donationInCents' => integer
      * ]
-     * @throws ExceptionWithMessage
      */
     protected function extractData(array $entry): array
     {
         $associations = [
-            'firstname' => 'bf_prenom',
-            'name' => 'bf_name',
-            'postalcode' => 'bf_code_postal',
-            'town' => 'bf_ville',
+            'firstName' => 'bf_prenom',
+            'lastName' => 'bf_name',
+            'zipCode' => 'bf_code_postal',
+            'city' => 'bf_ville',
             'email' => 'bf_mail'
         ];
         $data = [];
@@ -166,10 +266,56 @@ class DirectPaymentHandler extends YesWikiHandler
 
         // payment
         foreach (['total','membership','donation','group_membership'] as $key) {
-            $data[str_replace('_','',$key)] = floatval($entry[HpfService::CALC_FIELDNAMES[$key]] ?? 0);
+            $keyInData = str_replace('_','',$key). 'InCents';
+            $data[$keyInData] = intval(
+                round(
+                    floatval($entry[HpfService::CALC_FIELDNAMES[$key]] ?? 0) * 100
+                )
+            );
         }
 
-        $this->checkData($data);
         return $data;
+    }
+
+    /**
+     * append data for payment
+     * @param array $data
+     * @param array $entry
+     * @return array $dataUpdated
+     */
+    protected function appendDataForPayment(array $entry, array $data): array
+    {
+        $dataUpdated = $data;
+        $dataUpdated['totalAmount'] = $data['totalInCents'];
+        $dataUpdated['itemName'] = 'Payment';
+        $dataUpdated['containsDonation'] = ($data['donationInCents'] != 0);
+        foreach ([
+            'backUrl' => 'cancel',
+            'errorUrl' => 'error',
+            'returnUrl' => 'success'
+        ] as $key => $status) {
+            $dataUpdated[$key] = $this->wiki->Href(
+                'directpayment',
+                $entry['id_fiche'],
+                [
+                    self::KEY_IN_GET_FOR_STATUS => $status,
+                    self::KEY_IN_GET_FOR_AMOUNT => $data['totalInCents']
+                ],
+                false
+            );
+        }
+
+        return $dataUpdated;
+    }
+
+    /**
+     * get last payment amount for entry
+     * @param array $entry
+     * @return int $amountInCents
+     */
+    protected function getLastPaymentFromEntry(array $entry): int
+    {
+        $amountInCents = 0;
+        return $amountInCents;
     }
 }
