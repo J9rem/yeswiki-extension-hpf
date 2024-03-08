@@ -270,10 +270,10 @@ class DirectPaymentHandler extends YesWikiHandler
      * extract useful data from entry
      * @param array $entry
      * @return array [
-     *  'firstname' => string,
-     *  'name' => string,
-     *  'postalcode' => string,
-     *  'town' => string,
+     *  'firstName' => string,
+     *  'lastName' => string,
+     *  'zipCode' => string,
+     *  'city' => string,
      *  'email' => string,
      *  'totalInCents' => integer,
      *  'membershipInCents' => integer,
@@ -320,7 +320,9 @@ class DirectPaymentHandler extends YesWikiHandler
     {
         $dataUpdated = $data;
         $dataUpdated['totalAmount'] = $data['totalInCents'];
-        $dataUpdated['itemName'] = 'Payment';
+        $dataUpdated['itemName'] = _t('HPF_DIRECT_PAYMENT_TITLE',[
+            'entryId' => $entry['id_fiche']
+        ]);
         $dataUpdated['containsDonation'] = ($data['donationInCents'] != 0);
         foreach ([
             'backUrl' => 'cancel',
