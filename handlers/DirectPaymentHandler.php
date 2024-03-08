@@ -285,7 +285,7 @@ class DirectPaymentHandler extends YesWikiHandler
     {
         $associations = [
             'firstName' => 'bf_prenom',
-            'lastName' => 'bf_name',
+            'lastName' => 'bf_nom',
             'zipCode' => 'bf_code_postal',
             'city' => 'bf_ville',
             'email' => 'bf_mail'
