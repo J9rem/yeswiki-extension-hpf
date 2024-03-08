@@ -149,7 +149,7 @@ return [
     'HPF_CURRENT_USER_SHOULD_HAVE_SAME_EMAIL_AS_ENTRY' => 'L\'utilisateurice courante doit avoir le même e-mail que celui de la fiche.',
     'HPF_NOTHING_TO_PAY' => 'Vous n\'avez rien à payer pour cette fiche.',
     'HPF_SHOULD_BE_AN_ENTRY' => 'Cet handler n\'est utilisable que pour les fiches.',
-    'HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT' => 'Cette fiche n\'est pas associée à un formulaire de paiment.',
+    'HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT' => 'Cette fiche n\'est pas associée à un formulaire de paiement.',
     'HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER' => 'Cette fiche n\'appartient pas à un formulaire pour lequel un ' 
         .'utilisateur ne peut avoir qu\'une seule fiche.',
     
