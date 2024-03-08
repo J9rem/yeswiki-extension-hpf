@@ -49,7 +49,7 @@ class DirectPaymentHandler extends YesWikiHandler
                 ) = $this->getEntryAndFormIdSecured();
 
             $data = $this->extractData($entry);
-            $data = appendDataForPayment($entry, $data);
+            $data = $this->appendDataForPayment($entry, $data);
 
             $headersData = $this->extractHeadersFromGet($_GET ?? [], $entry, $data);
 
