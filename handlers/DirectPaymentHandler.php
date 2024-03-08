@@ -119,10 +119,6 @@ class DirectPaymentHandler extends YesWikiHandler
                     $amountInCents = $this->getLastPaymentFromEntry($entry);
                 }
             }
-            $amountStr = floor($amountInCents/100).','
-                . (($amountInCents % 100) < 10 ? '0' : '')
-                . ($amountInCents % 100)
-                .' € ';
             $entryLinkTxt = _t('HPF_DIRECT_PAYMENT_LINK_TO_ENTRY',[
                 'title' => $entry['bf_titre']
             ]);
@@ -138,7 +134,7 @@ class DirectPaymentHandler extends YesWikiHandler
                 case 'success':
                     $type = 'success';
                     $message = _t('HPF_DIRECT_PAYMENT_SUCCESS', [
-                        'ofAmount' => ($amountInCents != 0) ? $amountStr : '',
+                        'ofAmount' => ($amountInCents != 0) ? $this->amountToStr($amountInCents) : '',
                         'warningMessage' => ($data['totalInCents'] > 0)
                             ? ('<b>' ._t('HPF_DIRECT_PAYMENT_SUCCESS_WARNING'). '</b>')
                             : '',
@@ -148,25 +144,30 @@ class DirectPaymentHandler extends YesWikiHandler
                     break;
                 case 'cancel':
                     $type = 'info';
-                    $message = 'test';
-                    if ($amountInCents == 0){
-                        $isDirect = true;
-                        $message .= 'rien à payer';
-                    } else {
-                        $isDirect = false;
-                    }
+                    $message = _t('HPF_DIRECT_PAYMENT_CANCEL', [
+                        'specificMessage' => ($data['totalInCents'] > 0)
+                            ? ('<b>' ._t('HPF_DIRECT_PAYMENT_CANCEL_REDO',[
+                                'ofAmount' => $this->amountToStr($data['totalInCents']),
+                            ]). '</b>')
+                            : _t('HPF_DIRECT_PAYMENT_CANCEL_NOTHING_TO_PAY'),
+                        'entryLink' => $entryLink 
+                    ]);
+                    $isDirect = ($amountInCents == 0);
                     break;
                     
                 case 'error':
                 default:
-                    $type = 'danger';
-                    $message = 'test';
-                    if ($amountInCents == 0){
-                        $isDirect = true;
-                        $message .= 'rien à payer';
-                    } else {
-                        $isDirect = false;
-                    }
+                    $type = 'warning';
+                    $message = _t('HPF_DIRECT_PAYMENT_ERROR', [
+                        'ofAmount' => ($amountInCents != 0) ? $this->amountToStr($amountInCents) : '',
+                        'specificMessage' => ($data['totalInCents'] > 0)
+                            ? ('<b>' ._t('HPF_DIRECT_PAYMENT_CANCEL_REDO',[
+                                'ofAmount' => $this->amountToStr($data['totalInCents']),
+                            ]). '</b>')
+                            : _t('HPF_DIRECT_PAYMENT_CANCEL_NOTHING_TO_PAY'),
+                        'entryLink' => $entryLink 
+                    ]);
+                    $isDirect = ($amountInCents == 0);
                     break;
             }
             $message = str_replace("\n",'<br>',$message);
@@ -181,6 +182,20 @@ class DirectPaymentHandler extends YesWikiHandler
             }
         }
         return $headersData;
+    }
+
+    /**
+     * transform integer value of amount in string with 'of' at begining
+     * @param int $amountInCents
+     * @return string
+     */
+    protected function amountToStr(int $amountInCents): string
+    {
+        return _t('HPF_DIRECT_PAYMENT_OF') . ' '
+            .floor($amountInCents/100).','
+            . (($amountInCents % 100) < 10 ? '0' : '')
+            . ($amountInCents % 100)
+            .' € ';
     }
 
     /**
