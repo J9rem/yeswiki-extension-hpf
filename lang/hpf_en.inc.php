@@ -147,6 +147,9 @@ return [
     // handlers/DirectPaymentHandler.php
     // Feature UUID : hpf-direct-payment-helloasso
     'HPF_CURRENT_USER_SHOULD_HAVE_SAME_EMAIL_AS_ENTRY' => 'The current user should use the same email as in this entry.',
+    'HPF_DIRECT_PAYMENT_SUCCESS' => "Your payment %{ofAmount}is registered.\nThank you very much.\n\n%{warningMessage}%{entryLink}",
+    'HPF_DIRECT_PAYMENT_SUCCESS_WARNING' => "But, this registration is currently spreading to this website...\nCould you click on the link below to check data in your entry.\n\n",
+    'HPF_DIRECT_PAYMENT_LINK_TO_ENTRY' => "See your entry %{title}",
     'HPF_NOTHING_TO_PAY' => 'Nothing to pay for this entry.',
     'HPF_SHOULD_BE_AN_ENTRY' => 'This handler only works for entries.',
     'HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT' => 'This entry is not associated to a payment form.',

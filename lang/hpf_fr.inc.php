@@ -147,6 +147,9 @@ return [
     // handlers/DirectPaymentHandler.php
     // Feature UUID : hpf-direct-payment-helloasso
     'HPF_CURRENT_USER_SHOULD_HAVE_SAME_EMAIL_AS_ENTRY' => 'L\'utilisateurice courante doit avoir le même e-mail que celui de la fiche.',
+    'HPF_DIRECT_PAYMENT_SUCCESS' => "Votre paiement %{ofAmount}a bien été enregistré.\nMerci pour votre contribution.\n\n%{warningMessage}%{entryLink}",
+    'HPF_DIRECT_PAYMENT_SUCCESS_WARNING' => "Toutefois, l'information est encore en cours d'enregistrement sur le site, ...\nVeuillez cliquer sur le lien ci-dessous pour vérifier les données de votre fiche.\n\n",
+    'HPF_DIRECT_PAYMENT_LINK_TO_ENTRY' => "Voir votre fiche %{title}",
     'HPF_NOTHING_TO_PAY' => 'Vous n\'avez rien à payer pour cette fiche.',
     'HPF_SHOULD_BE_AN_ENTRY' => 'Cet handler n\'est utilisable que pour les fiches.',
     'HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT' => 'Cette fiche n\'est pas associée à un formulaire de paiement.',

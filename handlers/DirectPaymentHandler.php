@@ -119,15 +119,32 @@ class DirectPaymentHandler extends YesWikiHandler
                     $amountInCents = $this->getLastPaymentFromEntry($entry);
                 }
             }
+            $amountStr = floor($amountInCents/100).','
+                . (($amountInCents % 100) < 10 ? '0' : '')
+                . ($amountInCents % 100)
+                .' € ';
+            $entryLinkTxt = _t('HPF_DIRECT_PAYMENT_LINK_TO_ENTRY',[
+                'title' => $entry['bf_titre']
+            ]);
+            $entryLink = $this->callAction('button',[
+                'class' => "btn-primary btn-xs",
+                'title' => $entryLinkTxt,
+                'text' => $entryLinkTxt,
+                'link' => $entry['id_fiche'],
+                'icon' => 'fa fa-eye'
+            ]);
 
             switch ($get[self::KEY_IN_GET_FOR_STATUS]) {
                 case 'success':
                     $type = 'success';
-                    $message = 'test';
+                    $message = _t('HPF_DIRECT_PAYMENT_SUCCESS', [
+                        'ofAmount' => ($amountInCents != 0) ? $amountStr : '',
+                        'warningMessage' => ($data['totalInCents'] > 0)
+                            ? ('<b>' ._t('HPF_DIRECT_PAYMENT_SUCCESS_WARNING'). '</b>')
+                            : '',
+                        'entryLink' => $entryLink 
+                    ]);
                     $isDirect = true;
-                    if ($amountInCents != 0){
-                        $message .= 'rafraichir pour MaJ';
-                    }
                     break;
                 case 'cancel':
                     $type = 'info';
@@ -152,6 +169,7 @@ class DirectPaymentHandler extends YesWikiHandler
                     }
                     break;
             }
+            $message = str_replace("\n",'<br>',$message);
 
             if ($isDirect){
                 throw new ExceptionWithMessage($message, $type);
