@@ -325,9 +325,9 @@ class DirectPaymentHandler extends YesWikiHandler
         ]);
         $dataUpdated['containsDonation'] = ($data['donationInCents'] != 0);
         foreach ([
-            'backUrl' => 'cancel',
-            'errorUrl' => 'error',
-            'returnUrl' => 'success'
+            'shop backUrl' => 'cancel',
+            'shop errorUrl' => 'error',
+            'shop returnUrl' => 'success'
         ] as $key => $status) {
             $dataUpdated[$key] = $this->wiki->Href(
                 'directpayment',
@@ -339,6 +339,13 @@ class DirectPaymentHandler extends YesWikiHandler
                 false
             );
         }
+
+        $dataUpdated['meta'] = json_encode([
+            'title' => $entry['bf_titre'],
+            'membershipInCents' => $data['membershipInCents'],
+            'groupmembershipInCents' => $data['groupmembershipInCents'],
+            'donationInCents' => $data['donationInCents'],
+        ]);
 
         return $dataUpdated;
     }
