@@ -27,8 +27,7 @@ class ExceptionWithMessage extends Exception
         string $type = "danger",
         int $code = 0,
         ?Throwable $previous = null
-    )
-    {
+    ) {
         parent::__construct($message, $code, $previous);
         $this->typeForMessage = $type;
     }

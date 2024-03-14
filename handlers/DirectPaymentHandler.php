@@ -46,22 +46,22 @@ class DirectPaymentHandler extends YesWikiHandler
             list(
                 'entry' => $entry,
                 'formId' => $formId
-                ) = $this->getEntryAndFormIdSecured();
+            ) = $this->getEntryAndFormIdSecured();
 
             $data = $this->extractData($entry);
             $data = $this->appendDataForPayment($entry, $data);
 
             $headersData = $this->extractHeadersFromGet($_GET ?? [], $entry, $data);
 
-            if ($headersData['checkData']){
+            if ($headersData['checkData']) {
                 $this->checkData($data, true);
             }
 
             $output = $headersData['headerContent']
-                .$this->callAction('helloassodirectpayment',$data);
+                .$this->callAction('helloassodirectpayment', $data);
 
         } catch (ExceptionWithMessage $ex) {
-            $output = $this->render('@templates/alert-message.twig',[
+            $output = $this->render('@templates/alert-message.twig', [
                 'type' => $ex->getTypeForMessage(),
                 'message' => $ex->getMessage()
             ]);
@@ -100,29 +100,29 @@ class DirectPaymentHandler extends YesWikiHandler
                 'headerContent' => ''
             ];
         if (!empty($get[self::KEY_IN_GET_FOR_STATUS])
-            && in_array($get[self::KEY_IN_GET_FOR_STATUS], ['success', 'error', 'cancel'], true)){
+            && in_array($get[self::KEY_IN_GET_FOR_STATUS], ['success', 'error', 'cancel'], true)) {
 
             $headersData['checkData'] = false;
             $this->checkData($data, false);
 
             $amountInCents = (
-                    empty($get[self::KEY_IN_GET_FOR_AMOUNT])
+                empty($get[self::KEY_IN_GET_FOR_AMOUNT])
                     || !is_scalar($get[self::KEY_IN_GET_FOR_AMOUNT])
                     || (intval($get[self::KEY_IN_GET_FOR_AMOUNT]) <= 0)
-                ) ? 0
+            ) ? 0
                 : intval($get[self::KEY_IN_GET_FOR_AMOUNT]);
 
-            if ($amountInCents == 0){
-                if ($data['totalInCents'] > 0){
+            if ($amountInCents == 0) {
+                if ($data['totalInCents'] > 0) {
                     $amountInCents = $data['totalInCents'];
                 } else {
                     $amountInCents = $this->getLastPaymentFromEntry($entry);
                 }
             }
-            $entryLinkTxt = _t('HPF_DIRECT_PAYMENT_LINK_TO_ENTRY',[
+            $entryLinkTxt = _t('HPF_DIRECT_PAYMENT_LINK_TO_ENTRY', [
                 'title' => $entry['bf_titre']
             ]);
-            $entryLink = $this->callAction('button',[
+            $entryLink = $this->callAction('button', [
                 'class' => "btn-primary btn-xs",
                 'title' => $entryLinkTxt,
                 'text' => $entryLinkTxt,
@@ -138,7 +138,7 @@ class DirectPaymentHandler extends YesWikiHandler
                         'warningMessage' => ($data['totalInCents'] > 0)
                             ? ('<b>' ._t('HPF_DIRECT_PAYMENT_SUCCESS_WARNING'). '</b>')
                             : '',
-                        'entryLink' => $entryLink 
+                        'entryLink' => $entryLink
                     ]);
                     $isDirect = true;
                     break;
@@ -146,11 +146,11 @@ class DirectPaymentHandler extends YesWikiHandler
                     $type = 'info';
                     $message = _t('HPF_DIRECT_PAYMENT_CANCEL', [
                         'specificMessage' => ($data['totalInCents'] > 0)
-                            ? ('<b>' ._t('HPF_DIRECT_PAYMENT_CANCEL_REDO',[
+                            ? ('<b>' ._t('HPF_DIRECT_PAYMENT_CANCEL_REDO', [
                                 'ofAmount' => $this->amountToStr($data['totalInCents']),
                             ]). '</b>')
                             : _t('HPF_DIRECT_PAYMENT_CANCEL_NOTHING_TO_PAY'),
-                        'entryLink' => $entryLink 
+                        'entryLink' => $entryLink
                     ]);
                     $isDirect = ($amountInCents == 0);
                     break;
@@ -161,21 +161,21 @@ class DirectPaymentHandler extends YesWikiHandler
                     $message = _t('HPF_DIRECT_PAYMENT_ERROR', [
                         'ofAmount' => ($amountInCents != 0) ? $this->amountToStr($amountInCents) : '',
                         'specificMessage' => ($data['totalInCents'] > 0)
-                            ? ('<b>' ._t('HPF_DIRECT_PAYMENT_CANCEL_REDO',[
+                            ? ('<b>' ._t('HPF_DIRECT_PAYMENT_CANCEL_REDO', [
                                 'ofAmount' => $this->amountToStr($data['totalInCents']),
                             ]). '</b>')
                             : _t('HPF_DIRECT_PAYMENT_CANCEL_NOTHING_TO_PAY'),
-                        'entryLink' => $entryLink 
+                        'entryLink' => $entryLink
                     ]);
                     $isDirect = ($amountInCents == 0);
                     break;
             }
-            $message = str_replace("\n",'<br>',$message);
+            $message = str_replace("\n", '<br>', $message);
 
-            if ($isDirect){
+            if ($isDirect) {
                 throw new ExceptionWithMessage($message, $type);
             } else {
-                $headersData['headerContent'] = $this->render('@templates/alert-message.twig',[
+                $headersData['headerContent'] = $this->render('@templates/alert-message.twig', [
                     'type' => $type,
                     'message' => $message
                 ]);
@@ -213,7 +213,7 @@ class DirectPaymentHandler extends YesWikiHandler
             'formId' => ''
         ];
         // check current user is owner
-        if (!$this->aclService->hasAccess('read')){
+        if (!$this->aclService->hasAccess('read')) {
             throw new ExceptionWithMessage(_t('DENY_READ'));
         }
         // check current user is owner
@@ -235,7 +235,7 @@ class DirectPaymentHandler extends YesWikiHandler
         }
 
         $form = $this->formManager->getOne($output['formId']);
-        if (empty($form['bn_only_one_entry']) || $form['bn_only_one_entry'] !== 'Y'){
+        if (empty($form['bn_only_one_entry']) || $form['bn_only_one_entry'] !== 'Y') {
             throw new ExceptionWithMessage(_t('HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER'));
         }
 
@@ -257,10 +257,10 @@ class DirectPaymentHandler extends YesWikiHandler
         $user = $this->authController->getLoggedUser();
         if (
             empty($user['email'])
-            || empty($data['email']) 
+            || empty($data['email'])
             || $user['email'] != $data['email']
-            ){
-                throw new ExceptionWithMessage(_t('HPF_CURRENT_USER_SHOULD_HAVE_SAME_EMAIL_AS_ENTRY'));
+        ) {
+            throw new ExceptionWithMessage(_t('HPF_CURRENT_USER_SHOULD_HAVE_SAME_EMAIL_AS_ENTRY'));
         }
 
         // all is Right
@@ -299,7 +299,7 @@ class DirectPaymentHandler extends YesWikiHandler
 
         // payment
         foreach (['total','membership','donation','group_membership'] as $key) {
-            $keyInData = str_replace('_','',$key). 'InCents';
+            $keyInData = str_replace('_', '', $key). 'InCents';
             $data[$keyInData] = intval(
                 round(
                     floatval($entry[HpfService::CALC_FIELDNAMES[$key]] ?? 0) * 100
@@ -320,7 +320,7 @@ class DirectPaymentHandler extends YesWikiHandler
     {
         $dataUpdated = $data;
         $dataUpdated['totalAmount'] = $data['totalInCents'];
-        $dataUpdated['itemName'] = _t('HPF_DIRECT_PAYMENT_TITLE',[
+        $dataUpdated['itemName'] = _t('HPF_DIRECT_PAYMENT_TITLE', [
             'entryId' => $entry['id_fiche']
         ]);
         $dataUpdated['containsDonation'] = ($data['donationInCents'] != 0);
