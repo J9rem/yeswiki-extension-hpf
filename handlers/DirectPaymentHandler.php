@@ -216,14 +216,14 @@ class DirectPaymentHandler extends YesWikiHandler
         if (!$this->aclService->hasAccess('read')) {
             throw new ExceptionWithMessage(_t('DENY_READ'));
         }
-        // check current user is owner
-        if (!$this->aclService->check('%')){
-            throw new ExceptionWithMessage(_t('DELETEPAGE_NOT_OWNER'));
-        }
         // check if current page is an entry
         $tag = $this->wiki->GetPageTag();
         if (empty($tag) || !$this->entryManager->isEntry($tag)) {
             throw new ExceptionWithMessage(_t('HPF_SHOULD_BE_AN_ENTRY'));
+        }
+        // check current user is owner
+        if (!$this->wiki->UserIsOwner($tag)) {
+            throw new ExceptionWithMessage(_t('DELETEPAGE_NOT_OWNER'));
         }
         // prepare for action
         $output['entry'] = $this->entryManager->getOne($tag);
