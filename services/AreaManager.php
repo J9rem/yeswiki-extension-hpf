@@ -257,7 +257,7 @@ class AreaManager
                     "list" => $areaList
                 ];
             }
-            if (count($parentList) > 1){
+            if (count($parentList) > 1) {
                 $newFilters[self::KEY_FOR_PARENTS] = [
                     "icon" => "",
                     "title" => _t('HPF_AREA_MNGT_PARENTS_TITLES'),

@@ -15,4 +15,5 @@ namespace YesWiki\Hpf\Exception;
 use Exception;
 
 class PaymentAlreadyExistingException extends Exception
-{}
+{
+}

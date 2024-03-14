@@ -132,7 +132,7 @@ return [
     'HPF_RECEIPT_API_CAN_NOT_SEE_RECEIPT' => 'You can not see this receipt!',
 
     // docs/actions/bazarliste.yaml via templates/aceditor/actions-builder.tpl.html
-    // Feature UUID : hpf-area-management 
+    // Feature UUID : hpf-area-management
     'HPF_SELECTMEMBERSPARENT_FORM_LABEL' => 'Parent form',
     'HPF_SELECTMEMBERS_BY_AREA' => 'Members AND profiles in area',
     'HPF_SELECTMEMBERS_DISPLAY_FILTERS_LABEL' => 'Add structures of interest and geographical scope to filters',
@@ -159,7 +159,7 @@ return [
     'HPF_NOTHING_TO_PAY' => 'Nothing to pay for this entry.',
     'HPF_SHOULD_BE_AN_ENTRY' => 'This handler only works for entries.',
     'HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT' => 'This entry is not associated to a payment form.',
-    'HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER' => 'This entry is not associated to a form for which a user ' 
+    'HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER' => 'This entry is not associated to a form for which a user '
         .'can not have more than one entry.',
 
     // templates/hpf-import-memberships-action.twig

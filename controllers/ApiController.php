@@ -52,33 +52,33 @@ class ApiController extends YesWikiController
         $hpfService = $this->getService(HpfService::class);
         $userManager = $this->getService(UserManager::class);
         try {
-            if (empty($tag)){
+            if (empty($tag)) {
                 throw new ApiException(_t('HPF_NOT_FOR_EMPTY_TAG'));
             }
             $entry = $entryManager->getOne($tag);
-            if (empty($entry)){
+            if (empty($entry)) {
                 throw new ApiException('not existing entry');
             }
             $user = $userManager->getLoggedUser();
-            if (empty($entry['bf_mail']) || (!$this->wiki->UserIsAdmin() && $user['email'] !== $entry['bf_mail'])){
+            if (empty($entry['bf_mail']) || (!$this->wiki->UserIsAdmin() && $user['email'] !== $entry['bf_mail'])) {
                 throw new ApiException(_t('HPF_FORBIDEN_FOR_THIS_ENTRY'));
             }
             $previousValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
-            $newEntry = $hpfService->refreshEntryFromHelloAsso($entry,$user['email']);
+            $newEntry = $hpfService->refreshEntryFromHelloAsso($entry, $user['email']);
 
             return new ApiResponse([
                 'action' => 'refreshing',
                 'tag' => $tag,
                 'result' => 'refresh',
                 'needRefresh' => (md5(json_encode($entry)) != md5(json_encode($newEntry)))
-            ],200);
+            ], 200);
         } catch (ApiException $th) {
             return new ApiResponse([
                 'action' => 'refreshing',
                 'tag' => $tag,
                 'error' => $th->getMessage(),
                 'needRefresh' => false
-            ],404);
+            ], 404);
         }
     }
 
@@ -88,7 +88,7 @@ class ApiController extends YesWikiController
      */
     public function getPaymentInfo($id)
     {
-        return new ApiResponse($this->getService(HpfService::class)->getPaymentInfos($id),200);
+        return new ApiResponse($this->getService(HpfService::class)->getPaymentInfos($id), 200);
     }
 
     /**
@@ -97,7 +97,7 @@ class ApiController extends YesWikiController
      */
     public function getPaymentsViaEmail($email)
     {
-        return new ApiResponse($this->getService(HpfService::class)->getPaymentsViaEmail($email),200);
+        return new ApiResponse($this->getService(HpfService::class)->getPaymentsViaEmail($email), 200);
     }
     
     /**
@@ -106,7 +106,7 @@ class ApiController extends YesWikiController
      */
     public function refreshPaymentCache()
     {
-        return $this->callRefreshPaymentCommon('refresh-payment-cache-token',false);
+        return $this->callRefreshPaymentCommon('refresh-payment-cache-token', false);
     }
 
     /**
@@ -115,31 +115,31 @@ class ApiController extends YesWikiController
      */
     public function refreshPaymentsByCatCache()
     {
-        return $this->callRefreshPaymentCommon('refresh-payments-by-cat-cache-token',true);
+        return $this->callRefreshPaymentCommon('refresh-payments-by-cat-cache-token', true);
     }
 
     /**
      * Feature UUID : hpf-helloasso-payments-table
      * Feature UUID : hpf-payments-by-cat-table
      */
-    protected function callRefreshPaymentCommon(string $tokenKeyname,bool $byCat = false)
+    protected function callRefreshPaymentCommon(string $tokenKeyname, bool $byCat = false)
     {
         $csrfTokenController = $this->getService(CsrfTokenController::class);
         $csrfTokenController->checkToken($tokenKeyname, 'POST', 'anti-csrf-token');
         $formsIds = (empty($_POST['formsIds']) || !is_array($_POST['formsIds']))
             ? []
-            : array_filter($_POST['formsIds'],function($v,$k){
-                return in_array(intval($k),[1,2,3,4,5]) && is_scalar($v) && strval(intval($v)) === strval($v) && intval($v) > 0;
-            },ARRAY_FILTER_USE_BOTH);
+            : array_filter($_POST['formsIds'], function ($v, $k) {
+                return in_array(intval($k), [1,2,3,4,5]) && is_scalar($v) && strval(intval($v)) === strval($v) && intval($v) > 0;
+            }, ARRAY_FILTER_USE_BOTH);
         $college3to4fieldname = (
-                empty($_POST['college3to4fieldname'])
+            empty($_POST['college3to4fieldname'])
                 || !is_string($_POST['college3to4fieldname'])
-                || !preg_match('/^[a-z0-9_]+$/',$_POST['college3to4fieldname'])
-            )
+                || !preg_match('/^[a-z0-9_]+$/', $_POST['college3to4fieldname'])
+        )
             ? ''
             : $_POST['college3to4fieldname'];
-        list('code'=>$code,'output'=>$output) = $this->getService(HpfService::class)->refreshPaymentCache($formsIds,$college3to4fieldname,$byCat);
-        return new ApiResponse($output,$code);
+        list('code'=>$code, 'output'=>$output) = $this->getService(HpfService::class)->refreshPaymentCache($formsIds, $college3to4fieldname, $byCat);
+        return new ApiResponse($output, $code);
     }
 
     /**
@@ -148,29 +148,29 @@ class ApiController extends YesWikiController
      */
     public function getToken()
     {
-        return new ApiResponse($this->getService(CsrfTokenManager::class)->refreshToken('payment-admin')->getValue(),200);
+        return new ApiResponse($this->getService(CsrfTokenManager::class)->refreshToken('payment-admin')->getValue(), 200);
     }
 
     /**
      * @Route("/api/hpf/helloasso/payment/find/{date}/{amount}", methods={"POST"},options={"acl":{"public","@admins"}})
      * Feature UUID : hpf-register-payment-action
      */
-    public function findHelloAssoPayments($date,$amount)
+    public function findHelloAssoPayments($date, $amount)
     {
         $csrfTokenController = $this->getService(CsrfTokenController::class);
         $csrfTokenController->checkToken('payment-admin', 'POST', 'anti-csrf-token');
-        return new ApiResponse($this->getService(HpfController::class)->findHelloAssoPayments($date,$amount),200);
+        return new ApiResponse($this->getService(HpfController::class)->findHelloAssoPayments($date, $amount), 200);
     }
 
     /**
      * @Route("/api/hpf/helloasso/payment/{entryId}/delete/{paymentId}", methods={"POST"},options={"acl":{"public","@admins"}})
      * Feature UUID : hpf-register-payment-action
      */
-    public function deletePaymentInEntry($entryId,$paymentId)
+    public function deletePaymentInEntry($entryId, $paymentId)
     {
         $csrfTokenController = $this->getService(CsrfTokenController::class);
         $csrfTokenController->checkToken('payment-admin', 'POST', 'anti-csrf-token');
-        return new ApiResponse($this->getService(HpfController::class)->deletePaymentInEntry($entryId,$paymentId),200);
+        return new ApiResponse($this->getService(HpfController::class)->deletePaymentInEntry($entryId, $paymentId), 200);
     }
 
     /**
@@ -188,7 +188,7 @@ class ApiController extends YesWikiController
             'total',
         ];
         $data = [];
-        foreach($inputs as $input){
+        foreach($inputs as $input) {
             if(
                 empty($_POST[$input])
                 || !is_string($_POST[$input])
@@ -224,9 +224,9 @@ class ApiController extends YesWikiController
      * @Route("/api/hpf/importmembership/{mode}/{type}/{formId}", methods={"POST"},options={"acl":{"public","@admins"}})
      * Feature UUID : hpf-import-payments
      */
-    public function createEntryOrAppendPaymentForMemberShip($mode,$type,$formId)
+    public function createEntryOrAppendPaymentForMemberShip($mode, $type, $formId)
     {
-        return $this->getService(HpfImportController::class)->createEntryOrAppendPaymentForMemberShip($mode,$type,$formId);
+        return $this->getService(HpfImportController::class)->createEntryOrAppendPaymentForMemberShip($mode, $type, $formId);
     }
 
     /**
@@ -242,13 +242,13 @@ class ApiController extends YesWikiController
      * @Route("api/hpf/receipts/generate/{entryId}/{id}", methods={"POST"},options={"acl":{"public","+"}})
      * Feature UUID : hpf-receipts-creation
      */
-    public function generateReceipt(string $entryId,string $id)
+    public function generateReceipt(string $entryId, string $id)
     {
         // check inputs
-        if (empty($entryId)){
+        if (empty($entryId)) {
             throw new Exception('$entryId should not be empty !');
         }
-        if (empty($id)){
+        if (empty($id)) {
             throw new Exception('$id should not be empty !');
         }
 
@@ -259,7 +259,7 @@ class ApiController extends YesWikiController
         } catch (TokenNotFoundException $th) {
             return new ApiResponse([
                 'error' => 'bad token'
-            ],400);
+            ], 400);
         }
 
         // get Services
@@ -267,24 +267,24 @@ class ApiController extends YesWikiController
         $receiptManager = $this->getService(ReceiptManager::class);
         
 
-        if (empty($entryManager->getOne($entryId,false,null,false,true))){
+        if (empty($entryManager->getOne($entryId, false, null, false, true))) {
             throw new Exception('Not existing entry !');
         }
-        if (!$receiptManager->canSeeReceipts($entryId)){
+        if (!$receiptManager->canSeeReceipts($entryId)) {
             return new ApiResponse([
                 'error' => _t('HPF_RECEIPT_API_CAN_NOT_SEE_RECEIPT')
-            ],400);
+            ], 400);
         }
-        list($path,$errorMsg) = $receiptManager->generateReceiptForEntryIdAndNumber($entryId,$id);
-        if (empty($path)){
+        list($path, $errorMsg) = $receiptManager->generateReceiptForEntryIdAndNumber($entryId, $id);
+        if (empty($path)) {
             return new ApiResponse([
                 'error' => $errorMsg
-            ],500);
+            ], 500);
         }
         return new ApiResponse([
             'ok' => true,
             'error' => $errorMsg
-        ],200);
+        ], 200);
     }
 
     /**
@@ -295,20 +295,21 @@ class ApiController extends YesWikiController
     {
         return new ApiResponse([
             'token' => $this->getService(CsrfTokenManager::class)->getToken('hpf-receipts')->getValue()
-        ],200);;
+        ], 200);
+        ;
     }
 
     /**
      * @Route("api/hpf/receipts/getpdf/{entryId}/{id}", methods={"POST"},options={"acl":{"public","+"}})
      * Feature UUID : hpf-receipts-creation
      */
-    public function getPdf(string $entryId,string $id)
+    public function getPdf(string $entryId, string $id)
     {
         // check inputs
-        if (empty($entryId)){
+        if (empty($entryId)) {
             throw new Exception('$entryId should not be empty !');
         }
-        if (empty($id)){
+        if (empty($id)) {
             throw new Exception('$id should not be empty !');
         }
 
@@ -319,44 +320,44 @@ class ApiController extends YesWikiController
         } catch (TokenNotFoundException $th) {
             return new ApiResponse([
                 'error' => 'bad token'
-            ],400);
+            ], 400);
         }
 
         // get Services
         $entryManager = $this->getService(EntryManager::class);
         $receiptManager = $this->getService(ReceiptManager::class);
 
-        $entry = $entryManager->getOne($entryId,false,null,false,true); // no cache, bypass acls for payments
-        if (empty($entry)){
+        $entry = $entryManager->getOne($entryId, false, null, false, true); // no cache, bypass acls for payments
+        if (empty($entry)) {
             throw new Exception('Not existing entry !');
         }
         
-        if (!$receiptManager->canSeeReceipts($entryId)){
+        if (!$receiptManager->canSeeReceipts($entryId)) {
             return new ApiResponse([
                 'error' => _t('HPF_RECEIPT_API_CAN_NOT_SEE_RECEIPT')
-            ],400);
+            ], 400);
         }
         
         // check paymentId existing
         $existingPayments = $receiptManager->getPaymentsFromEntry($entry);
-        if (!array_key_exists($id,$existingPayments)){
+        if (!array_key_exists($id, $existingPayments)) {
             throw new Exception('paymentId not existing for this entry !');
         }
-        list($path) = $receiptManager->getExistingReceiptForEntryIdAndNumber($entryId,$id,$existingPayments);
-        if (empty($path) || !is_file($path)){
+        list($path) = $receiptManager->getExistingReceiptForEntryIdAndNumber($entryId, $id, $existingPayments);
+        if (empty($path) || !is_file($path)) {
             return new ApiResponse([
                 'error' => 'file not found'
-            ],500);
+            ], 500);
         }
         $content = file_get_contents($path);
-        if (empty($content)){
+        if (empty($content)) {
             return new ApiResponse([
                 'error' => 'empty file'
-            ],500);
+            ], 500);
         }
 
         $payment = $existingPayments[$id];
-        $filename = basename(dirname($path)).'-'.preg_replace('/^([0-9]{8})-[0-9]+-([0-9A-Za-z]+)-([^-]+)-[0-9A-Fa-f]+(\.pdf)$/','$1-$2-$3-$4',basename($path));
+        $filename = basename(dirname($path)).'-'.preg_replace('/^([0-9]{8})-[0-9]+-([0-9A-Za-z]+)-([^-]+)-[0-9A-Fa-f]+(\.pdf)$/', '$1-$2-$3-$4', basename($path));
         
         ob_end_clean();
         $headers = [

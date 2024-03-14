@@ -40,18 +40,18 @@ class StructureFinder
      * if several, return empty
      * @param string $deptcode
      * @param string $formId
-     * @return string 
+     * @return string
      */
     public function findStructureFromDept(string $deptcode, string $formId): string
     {
-        if (empty($deptcode) || empty($formId)){
+        if (empty($deptcode) || empty($formId)) {
             return '';
         }
-        if (!array_key_exists($deptcode,$this->cache['structures'])){
+        if (!array_key_exists($deptcode, $this->cache['structures'])) {
             $this->cache['structures'][$deptcode] = '';
             $field = $this->getField($formId);
-            if (!empty($field)){
-                $this->cache['structures'][$deptcode] = $this->findStructureFromDeptAndField($deptcode,$field);
+            if (!empty($field)) {
+                $this->cache['structures'][$deptcode] = $this->findStructureFromDeptAndField($deptcode, $field);
             }
             
         }
@@ -65,17 +65,17 @@ class StructureFinder
      */
     protected function getField(?string $formId): ?SelectEntryField
     {
-        if (empty($formId)){
+        if (empty($formId)) {
             return null;
         }
-        if (!array_key_exists($formId,$this->cache['fields'])){
+        if (!array_key_exists($formId, $this->cache['fields'])) {
             $this->cache['fields'][$formId] = null;
             $form = $this->formManager->getOne($formId);
-            if (!empty($form['prepared'])){
-                foreach($form['prepared'] as $field){
+            if (!empty($form['prepared'])) {
+                foreach($form['prepared'] as $field) {
                     if (empty($this->cache['fields'][$formId])
                         && $field instanceof SelectEntryField
-                        && in_array($field->getName(),['bf_structure_locale_adhesion_groupe','bf_structure_locale_adhesion'])){
+                        && in_array($field->getName(), ['bf_structure_locale_adhesion_groupe','bf_structure_locale_adhesion'])) {
                         $this->cache['fields'][$formId] = $field;
                     }
                 }
@@ -91,33 +91,33 @@ class StructureFinder
      * @param string $wantedStructure
      * @return string
      */
-    public function findStructureFromDeptAndField(string $deptcode,?SelectEntryField $field,string $wantedStructure= ''): string
+    public function findStructureFromDeptAndField(string $deptcode, ?SelectEntryField $field, string $wantedStructure= ''): string
     {
-        if (empty($field)){
+        if (empty($field)) {
             return '';
         }
         $options = $field->getOptions();
         $entries = array_map(
-            function($entryId){
+            function ($entryId) {
                 return $this->entryManager->getOne($entryId);
             },
             array_keys($options)
         );
         $entries = array_filter(
             $entries,
-            function($e) use ($deptcode){
+            function ($e) use ($deptcode) {
                 return !empty($e['checkboxListeDepartementsFrancais'])
-                    && in_array($deptcode,explode(',',$e['checkboxListeDepartementsFrancais']));
+                    && in_array($deptcode, explode(',', $e['checkboxListeDepartementsFrancais']));
             }
         );
-        if (!empty($wantedStructure) && count($entries) > 1){
+        if (!empty($wantedStructure) && count($entries) > 1) {
             $correspondingEntries = array_filter(
                 $entries,
-                function($e) use ($wantedStructure){
+                function ($e) use ($wantedStructure) {
                     return $e['id_fiche'] == $wantedStructure;
                 }
             );
-            if (!empty($correspondingEntries)){
+            if (!empty($correspondingEntries)) {
                 return $wantedStructure;
             }
         }

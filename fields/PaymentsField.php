@@ -44,7 +44,7 @@ class PaymentsField extends TextField
     {
         $value = $this->getValue($entry);
         $payments = $this->convertStringToPaymentsSorted($value);
-        return empty($value) ? '' : $this->render('@bazar/fields/payments.twig',compact(['payments','entry']));
+        return empty($value) ? '' : $this->render('@bazar/fields/payments.twig', compact(['payments','entry']));
     }
 
     protected function renderInput($entry)
@@ -54,7 +54,7 @@ class PaymentsField extends TextField
         $formManager = $this->getService(FormManager::class);
         $paymentsFormIds = $this->hpfService->getCurrentPaymentsFormIds();
         $formIds = [];
-        if (empty($entry['id_typeannonce'])){
+        if (empty($entry['id_typeannonce'])) {
             $formsIds = $paymentsFormIds;
         } else {
             $formIds = [$entry['id_typeannonce']];
@@ -63,25 +63,25 @@ class PaymentsField extends TextField
             'years' => [],
             'origins' => []
         ];
-        foreach(HpfService::PAYED_FIELDNAMES['years'] as $name => $fieldName){
+        foreach(HpfService::PAYED_FIELDNAMES['years'] as $name => $fieldName) {
             $field = null;
             foreach ($formIds as $formId) {
-                if (empty($field)){
+                if (empty($field)) {
                     $field = $formManager->findFieldFromNameOrPropertyName($fieldName, $formId);
                 }
             }
-            if (!empty($field)){
+            if (!empty($field)) {
                 $options['years'][$name] = $field->getOptions();
             }
         }
-        foreach($paymentsFormIds as $id){
+        foreach($paymentsFormIds as $id) {
             $form = $formManager->getOne($id);
-            if ($form){
+            if ($form) {
                 $name = self::AVAILABLE_ORIGINS[0].":$id";
-                $sameIdOption = array_filter($options['origins'],function($opt) use ($name){
+                $sameIdOption = array_filter($options['origins'], function ($opt) use ($name) {
                     return ($opt['id'] ?? '') == $name;
                 });
-                if (empty($sameIdOption)){
+                if (empty($sameIdOption)) {
                     $options['origins'][] = [
                         'id' => $name,
                         'name' => "$name ({$form['bn_label_nature']})"
@@ -89,14 +89,14 @@ class PaymentsField extends TextField
                 }
             }
         }
-        foreach(self::AVAILABLE_ORIGINS as $name){
+        foreach(self::AVAILABLE_ORIGINS as $name) {
             $options['origins'][] = [
                 'id' => $name,
                 'name' => $name
             ];
         }
 
-        return $this->render('@bazar/inputs/payments.twig',[
+        return $this->render('@bazar/inputs/payments.twig', [
             'payments' => $payments,
             'value' => json_encode($payments),
             'options' => $options
@@ -107,7 +107,7 @@ class PaymentsField extends TextField
     {
         $this->hpfService = $this->getService(HpfService::class);
         $payments = $this->hpfService->convertStringToPayments($value);
-        uksort($payments,function($keyA,$keyB) use ($payments){
+        uksort($payments, function ($keyA, $keyB) use ($payments) {
             $valA = $payments[$keyA];
             $valB = $payments[$keyB];
             $result = ($valB['date'] <=> $valA['date']);
@@ -125,8 +125,8 @@ class PaymentsField extends TextField
         }
         $dirtyHtml = $this->getValue($entry);
         $fieldsToRemove = [];
-        foreach($entry as $key=>$value){
-            if (is_string($key) && substr($key,0,strlen('datepicker-')) == 'datepicker-'){
+        foreach($entry as $key=>$value) {
+            if (is_string($key) && substr($key, 0, strlen('datepicker-')) == 'datepicker-') {
                 $fieldsToRemove[] = $key;
             }
         }

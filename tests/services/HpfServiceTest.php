@@ -53,21 +53,20 @@ class HpfServiceTest extends YesWikiTestCase
      */
     public function testGetHpfParams(
         array $services
-    ) 
-    {
+    ) {
         $thrown = false;
         $configurationService = $services['wiki']->services->get(ConfigurationService::class);
         $wakkaConfig = $this->getConfigValuesFromFile($configurationService);
-        try{
+        try {
             $params = $services['hpfService']->getHpfParams();
-        } catch (Throwable $th){
+        } catch (Throwable $th) {
             $thrown = true;
         }
-        $this->assertSame(is_null($wakkaConfig),$thrown,'\'hpf\' was not in same state in config than in service');
-        if (!$thrown){
+        $this->assertSame(is_null($wakkaConfig), $thrown, '\'hpf\' was not in same state in config than in service');
+        if (!$thrown) {
             $this->assertIsArray($params);
         }
-        return array_merge($services,compact(['wakkaConfig']));
+        return array_merge($services, compact(['wakkaConfig']));
     }
 
     protected function getConfigValuesFromFile(ConfigurationService $configurationService): ?array
@@ -87,19 +86,18 @@ class HpfServiceTest extends YesWikiTestCase
      */
     public function testGetCurrentPaymentsFormIds(
         array $services
-    ) 
-    {
+    ) {
         $thrown = false;
-        try{
+        try {
             $formIds = $services['hpfService']->getCurrentPaymentsFormIds();
-        } catch (Throwable $th){
+        } catch (Throwable $th) {
             $thrown = true;
         }
-        $this->assertSame(is_null($services['wakkaConfig']),$thrown,'\'hpf\' was not in same state in config than in service');
-        if (!$thrown){
+        $this->assertSame(is_null($services['wakkaConfig']), $thrown, '\'hpf\' was not in same state in config than in service');
+        if (!$thrown) {
             $this->assertIsArray($formIds);
         }
-        return array_merge($services,['hpfParamdefined'=>!$thrown]);
+        return array_merge($services, ['hpfParamdefined'=>!$thrown]);
     }
 
     /**
@@ -109,21 +107,20 @@ class HpfServiceTest extends YesWikiTestCase
      */
     public function testHpfParamDefined(
         array $services
-    ) 
-    {
+    ) {
         $GLOBALS['wiki'] = $services['wiki'];
-        $this->assertTrue($services['hpfParamdefined'],"'hpf' param must be defined !");
+        $this->assertTrue($services['hpfParamdefined'], "'hpf' param must be defined !");
         self::$cache['canSetList'] = true;
         $paymentsFormIds = $services['hpfService']->getCurrentPaymentsFormIds();
         $formManager = $services['wiki']->services->get(FormManager::class);
-        foreach($paymentsFormIds as $id){
+        foreach($paymentsFormIds as $id) {
             $form = $formManager->getOne($id);
-            if (!empty($id) && empty($form)){
+            if (!empty($id) && empty($form)) {
                 self::$cache['currentFormId'] = strval($id);
                 break;
             }
         }
-        if (empty(self::$cache['currentFormId'])){
+        if (empty(self::$cache['currentFormId'])) {
             self::$cache['currentFormId'] = $formManager->findNewId();
             $configurationService = $services['wiki']->services->get(ConfigurationService::class);
             $config = $configurationService->getConfiguration('wakka.config.php');
@@ -133,11 +130,11 @@ class HpfServiceTest extends YesWikiTestCase
             $config['hpf'] = array_merge(
                 $config['hpf'] ?? [],
                 [
-                    'contribFormIds' => implode(',',$newValues)
+                    'contribFormIds' => implode(',', $newValues)
                 ]
             );
             $configurationService->write($config);
-            $this->assertTrue(false,'all contrib form ids are used => RESTART TESTS');
+            $this->assertTrue(false, 'all contrib form ids are used => RESTART TESTS');
         }
         return $services;
     }
@@ -154,10 +151,9 @@ class HpfServiceTest extends YesWikiTestCase
     public function testBfCalc(
         array $data,
         array $services
-    ) 
-    {
+    ) {
         // create an entry
-        Helper::updateEntry(true,array_intersect_key(
+        Helper::updateEntry(true, array_intersect_key(
             $data,
             array_fill_keys([
                 'bf_montant_adhesion_mixte_college_1_libre',
@@ -166,24 +162,25 @@ class HpfServiceTest extends YesWikiTestCase
                 'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1',
                 'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2',
                 'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel'
-            ],1)
-        ),$services['wiki'],self::$cache['currentFormId'] ?? '');
+            ], 1)
+        ), $services['wiki'], self::$cache['currentFormId'] ?? '');
         
         $entries = $services['hpfService']->getCurrentContribEntries(
-            self::$cache['currentFormId'], 
+            self::$cache['currentFormId'],
             Helper::ENTRY_EMAIL,
-            Helper::ENTRY_ID);
+            Helper::ENTRY_ID
+        );
 
         $entry = !empty($entries) ? $entries[array_key_first($entries)] : [];
 
         // delete the entry
-        Helper::updateEntry(false,[],$services['wiki'],self::$cache['currentFormId'] ?? '');
+        Helper::updateEntry(false, [], $services['wiki'], self::$cache['currentFormId'] ?? '');
 
         // tests
-        $this->assertNotEmpty($entry,'entry should not be empty');
-        $this->assertIsArray($entry,'entry should be array');
-        $this->assertArrayHasKey('bf_mail',$entry,"entry should contain key 'bf_mail'");
-        $this->assertSame(Helper::ENTRY_EMAIL,$entry['bf_mail'],"entry['bf_mail'] should be ".Helper::ENTRY_EMAIL);
+        $this->assertNotEmpty($entry, 'entry should not be empty');
+        $this->assertIsArray($entry, 'entry should be array');
+        $this->assertArrayHasKey('bf_mail', $entry, "entry should contain key 'bf_mail'");
+        $this->assertSame(Helper::ENTRY_EMAIL, $entry['bf_mail'], "entry['bf_mail'] should be ".Helper::ENTRY_EMAIL);
         foreach([
             'bf_montant_adhesion_mixte_college_1_libre',
             'bf_montant_adhesion_mixte_college_2_libre',
@@ -195,15 +192,15 @@ class HpfServiceTest extends YesWikiTestCase
             'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1',
             'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2',
             'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel'
-        ] as $key){
-            $this->assertArrayHasKey($key,$entry,"entry should contain key '$key'");
+        ] as $key) {
+            $this->assertArrayHasKey($key, $entry, "entry should contain key '$key'");
         }
         foreach([
             'bf_montant_adhesion_mixte_college_1_libre',
             'bf_montant_adhesion_mixte_college_2_libre',
             'bf_montant_don_ponctuel_libre'
-        ] as $key){
-            $this->assertSame($data[$key],$entry[$key],"entry['$key'] should be {$data[$key]}");
+        ] as $key) {
+            $this->assertSame($data[$key], $entry[$key], "entry['$key'] should be {$data[$key]}");
         }
         foreach([
             'bf_adhesion_a_payer',
@@ -213,8 +210,8 @@ class HpfServiceTest extends YesWikiTestCase
             'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1',
             'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2',
             'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel'
-        ] as $key){
-            $this->assertSame($data['waited'][$key],$entry[$key],"entry['$key'] should by {$data['waited'][$key]}");
+        ] as $key) {
+            $this->assertSame($data['waited'][$key], $entry[$key], "entry['$key'] should by {$data['waited'][$key]}");
         }
     }
 
@@ -242,28 +239,28 @@ class HpfServiceTest extends YesWikiTestCase
         ];
         return [
             'empty' => [$default],
-            'only adhesion' => [array_replace_recursive($default,[
+            'only adhesion' => [array_replace_recursive($default, [
                 'bf_montant_adhesion_mixte_college_1_libre' => '10.0',
                 'waited' => [
                     'bf_adhesion_a_payer' => '10',
                     'bf_calc' => '10',
                 ]
             ])],
-            'only adhesion group' => [array_replace_recursive($default,[
+            'only adhesion group' => [array_replace_recursive($default, [
                 'bf_montant_adhesion_mixte_college_2_libre' => '11.0',
                 'waited' => [
                     'bf_adhesion_groupe_a_payer' => '11',
                     'bf_calc' => '11',
                 ]
             ])],
-            'only donation' => [array_replace_recursive($default,[
+            'only donation' => [array_replace_recursive($default, [
                 'bf_montant_don_ponctuel_libre' => '12.1',
                 'waited' => [
                     'bf_don_a_payer' => '12.1',
                     'bf_calc' => '12.1',
                 ]
             ])],
-            'two adhesions' => [array_replace_recursive($default,[
+            'two adhesions' => [array_replace_recursive($default, [
                 'bf_montant_adhesion_mixte_college_1_libre' => '5.6',
                 'bf_montant_adhesion_mixte_college_2_libre' => '6.7',
                 'waited' => [
@@ -272,7 +269,7 @@ class HpfServiceTest extends YesWikiTestCase
                     'bf_calc' => '12.3',
                 ]
             ])],
-            'two adhesions and 0 donation' => [array_replace_recursive($default,[
+            'two adhesions and 0 donation' => [array_replace_recursive($default, [
                 'bf_montant_adhesion_mixte_college_1_libre' => '5.6',
                 'bf_montant_adhesion_mixte_college_2_libre' => '6.7',
                 'bf_montant_don_ponctuel_libre' => '0',
@@ -283,7 +280,7 @@ class HpfServiceTest extends YesWikiTestCase
                     'bf_calc' => '12.3',
                 ]
             ])],
-            'two adhesions and donation' => [array_replace_recursive($default,[
+            'two adhesions and donation' => [array_replace_recursive($default, [
                 'bf_montant_adhesion_mixte_college_1_libre' => '5.6',
                 'bf_montant_adhesion_mixte_college_2_libre' => '6.7',
                 'bf_montant_don_ponctuel_libre' => '2.1',
@@ -310,25 +307,24 @@ class HpfServiceTest extends YesWikiTestCase
     public function testUpdateEntryWithPayment(
         array $data,
         array $services
-    ) 
-    {
-        $entriesToCheck = $this->prepareEntriesToTest($data,$services);
+    ) {
+        $entriesToCheck = $this->prepareEntriesToTest($data, $services);
         
         // tests
         foreach ($entriesToCheck as $type => $entry) {
-            $this->testEntry($data,$entry,$type);
+            $this->testEntry($data, $entry, $type);
         }
 
         // payment already defined
         
-        $entriesToCheck = $this->prepareEntriesToTest(array_replace_recursive($data,[
+        $entriesToCheck = $this->prepareEntriesToTest(array_replace_recursive($data, [
             'bf_payments' => $data['paymentId']
-        ]),$services);
+        ]), $services);
 
-        $this->testEntry($data,$entriesToCheck['calc'],'calc payment existing');
+        $this->testEntry($data, $entriesToCheck['calc'], 'calc payment existing');
         $currentYear = (new DateTime($data['paymentDate']))->format("Y");
         $this->testEntry(
-            array_replace_recursive($data,[
+            array_replace_recursive($data, [
                 'waited' => array_merge(array_intersect_key(
                     $data,
                     array_fill_keys([
@@ -338,8 +334,8 @@ class HpfServiceTest extends YesWikiTestCase
                         'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1',
                         'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2',
                         'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel'
-                    ],1)
-                ),[
+                    ], 1)
+                ), [
                     'bf_adhesion_a_payer' => strval(floatval($data['bf_montant_adhesion_mixte_college_1_libre'])),
                     'bf_adhesion_groupe_a_payer' => strval(floatval($data['bf_montant_adhesion_mixte_college_2_libre'])),
                     'bf_don_a_payer' => strval(floatval($data['bf_montant_don_ponctuel_libre'])),
@@ -353,30 +349,30 @@ class HpfServiceTest extends YesWikiTestCase
             ]),
             $entriesToCheck['updated'],
             'updated payment existing',
-            function($entry) use ($data){
-                $this->assertSame($data['paymentId'],$entry['bf_payments'],"entry['bf_payments'] (updated payment existing) should be same as '{$data['paymentId']}'");
+            function ($entry) use ($data) {
+                $this->assertSame($data['paymentId'], $entry['bf_payments'], "entry['bf_payments'] (updated payment existing) should be same as '{$data['paymentId']}'");
                 return;
             }
         );
 
         // other payment already defined
         
-        $entriesToCheck = $this->prepareEntriesToTest(array_replace_recursive($data,[
+        $entriesToCheck = $this->prepareEntriesToTest(array_replace_recursive($data, [
             'bf_payments' => Helper::OTHER_PAYMENT_ID
-        ]),$services);
+        ]), $services);
 
         foreach ($entriesToCheck as $type => $entry) {
-            $this->testEntry($data,$entry,"$type other payment existing");
-            $jsonDecoded = json_decode($entry['bf_payments'],true);
-            $this->assertArrayHasKey(Helper::OTHER_PAYMENT_ID,$jsonDecoded,"entry['bf_payments'] ($type other payment existing) should be array with key '".Helper::OTHER_PAYMENT_ID."'");
-            $this->assertIsArray($jsonDecoded[Helper::OTHER_PAYMENT_ID],"entry['bf_payments'] ($type other payment existing) should be array of array json encoded");
+            $this->testEntry($data, $entry, "$type other payment existing");
+            $jsonDecoded = json_decode($entry['bf_payments'], true);
+            $this->assertArrayHasKey(Helper::OTHER_PAYMENT_ID, $jsonDecoded, "entry['bf_payments'] ($type other payment existing) should be array with key '".Helper::OTHER_PAYMENT_ID."'");
+            $this->assertIsArray($jsonDecoded[Helper::OTHER_PAYMENT_ID], "entry['bf_payments'] ($type other payment existing) should be array of array json encoded");
             foreach([
                 'date' => '',
                 'origin' => 'helloasso',
                 'total' => ''
-            ] as $key => $waitedValue){
-                $this->assertArrayHasKey($key,$jsonDecoded[Helper::OTHER_PAYMENT_ID],"entry['bf_payments'] ($type other payment existing) should be array json_encoded with key '$key'");
-                $this->assertSame($waitedValue,$jsonDecoded[Helper::OTHER_PAYMENT_ID][$key],"entry['bf_payments']['$key'] ($type other payment existing) should be same as '".json_encode($waitedValue)."'");
+            ] as $key => $waitedValue) {
+                $this->assertArrayHasKey($key, $jsonDecoded[Helper::OTHER_PAYMENT_ID], "entry['bf_payments'] ($type other payment existing) should be array json_encoded with key '$key'");
+                $this->assertSame($waitedValue, $jsonDecoded[Helper::OTHER_PAYMENT_ID][$key], "entry['bf_payments']['$key'] ($type other payment existing) should be same as '".json_encode($waitedValue)."'");
             }
         }
 
@@ -392,7 +388,7 @@ class HpfServiceTest extends YesWikiTestCase
     protected function prepareEntriesToTest(array $data, array $services): array
     {
         // create an entry
-        Helper::updateEntry(true,array_intersect_key(
+        Helper::updateEntry(true, array_intersect_key(
             $data,
             array_fill_keys([
                 'bf_montant_adhesion_mixte_college_1_libre',
@@ -402,8 +398,8 @@ class HpfServiceTest extends YesWikiTestCase
                 'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1',
                 'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2',
                 'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel'
-            ],1)
-        ),$services['wiki'],self::$cache['currentFormId'] ?? '');
+            ], 1)
+        ), $services['wiki'], self::$cache['currentFormId'] ?? '');
 
         $user = new user();
         $user->email = Helper::ENTRY_EMAIL;
@@ -423,7 +419,7 @@ class HpfServiceTest extends YesWikiTestCase
         $rawentry = $entryManager->getOne(Helper::ENTRY_ID, false, null, false, true); // no cache
 
         $entriesToCheck = [];
-        $entriesToCheck['calc'] = $services['hpfService']->updateEntryWithPayment($rawentry,$payment);
+        $entriesToCheck['calc'] = $services['hpfService']->updateEntryWithPayment($rawentry, $payment);
 
         // test refreshPaymentsInfo
         $services['hpfService']->refreshPaymentsInfo(
@@ -437,7 +433,7 @@ class HpfServiceTest extends YesWikiTestCase
         $entriesToCheck['updated'] = $entryManager->getOne(Helper::ENTRY_ID, false, null, false, true);
 
         // delete the entry
-        Helper::updateEntry(false,[],$services['wiki'],self::$cache['currentFormId'] ?? '');
+        Helper::updateEntry(false, [], $services['wiki'], self::$cache['currentFormId'] ?? '');
         return $entriesToCheck;
     }
 
@@ -448,21 +444,21 @@ class HpfServiceTest extends YesWikiTestCase
      * @param string $type
      * @param callable $testPayment
      */
-    protected function testEntry(array $data,array $entry,string $type, $testPayment = null)
+    protected function testEntry(array $data, array $entry, string $type, $testPayment = null)
     {
-        $this->assertNotEmpty($entry,"entry ($type) should not be empty");
-        $this->assertIsArray($entry,"entry ($type) should be array");
-        $this->assertArrayHasKey('bf_payments',$entry,"entry ($type) should contain key 'bf_payments'");
-        $this->assertIsString($entry['bf_payments'],"entry ($type) should be a string");
-        if (!is_callable($testPayment)){
-            $jsonDecoded = json_decode($entry['bf_payments'],true);
-            $this->assertIsArray($jsonDecoded,"entry['bf_payments'] ($type) should be array json encoded");
-            $this->assertArrayHasKey($data['paymentId'],$jsonDecoded,"entry['bf_payments'] ($type) should be array with key '{$data['paymentId']}'");
-            $this->assertIsArray($jsonDecoded[$data['paymentId']],"entry['bf_payments'] ($type) should be array of array json encoded");
-            foreach($data['waited']['bf_payment'] as $key => $waitedValue){
-                $this->assertArrayHasKey($key,$jsonDecoded[$data['paymentId']],"entry['bf_payments'] ($type) should be array json_encoded with key '$key'");
-                $w = is_string($waitedValue) ? str_replace('{formId}',self::$cache['currentFormId'],$waitedValue) : $waitedValue;
-                $this->assertSame($w,$jsonDecoded[$data['paymentId']][$key],"entry['bf_payments']['$key'] ($type) should be same as '".json_encode($w)."'");
+        $this->assertNotEmpty($entry, "entry ($type) should not be empty");
+        $this->assertIsArray($entry, "entry ($type) should be array");
+        $this->assertArrayHasKey('bf_payments', $entry, "entry ($type) should contain key 'bf_payments'");
+        $this->assertIsString($entry['bf_payments'], "entry ($type) should be a string");
+        if (!is_callable($testPayment)) {
+            $jsonDecoded = json_decode($entry['bf_payments'], true);
+            $this->assertIsArray($jsonDecoded, "entry['bf_payments'] ($type) should be array json encoded");
+            $this->assertArrayHasKey($data['paymentId'], $jsonDecoded, "entry['bf_payments'] ($type) should be array with key '{$data['paymentId']}'");
+            $this->assertIsArray($jsonDecoded[$data['paymentId']], "entry['bf_payments'] ($type) should be array of array json encoded");
+            foreach($data['waited']['bf_payment'] as $key => $waitedValue) {
+                $this->assertArrayHasKey($key, $jsonDecoded[$data['paymentId']], "entry['bf_payments'] ($type) should be array json_encoded with key '$key'");
+                $w = is_string($waitedValue) ? str_replace('{formId}', self::$cache['currentFormId'], $waitedValue) : $waitedValue;
+                $this->assertSame($w, $jsonDecoded[$data['paymentId']][$key], "entry['bf_payments']['$key'] ($type) should be same as '".json_encode($w)."'");
             }
         } else {
             $testPayment($entry);
@@ -478,9 +474,9 @@ class HpfServiceTest extends YesWikiTestCase
             'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_1',
             'liste'.Helper::CHOICELIST_ID.'bf_montant_adhesion_college_2',
             'liste'.Helper::CHOICELIST_ID.'bf_montant_don_ponctuel'
-        ] as $key){
-            $this->assertArrayHasKey($key,$entry,"entry ($type) should contain key '$key'");
-            $this->assertSame($data['waited'][$key],$entry[$key],"entry['$key'] ($type) should be '{$data['waited'][$key]}'");
+        ] as $key) {
+            $this->assertArrayHasKey($key, $entry, "entry ($type) should contain key '$key'");
+            $this->assertSame($data['waited'][$key], $entry[$key], "entry['$key'] ($type) should be '{$data['waited'][$key]}'");
         }
         $currentYear = (new DateTime())->format("Y");
         foreach ([
@@ -488,8 +484,8 @@ class HpfServiceTest extends YesWikiTestCase
             'bf_adhesion_groupe_payee',
             'bf_dons_payes',
         ] as $key) {
-            $this->assertArrayHasKey("{$key}_$currentYear",$entry,"entry ($type) should contain key '{$key}_$currentYear'");
-            $this->assertSame($data["{$key}_$currentYear"],$entry["{$key}_$currentYear"],"entry['{$key}_$currentYear'] ($type) should be '{$data["{$key}_$currentYear"]}'");
+            $this->assertArrayHasKey("{$key}_$currentYear", $entry, "entry ($type) should contain key '{$key}_$currentYear'");
+            $this->assertSame($data["{$key}_$currentYear"], $entry["{$key}_$currentYear"], "entry['{$key}_$currentYear'] ($type) should be '{$data["{$key}_$currentYear"]}'");
         }
     }
 
@@ -545,7 +541,7 @@ class HpfServiceTest extends YesWikiTestCase
         $currentYear = $date->format("Y");
         $default = $this->getDefaultTestData();
         return [
-            'empty' => [array_replace_recursive($default,[
+            'empty' => [array_replace_recursive($default, [
                 'paymentAmount' => '100',
                 "bf_dons_payes_$currentYear" => '100',
                 'waited' => [
@@ -557,7 +553,7 @@ class HpfServiceTest extends YesWikiTestCase
                     ]
                 ],
             ])],
-            'partial adhesion only' => [array_replace_recursive($default,[
+            'partial adhesion only' => [array_replace_recursive($default, [
                 'bf_montant_adhesion_mixte_college_1_libre' => '20',
                 'paymentAmount' => '10',
                 'waited' => [
@@ -573,7 +569,7 @@ class HpfServiceTest extends YesWikiTestCase
                 ],
                 "bf_adhesion_payee_$currentYear" => '10'
             ])],
-            'full adhesion only' => [array_replace_recursive($default,[
+            'full adhesion only' => [array_replace_recursive($default, [
                 'bf_montant_adhesion_mixte_college_1_libre' => '20',
                 'paymentAmount' => '20',
                 'waited' => [
@@ -587,7 +583,7 @@ class HpfServiceTest extends YesWikiTestCase
                 ],
                 "bf_adhesion_payee_$currentYear" => '20'
             ])],
-            'more than adhesion only' => [array_replace_recursive($default,[
+            'more than adhesion only' => [array_replace_recursive($default, [
                 'bf_montant_adhesion_mixte_college_1_libre' => '20',
                 'paymentAmount' => '30.4',
                 'waited' => [
@@ -605,7 +601,7 @@ class HpfServiceTest extends YesWikiTestCase
                 "bf_adhesion_payee_$currentYear" => '20',
                 "bf_dons_payes_$currentYear" => '10.4'
             ])],
-            'partial adhesion groupe only' => [array_replace_recursive($default,[
+            'partial adhesion groupe only' => [array_replace_recursive($default, [
                 'bf_montant_adhesion_mixte_college_2_libre' => '23',
                 'paymentAmount' => '10',
                 'waited' => [
@@ -621,7 +617,7 @@ class HpfServiceTest extends YesWikiTestCase
                 ],
                 "bf_adhesion_groupe_payee_$currentYear" => '10',
             ])],
-            'full adhesion groupe only' => [array_replace_recursive($default,[
+            'full adhesion groupe only' => [array_replace_recursive($default, [
                 'bf_montant_adhesion_mixte_college_2_libre' => '24',
                 'paymentAmount' => '24',
                 'waited' => [
@@ -635,7 +631,7 @@ class HpfServiceTest extends YesWikiTestCase
                 ],
                 "bf_adhesion_groupe_payee_$currentYear" => '24',
             ])],
-            'more than adhesion groupe only' => [array_replace_recursive($default,[
+            'more than adhesion groupe only' => [array_replace_recursive($default, [
                 'bf_montant_adhesion_mixte_college_2_libre' => '25',
                 'paymentAmount' => '30.4',
                 'waited' => [
@@ -653,7 +649,7 @@ class HpfServiceTest extends YesWikiTestCase
                 "bf_adhesion_groupe_payee_$currentYear" => '25',
                 "bf_dons_payes_$currentYear" => '5.4',
             ])],
-            'partial don only' => [array_replace_recursive($default,[
+            'partial don only' => [array_replace_recursive($default, [
                 'bf_montant_don_ponctuel_libre' => '17',
                 'paymentAmount' => '10',
                 'waited' => [
@@ -670,7 +666,7 @@ class HpfServiceTest extends YesWikiTestCase
                 ],
                 "bf_dons_payes_$currentYear" => '10',
             ])],
-            'full don only' => [array_replace_recursive($default,[
+            'full don only' => [array_replace_recursive($default, [
                 'bf_montant_don_ponctuel_libre' => '18',
                 'paymentAmount' => '18',
                 'waited' => [
@@ -685,7 +681,7 @@ class HpfServiceTest extends YesWikiTestCase
                 ],
                 "bf_dons_payes_$currentYear" => '18',
             ])],
-            'more than don only' => [array_replace_recursive($default,[
+            'more than don only' => [array_replace_recursive($default, [
                 'bf_montant_don_ponctuel_libre' => '17',
                 'paymentAmount' => '30.9',
                 'waited' => [
@@ -708,14 +704,14 @@ class HpfServiceTest extends YesWikiTestCase
      */
     protected function setUp(): void
     {
-        if (empty(self::$myWiki)){
+        if (empty(self::$myWiki)) {
             return;
         }
-        if ((self::$cache['canSetList'] ?? false) === true){
+        if ((self::$cache['canSetList'] ?? false) === true) {
             // create List
-            Helper::updateList(true,self::$myWiki);
+            Helper::updateList(true, self::$myWiki);
             // create Form
-            self::$cache['currentFormId'] = Helper::updateForm(true,self::$myWiki,self::$cache['currentFormId'] ?? '');
+            self::$cache['currentFormId'] = Helper::updateForm(true, self::$myWiki, self::$cache['currentFormId'] ?? '');
         }
     }
     
@@ -724,13 +720,13 @@ class HpfServiceTest extends YesWikiTestCase
      */
     public static function tearDownAfterClass(): void
     {
-        if (empty(self::$myWiki)){
+        if (empty(self::$myWiki)) {
             return;
         }
         // remove List
-        Helper::updateList(false,self::$myWiki);
+        Helper::updateList(false, self::$myWiki);
         // remove Form
-        self::$cache['currentFormId'] = Helper::updateForm(false,self::$myWiki,self::$cache['currentFormId'] ?? '');
+        self::$cache['currentFormId'] = Helper::updateForm(false, self::$myWiki, self::$cache['currentFormId'] ?? '');
     }
 
 

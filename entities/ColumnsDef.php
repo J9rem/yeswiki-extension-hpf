@@ -19,7 +19,7 @@ use JsonSerializable;
 use PhpOffice\PhpSpreadsheet\Shared\Date as PhpSpreadsheetDate;
 use Throwable;
 
-class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
+class ColumnsDef implements ArrayAccess, Iterator, JsonSerializable
 {
     public const COLUMNS_SEARCH = [
         'email' => [
@@ -178,7 +178,7 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
     /* === implements ArrayAccess === */
     public function offsetExists($offset): bool
     {
-        return is_string($offset) && array_key_exists($offset,$this->data);
+        return is_string($offset) && array_key_exists($offset, $this->data);
     }
 
     #[\ReturnTypeWillChange]
@@ -190,10 +190,10 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
     #[\ReturnTypeWillChange]
     public function offsetSet($offset, $value)
     {
-        if (!is_string($offset) || !array_key_exists($offset,self::COLUMNS_SEARCH)){
+        if (!is_string($offset) || !array_key_exists($offset, self::COLUMNS_SEARCH)) {
             throw new Exception('The key "'.(is_string($offset) ? $offset : 'unknown').'" is not authorized !');
         }
-        if (!is_integer($value)){
+        if (!is_integer($value)) {
             throw new Exception('Value should be an integer !');
         }
         $this->data[$offset] = $value;
@@ -203,7 +203,7 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
     #[\ReturnTypeWillChange]
     public function offsetUnset($offset)
     {
-        if (is_string($offset) && in_array($offset,$this->data)){
+        if (is_string($offset) && in_array($offset, $this->data)) {
             unset($this->data);
             $this->cacheKeys = array_keys($this->data);
         }
@@ -237,14 +237,14 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
 
     public function valid():bool
     {
-        return array_key_exists($this->currentIdx,$this->cacheKeys)
-            && array_key_exists($this->cacheKeys[$this->currentIdx],$this->data);
+        return array_key_exists($this->currentIdx, $this->cacheKeys)
+            && array_key_exists($this->cacheKeys[$this->currentIdx], $this->data);
     }
 
     /* === static === */
     public static function rowUcWords($input): string
     {
-        return is_string($input) ? ucwords($input,"-,. \t\r\n\f\v") : '';
+        return is_string($input) ? ucwords($input, "-,. \t\r\n\f\v") : '';
     }
     public static function extractX($input): string
     {
@@ -253,11 +253,11 @@ class ColumnsDef implements ArrayAccess,Iterator,JsonSerializable
     public static function formatDate($input): string
     {
         $match = [];
-        if (is_string($input) && preg_match("/^\s*=?\"?([0-9]{2}\/[0-9]{2}\/[0-9]{2,4})\"?\s*$/",$input,$match)){
+        if (is_string($input) && preg_match("/^\s*=?\"?([0-9]{2}\/[0-9]{2}\/[0-9]{2,4})\"?\s*$/", $input, $match)) {
             return $match[1];
         }
         try {
-            if (!empty($input)){
+            if (!empty($input)) {
                 return PhpSpreadsheetDate::excelToDateTimeObject($input)->format('d/m/Y');
             }
         } catch (Throwable $th) {

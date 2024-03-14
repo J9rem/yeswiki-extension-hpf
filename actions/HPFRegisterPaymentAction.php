@@ -27,8 +27,8 @@ class HPFRegisterPaymentAction extends YesWikiAction
     public function run()
     {
         // only admins
-        if (!$this->wiki->UserIsAdmin()){
-            return $this->render('@templates/alert-message.twig',[
+        if (!$this->wiki->UserIsAdmin()) {
+            return $this->render('@templates/alert-message.twig', [
                 'message' => _t('BAZ_NEED_ADMIN_RIGHTS'),
                 'type' => 'danger'
             ]);
@@ -37,14 +37,14 @@ class HPFRegisterPaymentAction extends YesWikiAction
             'formsids' => []
         ];
         $formManager = $this->getService(FormManager::class);
-        foreach($this->arguments['formsids'] as $id){
+        foreach($this->arguments['formsids'] as $id) {
             if (
                 is_scalar($id)
                 && strval($id) == strval(intval($id))
                 && intval($id) > 0
-                ){
+            ) {
                 $form = $formManager->getOne($id);
-                if (!empty($form)){
+                if (!empty($form)) {
                     $params['formsids'][strval($id)] = $form['bn_label_nature'];
                 }
             }
@@ -52,6 +52,6 @@ class HPFRegisterPaymentAction extends YesWikiAction
             
         }
 
-        return $this->render('@hpf/register-payment.twig',compact(['params']));        
+        return $this->render('@hpf/register-payment.twig', compact(['params']));
     }
 }

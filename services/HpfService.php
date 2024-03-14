@@ -200,8 +200,8 @@ class HpfService
                 // delete cache
                 $GLOBALS['_BAZAR_'] = array_filter(
                     $GLOBALS['_BAZAR_'] ?? [],
-                    function($k){
-                        return substr($k,0,strlen('bazar-search-')) !== 'bazar-search-';
+                    function ($k) {
+                        return substr($k, 0, strlen('bazar-search-')) !== 'bazar-search-';
                     },
                     ARRAY_FILTER_USE_KEY
                 );
@@ -216,11 +216,11 @@ class HpfService
                 } else {
                     $sameIds = empty($preferedEntryId)
                         ? []
-                        : array_filter($entries,function($entry) use ($preferedEntryId){
-                        return !empty($entry['id_fiche']) && $entry['id_fiche'] == $preferedEntryId;
-                    });
+                        : array_filter($entries, function ($entry) use ($preferedEntryId) {
+                            return !empty($entry['id_fiche']) && $entry['id_fiche'] == $preferedEntryId;
+                        });
                     $sameOwner = (empty($sameIds) && !empty($preferedUserName))
-                        ? array_filter($entries,function($entry) use ($preferedUserName){
+                        ? array_filter($entries, function ($entry) use ($preferedUserName) {
                             return !empty($entry['owner']) && $entry['owner'] == $preferedUserName;
                         })
                         : [];
@@ -231,12 +231,12 @@ class HpfService
                             ? $sameOwner
                             : $entries
                         );
-                    if (!empty($ids) && $this->wiki->UserIsAdmin()){
+                    if (!empty($ids) && $this->wiki->UserIsAdmin()) {
                         $ids = [$ids[array_key_first($ids)]];
                     }
-                    return array_map(function($id){
+                    return array_map(function ($id) {
                         return $this->entryManager->getOne($id['id_fiche'], false, null, false, true);
-                    },$ids);
+                    }, $ids);
                 }
             }
         } catch (Throwable $th) {
@@ -288,21 +288,21 @@ class HpfService
             'town' => true,
             'email' => true,
             'website' => true
-        ] as $key => $testIfEmpty){
+        ] as $key => $testIfEmpty) {
             if ($testIfEmpty && empty($this->hpfParams['structureInfo'][$key])) {
                 throw new Exception("hpf['structureInfo']['$key'] param should be defined !");
             }
             if (!empty($this->hpfParams['structureInfo'][$key])
-                && !is_string($this->hpfParams['structureInfo'][$key])){
+                && !is_string($this->hpfParams['structureInfo'][$key])) {
                 throw new Exception("hpf['structureInfo']['$key'] param should be a string !");
             }
         }
         
-        if (empty(filter_var($this->hpfParams['structureInfo']['email'],FILTER_VALIDATE_EMAIL,FILTER_NULL_ON_FAILURE))){
+        if (empty(filter_var($this->hpfParams['structureInfo']['email'], FILTER_VALIDATE_EMAIL, FILTER_NULL_ON_FAILURE))) {
             throw new Exception("hpf['structureInfo']['email'] param should be an email !");
         }
-        if (empty(filter_var($this->hpfParams['structureInfo']['website'],FILTER_VALIDATE_URL,FILTER_NULL_ON_FAILURE)) ||
-            !preg_match('/^https?:\/\/.*/',$this->hpfParams['structureInfo']['website'])){
+        if (empty(filter_var($this->hpfParams['structureInfo']['website'], FILTER_VALIDATE_URL, FILTER_NULL_ON_FAILURE)) ||
+            !preg_match('/^https?:\/\/.*/', $this->hpfParams['structureInfo']['website'])) {
             throw new Exception("hpf['structureInfo']['website'] param should be an url !");
         }
 
@@ -461,11 +461,11 @@ class HpfService
             } else {
                 try {
                     $pageTag = 'HelloAssoApiLog';
-                    $this->tripleStore->create($pageTag,self::HELLOASSO_API_PROPERTY,json_encode([
+                    $this->tripleStore->create($pageTag, self::HELLOASSO_API_PROPERTY, json_encode([
                         'date' => (new DateTime())->format("Y-m-d H:i:s.v"),
                         'account' => (empty($_SESSION['user']['name']) || !is_string($_SESSION['user']['name'])) ? '' : $_SESSION['user']['name'],
                         'throwableToString' => "Exception (code {$th->getCode()}): {$th->getMessage()} in ".basename($th->getFile()).":{$th->getLine()}"
-                    ]),'','');
+                    ]), '', '');
                 } catch (Throwable $th) {
                 }
             }
@@ -484,7 +484,7 @@ class HpfService
                     $cacheEntries[$paymentEmail] = [];
                 }
                 if (!isset($cacheEntries[$paymentEmail]['entry'])) {
-                    $entries = $this->getCurrentContribEntries($formId, $paymentEmail,$preferedEntryId);
+                    $entries = $this->getCurrentContribEntries($formId, $paymentEmail, $preferedEntryId);
                     if (!empty($entries)) {
                         $cacheEntries[$paymentEmail]['entry'] = $entries[array_key_first($entries)];
                         $cacheEntries[$paymentEmail]['previousTotal'] = $cacheEntries[$paymentEmail]['entry'][self::CALC_FIELDNAMES['total']] ?? "";
@@ -623,7 +623,7 @@ class HpfService
      * Feature UUID : hpf-payment-status-action
      * Feature UUID : hpf-api-helloasso-token-triggered
      */
-    public function updateEntryWithPayment(array $entry, Payment $payment, string $forceOrigin = '',string $forceYear = ''):array
+    public function updateEntryWithPayment(array $entry, Payment $payment, string $forceOrigin = '', string $forceYear = ''):array
     {
         $contribFormIds = $this->getCurrentPaymentsFormIds();
         if (!in_array($entry['id_typeannonce'], $contribFormIds)) {
@@ -647,7 +647,7 @@ class HpfService
         $currentYear = (new DateTime())->format("Y");
 
         $restToAffect =  floatval($payment->status === 'Authorized' ? $payment->amount : 0);
-        $paymentParams = 
+        $paymentParams =
         [
             'payment' => $payment,
             'origin' => !empty($forceOrigin)
@@ -663,10 +663,10 @@ class HpfService
             $wantedYear = (empty($forceYear) || intval($forceYear) > (intval($currentYear) + 1))
                 ? $paymentYear
                 : $forceYear;
-            $this->manipulatePayment($restToAffect,$contribFormId,'membership','adhesion',$wantedYear,$forceYear,$entry,$paymentParams);
-            $this->manipulatePayment($restToAffect,$contribFormId,'group_membership','adhesion_groupe',$wantedYear,$forceYear,$entry,$paymentParams);
+            $this->manipulatePayment($restToAffect, $contribFormId, 'membership', 'adhesion', $wantedYear, $forceYear, $entry, $paymentParams);
+            $this->manipulatePayment($restToAffect, $contribFormId, 'group_membership', 'adhesion_groupe', $wantedYear, $forceYear, $entry, $paymentParams);
         }
-        $this->manipulatePayment($restToAffect,$contribFormId,'donation','don',$paymentYear,'',$entry,$paymentParams);
+        $this->manipulatePayment($restToAffect, $contribFormId, 'donation', 'don', $paymentYear, '', $entry, $paymentParams);
 
         // update payment in entry
         $entry[self::PAYMENTS_FIELDNAME] = $this->appendFormatPaymentForField(
@@ -687,24 +687,23 @@ class HpfService
         &$restToAffect,
         string $contribFormId,
         string $key,
-        string $partKey, 
+        string $partKey,
         string $wantedYear,
         string $forceYear,
         array &$entry,
         array &$paymentParams
-    )
-    {
+    ) {
         if ($restToAffect > 0) {
-            list('isOpenedNextYear' => $isOpenedNextYear, 'field' => $field) = 
-                $this->getPayedField($contribFormId, $wantedYear, $key,!empty($forceYear));
+            list('isOpenedNextYear' => $isOpenedNextYear, 'field' => $field) =
+                $this->getPayedField($contribFormId, $wantedYear, $key, !empty($forceYear));
 
             $aimedYear = $isOpenedNextYear
                 ? strval(intval($wantedYear)+1)
                 : $wantedYear;
             
-            list('entry' => $entry, 'restToAffect' => $restToAffect,'affected'=>$affected) =
+            list('entry' => $entry, 'restToAffect' => $restToAffect, 'affected'=>$affected) =
                 $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $aimedYear, $key);
-            if (!empty($affected)){
+            if (!empty($affected)) {
                 $paymentParams["annee_$partKey"] = strval($aimedYear);
                 $paymentParams["valeur_$partKey"] = strval($affected);
             }
@@ -768,8 +767,8 @@ class HpfService
                     // only affect current field
                     $entry[$field->getPropertyName()] = strval($payedValue + $restToAffect);
                     $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"][$name], $paymentYear);
-                    if ($isDonation && $valueToPay > 0){
-                        $this->updateWantedDonation($entry,$valueToPay,$restToAffect);
+                    if ($isDonation && $valueToPay > 0) {
+                        $this->updateWantedDonation($entry, $valueToPay, $restToAffect);
                     }
                     $affected = $restToAffect;
                     $restToAffect = 0;
@@ -784,16 +783,16 @@ class HpfService
         return compact(['entry','restToAffect','affected']);
     }
 
-    private function updateWantedDonation(array &$entry,$valueToPay,$restToAffect)
+    private function updateWantedDonation(array &$entry, $valueToPay, $restToAffect)
     {
-        $field = $this->formManager->findFieldFromNameOrPropertyName('bf_montant_don_ponctuel',$entry['id_typeannonce'] ?? null);
+        $field = $this->formManager->findFieldFromNameOrPropertyName('bf_montant_don_ponctuel', $entry['id_typeannonce'] ?? null);
         if (!empty($field)) {
             $propertyName = $field->getPropertyName();
-            if (!empty($propertyName)){
+            if (!empty($propertyName)) {
                 $entry[$propertyName] = 'libre';
             }
         }
-        $entry['bf_montant_don_ponctuel_libre'] = strval(max(0,$valueToPay-$restToAffect));
+        $entry['bf_montant_don_ponctuel_libre'] = strval(max(0, $valueToPay-$restToAffect));
     }
 
     public function updateYear(array $entry, string $name, string $year, bool $append = true): array
@@ -805,12 +804,12 @@ class HpfService
             $propertyName = $field->getPropertyName();
         }
         $values = explode(",", $entry[$propertyName] ?? "");
-        if ($append){
+        if ($append) {
             if (!in_array($year, $values)) {
                 $values[] = $year;
             }
         } else {
-            $values = array_filter($values,function($v) use($year){
+            $values = array_filter($values, function ($v) use ($year) {
                 return $v != $year;
             });
         }
@@ -887,12 +886,12 @@ class HpfService
         $updatedEntry = $this->entryManager->getOne($data['id_fiche'], false, null, false, true);
 
         // reset page Manager cache
-        $this->pageManager->cache(array_merge($oldPage,[
+        $this->pageManager->cache(array_merge($oldPage, [
             'tag' => $data['id_fiche'],
             'time' => $data['date_maj_fiche'],
             'latest' => 'Y',
             'body' => json_encode($data),
-        ]),$data['id_fiche']);
+        ]), $data['id_fiche']);
 
         return $updatedEntry;
     }
@@ -915,7 +914,7 @@ class HpfService
             empty($postNotSanitized['post']['data']['payer']) ||
             empty($postNotSanitized['post']['data']['payer']['email']) ||
             empty($postNotSanitized['post']['data']['order'])
-            ) {
+        ) {
             // only save not payments data
             $this->appendToHelloAssoLog($postNotSanitized);
         } else {
@@ -956,18 +955,18 @@ class HpfService
     {
         if (empty($postNotSanitized['post']['eventType']) ||
             !is_string($postNotSanitized['post']['eventType']) ||
-            !in_array($postNotSanitized['post']['eventType'],['Order','Form'])){
+            !in_array($postNotSanitized['post']['eventType'], ['Order','Form'])) {
             $pageTag = 'HelloAssoLog';
             try {
-                $data = json_decode(json_encode($postNotSanitized),true);
+                $data = json_decode(json_encode($postNotSanitized), true);
             } catch (Throwable $th) {
                 $data = '';
             }
-            $this->tripleStore->create($pageTag,self::HELLOASSO_HPF_PROPERTY,json_encode([
+            $this->tripleStore->create($pageTag, self::HELLOASSO_HPF_PROPERTY, json_encode([
                 'date' => (new DateTime())->format("Y-m-d H:i:s.v"),
                 'account' => (empty($_SESSION['user']['name']) || !is_string($_SESSION['user']['name'])) ? '' : $_SESSION['user']['name'],
                 'data' => $data
-            ]),'','');
+            ]), '', '');
         }
     }
 
@@ -996,11 +995,11 @@ class HpfService
      * Feature UUID : hpf-payment-status-action
      * Feature UUID : hpf-api-helloasso-token-triggered
      */
-    public function appendFormatPaymentForField(string $paymentContent,array $params): string
+    public function appendFormatPaymentForField(string $paymentContent, array $params): string
     {
         $newPayment = $this->formatPaymentForField($params);
         $formattedPayments = $this->convertStringToPayments($paymentContent);
-        foreach($newPayment as $k => $v){
+        foreach($newPayment as $k => $v) {
             $formattedPayments[$k] = $v;
         }
         return json_encode($formattedPayments);
@@ -1019,26 +1018,26 @@ class HpfService
     public function convertStringToPayments(string $paymentContent):array
     {
         $formattedPayments = [];
-        if (!empty($paymentContent)){
+        if (!empty($paymentContent)) {
             try {
-                $jsonDecoded = json_decode($paymentContent,true);
-                if (empty($jsonDecoded) || !is_array($jsonDecoded)){
+                $jsonDecoded = json_decode($paymentContent, true);
+                if (empty($jsonDecoded) || !is_array($jsonDecoded)) {
                     throw new Exception('paymentfied is not json encoded');
                 } else {
-                    foreach($jsonDecoded as $id => $data){
-                        if (is_array($data)){
+                    foreach($jsonDecoded as $id => $data) {
+                        if (is_array($data)) {
                             $formattedPayments[$id] = $data;
                         }
                     }
                 }
             } catch (Throwable $th) {
-                foreach(explode(',',$paymentContent) as $paymentRaw){
+                foreach(explode(',', $paymentContent) as $paymentRaw) {
                     $rawField = $this->formatPaymentForField([
                         'id' => $paymentRaw,
                         'origin' => 'helloasso',
                         'total' => ''
                     ]);
-                    foreach($rawField as $k => $v){
+                    foreach($rawField as $k => $v) {
                         $formattedPayments[$k] = $v;
                     }
                 }
@@ -1060,7 +1059,7 @@ class HpfService
      */
     public function formatPaymentForField(array $params): array
     {
-        if (empty($params['origin'])){
+        if (empty($params['origin'])) {
             throw new Exception('$params[\'origin\'] can not be empty');
         }
         return $this->formatPaymentForFieldInternal(
@@ -1109,9 +1108,8 @@ class HpfService
         string $id,
         string $date,
         string $total
-    ): array
-    {
-        if (!empty($payment)){
+    ): array {
+        if (!empty($payment)) {
             $id = $payment->id;
             $date = $payment->date;
             $total = ($payment->status === 'Authorized') ? strval($payment->amount) : '0';
@@ -1123,13 +1121,13 @@ class HpfService
                 'total' => $total,
             ]
         ];
-        if (!empty($annee_adhesion) && !empty($valeur_adhesion)){
+        if (!empty($annee_adhesion) && !empty($valeur_adhesion)) {
             $formattedPayment[$id]['adhesion'][$annee_adhesion] = $valeur_adhesion;
         }
-        if (!empty($annee_adhesion_groupe) && !empty($annee_adhesion_groupe)){
+        if (!empty($annee_adhesion_groupe) && !empty($annee_adhesion_groupe)) {
             $formattedPayment[$id]['adhesion_groupe'][$annee_adhesion_groupe] = $valeur_adhesion_groupe;
         }
-        if (!empty($annee_don) && !empty($valeur_don)){
+        if (!empty($annee_don) && !empty($valeur_don)) {
             $formattedPayment[$id]['don'][$annee_don] = $valeur_don;
         }
         return $formattedPayment;
@@ -1139,10 +1137,10 @@ class HpfService
      * Feature UUID : hpf-payment-status-action
      * Feature UUID : hpf-api-helloasso-token-triggered
      */
-    protected function isAlreadyRegisteredPayment(array &$entry,Payment $payment): bool
+    protected function isAlreadyRegisteredPayment(array &$entry, Payment $payment): bool
     {
         $payments = $this->convertStringToPayments($entry[self::PAYMENTS_FIELDNAME] ?? '');
-        return array_key_exists($payment->id,$payments);
+        return array_key_exists($payment->id, $payments);
     }
 
     /**
@@ -1150,7 +1148,7 @@ class HpfService
      */
     public function getPaymentInfos(string $id): array
     {
-        if (empty($id)){
+        if (empty($id)) {
             throw new Exception("id should not be empty");
         }
         $data = [
@@ -1159,20 +1157,20 @@ class HpfService
         ];
         try {
             $payment = $this->helloAssoService->getPayment($id);
-            if (!empty($payment) && $payment instanceof Payment){
+            if (!empty($payment) && $payment instanceof Payment) {
                 $data['found'] = true;
-                $data = array_merge($data,$payment->jsonSerialize());
-                if (!empty($data['formSlug'])){
+                $data = array_merge($data, $payment->jsonSerialize());
+                if (!empty($data['formSlug'])) {
                     $sameSlugForms = array_filter(
                         $this->getCurrentPaymentsFormIds(),
-                        function($formId) use ($data){
+                        function ($formId) use ($data) {
                             $form = $this->getPaymentForm($formId);
                             return $form['formSlug'] == $data['formSlug'];
                         }
                     );
-                    if (!empty($sameSlugForms)){
+                    if (!empty($sameSlugForms)) {
                         $data['form'] = $sameSlugForms[0];
-                    } elseif (($data['formType'] ?? '') == 'Donation'){
+                    } elseif (($data['formType'] ?? '') == 'Donation') {
                         $data['form'] = 'donation';
                     }
                 }
@@ -1188,7 +1186,7 @@ class HpfService
      */
     public function getPaymentsViaEmail(string $email): array
     {
-        if (empty($email)){
+        if (empty($email)) {
             throw new Exception("email should not be empty");
         }
         $results = $this->helloAssoService->getPayments([
@@ -1202,28 +1200,28 @@ class HpfService
      * Feature UUID : hpf-payments-by-cat-table
      */
     public function refreshPaymentCache(
-        array $formsIds, 
+        array $formsIds,
         string $college3to4fieldname,
-        bool $byCat = false): array
-    {
+        bool $byCat = false
+    ): array {
         $code = 200;
         $output = [];
         $payments = [];
         $currentYear = intval((new DateTime())->format('Y'));
-        for ($y=2022; $y <= ($currentYear+1) ; $y++) { 
+        for ($y=2022; $y <= ($currentYear+1) ; $y++) {
             $payments[strval($y)] = $byCat ? $this->getDefaultPaymentsByCat() : $this->getDefaultPayments();
         }
         $fieldCache = [];
-        foreach($formsIds as $college => $formId){
+        foreach($formsIds as $college => $formId) {
             $entries = $this->entryManager->search([
                 'formsIds' => [$formId]
             ]);
-            if (!empty($entries)){
+            if (!empty($entries)) {
                 foreach ($entries as $entry) {
-                    if ($byCat){
-                        $this->updatePaymentsByCat($payments,$college,$entry,$fieldCache,$college3to4fieldname);
+                    if ($byCat) {
+                        $this->updatePaymentsByCat($payments, $college, $entry, $fieldCache, $college3to4fieldname);
                     } else {
-                        $this->updatePayments($payments,$college,$entry,$fieldCache,$college3to4fieldname);
+                        $this->updatePayments($payments, $college, $entry, $fieldCache, $college3to4fieldname);
                     }
                 }
             }
@@ -1242,7 +1240,7 @@ class HpfService
     protected function getDefaultPaymentsByCat():array
     {
         $defaultPayment = [];
-        for ($i=1; $i <= 4; $i++) { 
+        for ($i=1; $i <= 4; $i++) {
             $defaultPayment["$i"] = self::DEFAULT_BASE_PAYMENT;
         }
         $defaultPayment['d'] = self::DEFAULT_BASE_PAYMENT;
@@ -1251,7 +1249,7 @@ class HpfService
         $defaultPayments = [];
         foreach (self::AREAS as $areaCode => $depts) {
             $defaultPayments[$areaCode] = $defaultPayment;
-            foreach($depts as $dept){
+            foreach($depts as $dept) {
                 $defaultPayments[$dept] = $defaultPayment;
             }
         }
@@ -1264,7 +1262,7 @@ class HpfService
     protected function getDefaultPayments():array
     {
         $defaultPayment = [];
-        for ($i=1; $i <= 12; $i++) { 
+        for ($i=1; $i <= 12; $i++) {
             $defaultPayment["$i"] = [
                 'v' => 0,
                 'e' => []
@@ -1287,13 +1285,13 @@ class HpfService
     /**
      * Feature UUID : hpf-helloasso-payments-table
      */
-    protected function updatePayments(array &$payments,string $college, array $entry, array &$fieldCache, string $college3to4fieldname)
+    protected function updatePayments(array &$payments, string $college, array $entry, array &$fieldCache, string $college3to4fieldname)
     {
-        if (empty($entry['id_typeannonce'])){
+        if (empty($entry['id_typeannonce'])) {
             return;
         }
         try {
-            $isCb = $this->checkIfIsCB($entry,$fieldCache);
+            $isCb = $this->checkIfIsCB($entry, $fieldCache);
         } catch (Throwable $th) {
             return ;
         }
@@ -1302,7 +1300,7 @@ class HpfService
             $fieldCache,
             $payments,
             $this->getDefaultPayments()['1'],
-            function($subpartData,$value,$fieldName){
+            function ($subpartData, $value, $fieldName) {
                 $subpartData['o']['v'] = $value;
                 return $subpartData;
             },
@@ -1316,28 +1314,28 @@ class HpfService
             $fieldCache,
             $data,
             $associations,
-            function($paymentOrigin){
-                return substr($paymentOrigin,0,strlen('helloasso')) === 'helloasso';
+            function ($paymentOrigin) {
+                return substr($paymentOrigin, 0, strlen('helloasso')) === 'helloasso';
             },
-            function($subPartData,$date,$year,$paymentOrigin,$value,$fieldName){
+            function ($subPartData, $date, $year, $paymentOrigin, $value, $fieldName) {
                 $month = strval(intval($date->format('m')));
                 $paymentYear = $date->format('Y');
-                if (array_key_exists($paymentYear,$subPartData)){
+                if (array_key_exists($paymentYear, $subPartData)) {
                     $subPartData[$paymentYear][$month]['v'] = $subPartData[$paymentYear][$month]['v'] + $value;
                 }
-                if (array_key_exists($year,$subPartData)){
-                    $subPartData[$year]['o']['v'] = max(0,$subPartData[$year]['o']['v']-$value);
+                if (array_key_exists($year, $subPartData)) {
+                    $subPartData[$year]['o']['v'] = max(0, $subPartData[$year]['o']['v']-$value);
                 }
                 return $subPartData;
             }
         );
         
         // append in dedicated date
-        foreach($associations as $fieldName => $destinationKey){
-            foreach($data[$fieldName] as $year => $values){
-                foreach($values as $month => $value){
+        foreach($associations as $fieldName => $destinationKey) {
+            foreach($data[$fieldName] as $year => $values) {
+                foreach($values as $month => $value) {
                     $payments[$year][$destinationKey][$month]['v'] = $payments[$year][$destinationKey][$month]['v'] + $value['v'];
-                    if (!empty($value['v']) && !empty($entry['id_fiche']) && !in_array($entry['id_fiche'],$payments[$year][$destinationKey][$month]['e'])){
+                    if (!empty($value['v']) && !empty($entry['id_fiche']) && !in_array($entry['id_fiche'], $payments[$year][$destinationKey][$month]['e'])) {
                         $payments[$year][$destinationKey][$month]['e'][] = $entry['id_fiche'];
                     }
                 }
@@ -1348,35 +1346,35 @@ class HpfService
     /**
      * Feature UUID : hpf-payments-by-cat-table
      */
-    protected function updatePaymentsByCat(array &$payments,string $college, array $entry, array &$fieldCache, string $college3to4fieldname)
+    protected function updatePaymentsByCat(array &$payments, string $college, array $entry, array &$fieldCache, string $college3to4fieldname)
     {
-        if (empty($entry['id_typeannonce'])){
+        if (empty($entry['id_typeannonce'])) {
             return;
         }
         try {
-            $keyForPaymentType = $this->getdefaultPaymentType($entry,$fieldCache);
+            $keyForPaymentType = $this->getdefaultPaymentType($entry, $fieldCache);
         } catch (Throwable $th) {
             return;
         }
         
 
         $associations = array_map(
-            function($assoc){
+            function ($assoc) {
                 return $assoc === 'partner' ? 'p' : $assoc;
             },
             $this->getAssociations($entry, $fieldCache, $college, $college3to4fieldname)
         );
 
-        $areaData = $this->prepareAreaData($entry,$fieldCache);
+        $areaData = $this->prepareAreaData($entry, $fieldCache);
 
         $data = $this->getFirstData(
             $entry,
-            $fieldCache, 
+            $fieldCache,
             $payments,
             $this->getDefaultPaymentsByCat(),
-            function($subpartData,$value,$fieldName) use ($college,$associations,$keyForPaymentType,$areaData){
-                $type = $this->getTypeForCat($fieldName,$college,$associations[$fieldName]);
-                if (!isset($subpartData['default'])){
+            function ($subpartData, $value, $fieldName) use ($college, $associations, $keyForPaymentType, $areaData) {
+                $type = $this->getTypeForCat($fieldName, $college, $associations[$fieldName]);
+                if (!isset($subpartData['default'])) {
                     $subpartData['default'] = $this->getDefaultPaymentsByCat()['sans'];
                 }
                 $subpartData['default'][$type][$keyForPaymentType][0] = $value;
@@ -1391,30 +1389,29 @@ class HpfService
             $fieldCache,
             $data,
             $associations,
-            function($paymentOrigin){
+            function ($paymentOrigin) {
                 return true;
             },
-            function($subPartData,$date,$year,$paymentOrigin,$value,$fieldName)
-                use ($associations,$college,$keyForPaymentType){
-                if (!isset($subpartData['default'])){
+            function ($subPartData, $date, $year, $paymentOrigin, $value, $fieldName) use ($associations, $college, $keyForPaymentType) {
+                if (!isset($subpartData['default'])) {
                     $subpartData['default'] = $this->getDefaultPaymentsByCat()['sans'];
                 }
                 $paymentYear = $date->format('Y');
-                $type = $this->getTypeForCat($fieldName,$college,$associations[$fieldName]);
+                $type = $this->getTypeForCat($fieldName, $college, $associations[$fieldName]);
                 $paymentType = $this->formatPaymentType($paymentOrigin);
-                if ($value != 0){
+                if ($value != 0) {
                     // remove previous registered from default
-                    if (array_key_exists($year,$subPartData)){
-                        $subPartData[$year]['default'][$type][$keyForPaymentType][0] = max($subPartData[$year]['default'][$type][$keyForPaymentType][0] - $value,0);
-                        $subPartData[$year]['default'][$type][$keyForPaymentType][1] = max($subPartData[$year]['default'][$type][$keyForPaymentType][1] - 1,0);
+                    if (array_key_exists($year, $subPartData)) {
+                        $subPartData[$year]['default'][$type][$keyForPaymentType][0] = max($subPartData[$year]['default'][$type][$keyForPaymentType][0] - $value, 0);
+                        $subPartData[$year]['default'][$type][$keyForPaymentType][1] = max($subPartData[$year]['default'][$type][$keyForPaymentType][1] - 1, 0);
                     }
-                    if (array_key_exists($paymentYear,$subPartData)){
+                    if (array_key_exists($paymentYear, $subPartData)) {
                         // register on right payment type
                         $subPartData[$paymentYear]['default'][$type][$paymentType][0] = $subPartData[$paymentYear]['default'][$type][$paymentType][0] + $value;
                         $subPartData[$paymentYear]['default'][$type][$paymentType][1] = $subPartData[$paymentYear]['default'][$type][$paymentType][1] + 1;
-                        if ($paymentType != $keyForPaymentType){
-                            $subPartData[$paymentYear]['default'][$type][$keyForPaymentType][0] = max($subPartData[$paymentYear]['default'][$type][$keyForPaymentType][0] - $value,0);
-                            $subPartData[$paymentYear]['default'][$type][$keyForPaymentType][1] = max($subPartData[$paymentYear]['default'][$type][$keyForPaymentType][1] - 1,0);
+                        if ($paymentType != $keyForPaymentType) {
+                            $subPartData[$paymentYear]['default'][$type][$keyForPaymentType][0] = max($subPartData[$paymentYear]['default'][$type][$keyForPaymentType][0] - $value, 0);
+                            $subPartData[$paymentYear]['default'][$type][$keyForPaymentType][1] = max($subPartData[$paymentYear]['default'][$type][$keyForPaymentType][1] - 1, 0);
                         }
                     }
                 }
@@ -1423,16 +1420,16 @@ class HpfService
         );
 
         // append in dedicated area
-        foreach($associations as $fieldName => $destinationKey){
-            foreach($data[$fieldName] as $year => $values){
-                foreach($values as $zoneCode => $value){
-                    $type = $this->getTypeForCat($fieldName,$college, $destinationKey);
-                    if (isset($value[$type])){
-                        foreach($value[$type] as $paymentType => $v){
+        foreach($associations as $fieldName => $destinationKey) {
+            foreach($data[$fieldName] as $year => $values) {
+                foreach($values as $zoneCode => $value) {
+                    $type = $this->getTypeForCat($fieldName, $college, $destinationKey);
+                    if (isset($value[$type])) {
+                        foreach($value[$type] as $paymentType => $v) {
                             $localZoneCode = ($zoneCode !== 'default') ? $zoneCode : $areaData[$fieldName]['area'];
                             $payments[$year][$localZoneCode][$type][$paymentType][0] = $payments[$year][$localZoneCode][$type][$paymentType][0] + $v[0];
                             $payments[$year][$localZoneCode][$type][$paymentType][1] = $payments[$year][$localZoneCode][$type][$paymentType][1] + $v[1];
-                            if($zoneCode === 'default' && $areaData[$fieldName]['dept'] !== ''){
+                            if($zoneCode === 'default' && $areaData[$fieldName]['dept'] !== '') {
                                 $localZoneCode = $areaData[$fieldName]['dept'];
                                 $payments[$year][$localZoneCode][$type][$paymentType][0] = $payments[$year][$localZoneCode][$type][$paymentType][0] + $v[0];
                                 $payments[$year][$localZoneCode][$type][$paymentType][1] = $payments[$year][$localZoneCode][$type][$paymentType][1] + $v[1];
@@ -1458,8 +1455,8 @@ class HpfService
         return array_combine(
             ['membership','group_membership','donation'],
             array_map(
-                function($fieldname) use($entry,&$fieldCache){
-                    return $this->extractArea($entry,$fieldCache,$fieldname);
+                function ($fieldname) use ($entry, &$fieldCache) {
+                    return $this->extractArea($entry, $fieldCache, $fieldname);
                 },
                 ['membership','group_membership','donation']
             )
@@ -1477,12 +1474,12 @@ class HpfService
     {
         $area = 'sans';
         $dept = 0;
-        if (in_array($fieldName,['donation','membership','group_membership'],true)){
+        if (in_array($fieldName, ['donation','membership','group_membership'], true)) {
 
-            // special case 'donation'            
-            if ($fieldName === 'donation'){
+            // special case 'donation'
+            if ($fieldName === 'donation') {
                 $data = $this->extractArea($entry, $fieldCache, 'membership');
-                if (!empty($data['area']) && $data['area'] !== 'sans'){
+                if (!empty($data['area']) && $data['area'] !== 'sans') {
                     return $data;
                 }
                 // backup on group
@@ -1495,32 +1492,32 @@ class HpfService
             $deptFieldName = self::AREA_FIELDNAMES[$fieldName][1];
             $deptPropertyName = '';
             try {
-                $deptPropertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'],$fieldCache,$deptFieldName);
+                $deptPropertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'], $fieldCache, $deptFieldName);
             } catch (Throwable $th) {
             }
             if (!empty($deptPropertyName)
-                && substr($deptPropertyName,0,10) === 'listeListe'
+                && substr($deptPropertyName, 0, 10) === 'listeListe'
                 && isset($entry[$deptPropertyName])
-                && array_key_exists($entry[$deptPropertyName],$defaultPayments)){
+                && array_key_exists($entry[$deptPropertyName], $defaultPayments)) {
                 $dept = $entry[$deptPropertyName];
                 foreach (self::AREAS as $areaCode => $depts) {
-                    if ($area === 'sans' && in_array($dept,$depts)){
+                    if ($area === 'sans' && in_array($dept, $depts)) {
                         $area = $areaCode;
                     }
                 }
-                if ($area === 'sans'){
+                if ($area === 'sans') {
                     $dept = 0;
                 }
             } else {
                 $areaPropertyName = '';
                 try {
-                    $areaPropertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'],$fieldCache,$areaFieldName);
+                    $areaPropertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'], $fieldCache, $areaFieldName);
                 } catch (Throwable $th) {
                 }
                 if (!empty($areaPropertyName)
-                    && substr($areaPropertyName,0,10) === 'listeListe'
+                    && substr($areaPropertyName, 0, 10) === 'listeListe'
                     && isset($entry[$areaPropertyName])
-                    && array_key_exists($entry[$areaPropertyName],$defaultPayments)){
+                    && array_key_exists($entry[$areaPropertyName], $defaultPayments)) {
                     $area = $entry[$areaPropertyName];
                     $dept = '';
                 }
@@ -1538,11 +1535,12 @@ class HpfService
      * @return string
      * Feature UUID : hpf-payments-by-cat-table
      */
-    protected function getTypeForCat(string $fieldName,string $college, string $destinationKey): string
+    protected function getTypeForCat(string $fieldName, string $college, string $destinationKey): string
     {
         return ($fieldName === 'donation')
             ? 'd'
-            : (strval($college) === '5'
+            : (
+                strval($college) === '5'
                 ? 'p'
                 : $destinationKey
             );
@@ -1558,7 +1556,7 @@ class HpfService
      */
     protected function getdefaultPaymentType(array $entry, array &$fieldCache): string
     {
-        $paymentType = $this->extractPaymentType($entry,$fieldCache);
+        $paymentType = $this->extractPaymentType($entry, $fieldCache);
         return $this->formatPaymentType($paymentType);
     }
 
@@ -1572,7 +1570,7 @@ class HpfService
     {
         $keyForPaymentType = 'i';
         foreach (self::PAYMENT_TYPE_ASSOCIATION as $searchRegExp => $newKey) {
-            if ($keyForPaymentType === 'i' && preg_match($searchRegExp,$paymentType)){
+            if ($keyForPaymentType === 'i' && preg_match($searchRegExp, $paymentType)) {
                 $keyForPaymentType = $newKey;
             }
         }
@@ -1589,7 +1587,7 @@ class HpfService
      */
     protected function checkIfIsCB(array $entry, array &$fieldCache): bool
     {
-        $paymentType = $this->extractPaymentType($entry,$fieldCache);
+        $paymentType = $this->extractPaymentType($entry, $fieldCache);
         return (!empty($paymentType) && $paymentType == self::CB_TYPE_PAYMENT_FIELDVALUE);
     }
 
@@ -1605,8 +1603,8 @@ class HpfService
      */
     protected function extractPaymentType(array $entry, array &$fieldCache): string
     {
-        $paymentTypePropertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'],$fieldCache,self::TYPE_PAYMENT_FIELDNAME);
-        if (empty($paymentTypePropertyName)){
+        $paymentTypePropertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'], $fieldCache, self::TYPE_PAYMENT_FIELDNAME);
+        if (empty($paymentTypePropertyName)) {
             throw new Exception('PaymentTypeField not found');
         }
         return !is_string($entry[$paymentTypePropertyName]) ? '' : $entry[$paymentTypePropertyName];
@@ -1629,16 +1627,16 @@ class HpfService
         $years = array_keys($payments);
 
         $data = [];
-        foreach(['membership','group_membership','donation'] as $fieldName){
+        foreach(['membership','group_membership','donation'] as $fieldName) {
             // init data
             $data[$fieldName] = array_fill_keys($years, $defaultPayment);
-            if ($shouldExtractData){
-                foreach($years as $year){
-                    $fullFieldName = str_replace('{year}',$year,self::PAYED_FIELDNAMES[$fieldName]);
+            if ($shouldExtractData) {
+                foreach($years as $year) {
+                    $fullFieldName = str_replace('{year}', $year, self::PAYED_FIELDNAMES[$fieldName]);
                     try {
-                        $propertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'],$fieldCache,$fullFieldName);
-                        if (is_callable($setdata)){
-                            $data[$fieldName][$year] = $setdata($data[$fieldName][$year],floatval($entry[$propertyName] ?? 0),$fieldName);
+                        $propertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'], $fieldCache, $fullFieldName);
+                        if (is_callable($setdata)) {
+                            $data[$fieldName][$year] = $setdata($data[$fieldName][$year], floatval($entry[$propertyName] ?? 0), $fieldName);
                         }
                     } catch (Throwable $th) {
                     }
@@ -1664,18 +1662,18 @@ class HpfService
         try {
             $collegeAdhesionpropertyName = empty($college3to4fieldname)
                 ? ''
-                : $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'],$fieldCache,$college3to4fieldname);
+                : $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'], $fieldCache, $college3to4fieldname);
         } catch (Throwable $th) {
             $collegeAdhesionpropertyName = '';
         }
 
         $updatedCollege = (
-                $college == '3' 
+            $college == '3'
                 && !empty($collegeAdhesionpropertyName)
                 && !empty($entry[$collegeAdhesionpropertyName])
                 && is_scalar($entry[$collegeAdhesionpropertyName])
                 && $entry[$collegeAdhesionpropertyName] == '4'
-            )
+        )
             ? '4'
             : $college;
 
@@ -1703,17 +1701,17 @@ class HpfService
         array &$data,
         array $associations,
         $isRightPayment = null,
-        $affectValue = null)
-    {
+        $affectValue = null
+    ) {
         // extract payments
         try {
-            $propertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'],$fieldCache,self::PAYMENTS_FIELDNAME);
+            $propertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'], $fieldCache, self::PAYMENTS_FIELDNAME);
         } catch (Throwable $th) {
             $propertyName = '';
         }
-        if(!empty($propertyName) && !empty($entry[$propertyName])){
+        if(!empty($propertyName) && !empty($entry[$propertyName])) {
             $paymentsFromField = $this->convertStringToPayments($entry[$propertyName]);
-            foreach($paymentsFromField as $id => $payment){
+            foreach($paymentsFromField as $id => $payment) {
                 if (!empty($payment['date'])
                     && !empty($payment['total'])
                     && !empty($payment['origin'])
@@ -1721,10 +1719,10 @@ class HpfService
                         is_null($isRightPayment)
                         || !is_callable($isRightPayment)
                         || $isRightPayment($payment['origin'])
-                    )){
+                    )) {
                     $date = new DateTime($payment['date']);
-                    if (!empty($date)){
-                        foreach($associations as $fieldName => $destinationKey){
+                    if (!empty($date)) {
+                        foreach($associations as $fieldName => $destinationKey) {
                             switch ($fieldName) {
                                 case 'membership':
                                     $localFieldName = 'adhesion';
@@ -1736,12 +1734,12 @@ class HpfService
                                     $localFieldName = 'don';
                                     break;
                                 default:
-                                $localFieldName = '';
+                                    $localFieldName = '';
                                     break;
                             }
-                            if(!empty($payment[$localFieldName])){
-                                foreach($payment[$localFieldName] as $year => $value){
-                                    if (is_callable($affectValue)){
+                            if(!empty($payment[$localFieldName])) {
+                                foreach($payment[$localFieldName] as $year => $value) {
+                                    if (is_callable($affectValue)) {
                                         $data[$fieldName] = $affectValue(
                                             $data[$fieldName],
                                             $date,
@@ -1765,23 +1763,23 @@ class HpfService
      * Feature UUID : hpf-helloasso-payments-table
      * Feature UUID : hpf-payments-by-cat-table
      */
-    protected function getPropertyNameFromFormOrCache(string $formId,array &$fieldCache,string $name): string
+    protected function getPropertyNameFromFormOrCache(string $formId, array &$fieldCache, string $name): string
     {
-        if (empty($fieldCache[$formId])){
+        if (empty($fieldCache[$formId])) {
             $fieldCache[$formId] = [];
         }
-        if (empty($fieldCache[$formId][$name])){
+        if (empty($fieldCache[$formId][$name])) {
             $fieldCache[$formId][$name] = $this->formManager->findFieldFromNameOrPropertyName(
                 $name,
                 $formId
             );
         }
-        if (empty($fieldCache[$formId][$name])){
+        if (empty($fieldCache[$formId][$name])) {
             throw new Exception("Not found field '$name' for form '$formId'");
         }
         $paymentTypePropertyName = $fieldCache[$formId][$name]->getPropertyName();
         
-        if (empty($paymentTypePropertyName)){
+        if (empty($paymentTypePropertyName)) {
             throw new Exception("Empty property name");
         }
         return $paymentTypePropertyName;
@@ -1803,10 +1801,10 @@ class HpfService
             null
         );
         $triples = [];
-        if (!empty($previousTriples)){
+        if (!empty($previousTriples)) {
             // clean cache if not present in payments
-            foreach($previousTriples as $triple){
-                if (!array_key_exists($triple['resource'],$payments)){
+            foreach($previousTriples as $triple) {
+                if (!array_key_exists($triple['resource'], $payments)) {
                     try {
                         $this->tripleStore->delete(
                             $triple['resource'],
@@ -1814,19 +1812,19 @@ class HpfService
                         );
                     } catch (Throwable $th) {
                         //throw $th;
-                    } 
+                    }
                 } else {
                     $triples[strval($triple['resource'])] = $triple;
                 }
             }
         }
-        foreach($payments as $year => $values){
+        foreach($payments as $year => $values) {
             $newValue = json_encode([
                 'date' => $date,
                 'values' => $values
             ]);
             try {
-                if (array_key_exists($year,$triples)){
+                if (array_key_exists($year, $triples)) {
                     $this->tripleStore->update(
                         $triples[$year]['resource'],
                         $triples[$year]['property'],
@@ -1844,7 +1842,7 @@ class HpfService
                         ''
                     );
                 }
-            } catch(Throwable $th){
+            } catch(Throwable $th) {
             }
         }
     }

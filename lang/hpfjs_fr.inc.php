@@ -19,7 +19,7 @@ return [
     'HPF_CONDITIONVIEW_WAITEDVALUE' => 'Valeur attendue',
 
     // Feature UUID : hpf-receipts-creation
-    // javascripts/fields/receiptsfield.php 
+    // javascripts/fields/receiptsfield.php
     'HPF_RECEIPTS_FIELD' => 'Affichage des reçus',
 
     // tools/hpf/javascripts/refresh-link.js

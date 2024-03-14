@@ -8,7 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  * Feature UUID : hpf-receipts-creation
- * 
+ *
  * This class is the manager of receipts. It creates, associates receipts to
  * entries and furnish all things neededfor api.
  */
@@ -77,13 +77,13 @@ class ReceiptManager
         $acls = '@admins';
         try {
             $hpfParams = $this->hpfService->getHpfParams();
-            if (!empty($hpfParams['canViewReceipts']) && $hpfParams['canViewReceipts'] === '%'){
+            if (!empty($hpfParams['canViewReceipts']) && $hpfParams['canViewReceipts'] === '%') {
                 $acls = '%';
             }
         } catch (Throwable $th) {
             $acls = '@admins';
         }
-        return $this->aclService->check($acls,null,true,$tag);
+        return $this->aclService->check($acls, null, true, $tag);
     }
 
     /**
@@ -93,7 +93,7 @@ class ReceiptManager
     public function getNextUniqId():string
     {
         $nextUniqId = $this->getNextUniqIdFromDatabase();
-        if (empty($nextUniqId)){
+        if (empty($nextUniqId)) {
             $nextUniqId = $this->getNextUniqIdFromFiles();
         }
         return empty($nextUniqId) ? $this->convertUniqIdFromInt(1) : $nextUniqId;
@@ -105,11 +105,11 @@ class ReceiptManager
      * @param array $existingPayments
      * @return array $receipts [$number => array $data]
      */
-    public function getExistingReceiptsForEntryId(string $entryId,array $existingPayments):array
+    public function getExistingReceiptsForEntryId(string $entryId, array $existingPayments):array
     {
         $sanitizedEntryId = $this->attach->sanitizeFilename($entryId);
         $receipts = array_map(
-            function($result){
+            function ($result) {
                 return [
                     'date' => $result['match'][1],
                     'uniqId' => $result['match'][2],
@@ -120,8 +120,8 @@ class ReceiptManager
                 ];
             },
             array_filter(
-                $this->extractListOfFiles("$sanitizedEntryId/*-*-*-*-*",'/([^-]+)-([0-9]+)-([^-]+)-([^-]+)-([0-9A-Fa-f]+)/'),
-                function($result){
+                $this->extractListOfFiles("$sanitizedEntryId/*-*-*-*-*", '/([^-]+)-([0-9]+)-([^-]+)-([^-]+)-([0-9A-Fa-f]+)/'),
+                function ($result) {
                     return !empty($result['match'][1])
                         && !empty($result['match'][2])
                         && !empty($result['match'][3])
@@ -133,13 +133,13 @@ class ReceiptManager
         $adjustedKeys = [];
         foreach ($existingPayments as $key => $data) {
             $sanitized = $this->attach->sanitizeFilename($key);
-            if (!empty($sanitized)){
+            if (!empty($sanitized)) {
                 $adjustedKeys[$sanitized] = $key;
             }
         }
         $results = [];
         foreach ($receipts as $result) {
-            if (array_key_exists($result['paymentId'],$adjustedKeys)){
+            if (array_key_exists($result['paymentId'], $adjustedKeys)) {
                 $paymentId = $adjustedKeys[$result['paymentId']];
                 $waitedMD5 = $this->calculateShortMd5($existingPayments[$paymentId]);
                 $results[$paymentId] = $result;
@@ -156,7 +156,7 @@ class ReceiptManager
      */
     public function calculateShortMd5(array $paymentData): string
     {
-        return substr(md5(serialize($paymentData)),0,10);
+        return substr(md5(serialize($paymentData)), 0, 10);
     }
 
     /**
@@ -167,13 +167,13 @@ class ReceiptManager
      * @param bool $forceNotSameMd5
      * @return array [string $receiptPath,string $shortMD5]
      */
-    public function getExistingReceiptForEntryIdAndNumber(string $entryId,string $paymentId,array $existingPayments,bool $forceNotSameMd5 = false):array
+    public function getExistingReceiptForEntryIdAndNumber(string $entryId, string $paymentId, array $existingPayments, bool $forceNotSameMd5 = false):array
     {
-        $receipts = $this->getExistingReceiptsForEntryId($entryId,$existingPayments);
+        $receipts = $this->getExistingReceiptsForEntryId($entryId, $existingPayments);
         return (
             empty($receipts[$paymentId]['filePath'])
             || (
-                !$forceNotSameMd5 && 
+                !$forceNotSameMd5 &&
                 !$receipts[$paymentId]['md5Match']
             )
         )
@@ -194,46 +194,46 @@ class ReceiptManager
     public function generateReceiptForEntryIdAndNumber(string $entryId, string $paymentId):array
     {
         $hpfParams = $this->hpfService->getHpfParams();
-        if (empty($hpfParams)){
+        if (empty($hpfParams)) {
             return ['','empty HpfParams'];
         }
-        if (empty($entryId)){
+        if (empty($entryId)) {
             return ['','entryId should not be empty'];
         }
-        if (empty($paymentId)){
+        if (empty($paymentId)) {
             return ['','paymentId should not be empty'];
         }
         $structureInfo = $this->hpfService->getHpfStructureInfo();
         // extract data from entry
-        $entry = $this->entryManager->getOne($entryId,false,null,false,true); // no cache, bypass acls for payments
-        if (empty($entry)){
+        $entry = $this->entryManager->getOne($entryId, false, null, false, true); // no cache, bypass acls for payments
+        if (empty($entry)) {
             return ['','not found entry'];
         }
         // check paymentId existing
         $existingPayments = $this->getPaymentsFromEntry($entry);
-        if (!array_key_exists($paymentId,$existingPayments)){
+        if (!array_key_exists($paymentId, $existingPayments)) {
             return ['','not found payment\'s id'];
         }
         $payment = $existingPayments[$paymentId];
-        if ($payment['origin'] == 'structure'){
+        if ($payment['origin'] == 'structure') {
             return ['','It is not possible to generate a receipt for structure\'s payment !'];
         }
         // check if receipt is existing
-        list($existingReceiptPath,$existingReceiptMd5) = $this->getExistingReceiptForEntryIdAndNumber($entryId,$paymentId,$existingPayments,true);
-        if (!empty($existingReceiptPath)){
+        list($existingReceiptPath, $existingReceiptMd5) = $this->getExistingReceiptForEntryIdAndNumber($entryId, $paymentId, $existingPayments, true);
+        if (!empty($existingReceiptPath)) {
             $currentMD5 = $this->calculateShortMd5($payment);
-            if ($currentMD5 == $existingReceiptMd5){
+            if ($currentMD5 == $existingReceiptMd5) {
                 return [$existingReceiptPath,'receipt already existing !'];
             } else {
                 $currentDir = dirname($existingReceiptPath);
                 $fileName = basename($existingReceiptPath);
-                if (file_exists("$currentDir/archives/$fileName")){
+                if (file_exists("$currentDir/archives/$fileName")) {
                     unlink("$currentDir/archives/$fileName");
                 }
-                if (!is_dir("$currentDir/archives")){
+                if (!is_dir("$currentDir/archives")) {
                     mkdir("$currentDir/archives");
                 }
-                rename($existingReceiptPath,"$currentDir/archives/$fileName");
+                rename($existingReceiptPath, "$currentDir/archives/$fileName");
             }
         }
         // get uniqId
@@ -245,33 +245,33 @@ class ReceiptManager
             $payment
         );
         $archiveFilePath = dirname($filePath).'/archives/'.basename($filePath);
-        if (file_exists($archiveFilePath)){
-            rename($archiveFilePath,$filePath);
+        if (file_exists($archiveFilePath)) {
+            rename($archiveFilePath, $filePath);
             return [$filePath,'receipt already existing from archive !'];
         }
         // render via twig
-        $html = $this->wiki->render('@hpf/hpf-receipts.twig',compact([
+        $html = $this->wiki->render('@hpf/hpf-receipts.twig', compact([
             'entry',
             'uniqId',
             'structureInfo',
             'paymentId',
             'payment'
         ]));
-        if (empty($html)){
+        if (empty($html)) {
             throw new Exception('error when generating html !');
         }
         // next line only for tests
         // file_put_contents(str_replace('.pdf','.html',$filePath),$html);
         // use Mpdf to render pdf and save it
-        $this->generatePdfFromHtml($html,$filePath);
-        if (!is_file($filePath)){
+        $this->generatePdfFromHtml($html, $filePath);
+        if (!is_file($filePath)) {
             ['','The pdf was not generated'];
         }
         // save UniqId
-        if ($this->saveLastestUniqId($uniqId)){
+        if ($this->saveLastestUniqId($uniqId)) {
             return [$filePath,''];
         }
-        if (is_file($filePath)){
+        if (is_file($filePath)) {
             unlink($filePath);
         }
         return ['','not possible to save the new uniq Id'];
@@ -293,7 +293,7 @@ class ReceiptManager
      */
     protected function getNextUniqIdFromDatabase(): string
     {
-        $value = $this->tripleStore->getOne(self::RECEIPT_UNIQ_ID_HPF_RESOURCE,self::RECEIPT_UNIQ_ID_HPF_PROPERTY,'','');
+        $value = $this->tripleStore->getOne(self::RECEIPT_UNIQ_ID_HPF_RESOURCE, self::RECEIPT_UNIQ_ID_HPF_PROPERTY, '', '');
         return (empty($value) || !is_string($value)) ? '' : $this->convertUniqIdFromInt(intval($value)+1);
     }
 
@@ -304,7 +304,7 @@ class ReceiptManager
      */
     public function convertUniqIdFromInt(int $value):string
     {
-        return $value < 0 ? '' : str_pad(strval($value),self::NB_CHARS,'0',STR_PAD_LEFT);
+        return $value < 0 ? '' : str_pad(strval($value), self::NB_CHARS, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -315,12 +315,12 @@ class ReceiptManager
     {
         $nbChars = self::NB_CHARS;
         $ids = array_map(
-            function($result){
+            function ($result) {
                 return intval($result['match'][2]);
             },
             array_filter(
-                $this->extractListOfFiles('*/*-*-*-*','/([^-]+)-([0-9]{12,$nbChars})-.+/'),
-                function($result){
+                $this->extractListOfFiles('*/*-*-*-*', '/([^-]+)-([0-9]{12,$nbChars})-.+/'),
+                function ($result) {
                     return !empty($result['match'][2]);
                 }
             )
@@ -334,7 +334,7 @@ class ReceiptManager
      * @param string $regexp
      * @return array $results
      */
-    protected function extractListOfFiles(string $globFilter,string $regexp):array
+    protected function extractListOfFiles(string $globFilter, string $regexp):array
     {
         $this->prepareDirectory();
         $files = glob(self::LOCALIZATION."$globFilter.pdf");
@@ -342,7 +342,7 @@ class ReceiptManager
         foreach ($files as $filePath) {
             $filename = pathinfo($filePath)['filename'];
             $match = [];
-            if (preg_match($regexp,$filename,$match)){
+            if (preg_match($regexp, $filename, $match)) {
                 $results[] = compact(['match','filePath']);
             }
         }
@@ -362,14 +362,13 @@ class ReceiptManager
         string $uniqId,
         string $paymentId,
         array $paymentData
-    ):string
-    {
+    ):string {
         $sanitizedEntryId = $this->attach->sanitizeFilename($entryId);
-        if (!file_exists(self::LOCALIZATION.$sanitizedEntryId)){
+        if (!file_exists(self::LOCALIZATION.$sanitizedEntryId)) {
             mkdir(self::LOCALIZATION.$sanitizedEntryId);
         }
         $sanitizedOrigin = $this->attach->sanitizeFilename($paymentData['origin']);
-        $date = $this->attach->sanitizeFilename(substr($paymentData['date'],0,10));
+        $date = $this->attach->sanitizeFilename(substr($paymentData['date'], 0, 10));
         $sanitizedpaymentId = $this->attach->sanitizeFilename($paymentId);
         $shortMd5 = $this->calculateShortMd5($paymentData);
         return self::LOCALIZATION
@@ -381,30 +380,30 @@ class ReceiptManager
      */
     protected function prepareDirectory()
     {
-        if (!file_exists(self::LOCALIZATION)){
+        if (!file_exists(self::LOCALIZATION)) {
             mkdir(self::LOCALIZATION);
         }
-        if (!file_exists(self::LOCALIZATION_CACHE)){
+        if (!file_exists(self::LOCALIZATION_CACHE)) {
             mkdir(self::LOCALIZATION_CACHE);
         }
     }
 
     /**
-     * save next uniq Id as lastest uniq ID 
+     * save next uniq Id as lastest uniq ID
      * @param string $nextUniqId
      * @return bool
      */
     public function saveLastestUniqId(string $nextUniqId): bool
     {
         $nextExpected = $this->getNextUniqId();
-        if (intval($nextExpected) != intval($nextUniqId)){
+        if (intval($nextExpected) != intval($nextUniqId)) {
             return false;
         }
-        $value = $this->tripleStore->getOne(self::RECEIPT_UNIQ_ID_HPF_RESOURCE,self::RECEIPT_UNIQ_ID_HPF_PROPERTY,'','');
-        if (empty($value)){
-            return $this->tripleStore->create(self::RECEIPT_UNIQ_ID_HPF_RESOURCE,self::RECEIPT_UNIQ_ID_HPF_PROPERTY,$nextExpected,'','') === 0;
+        $value = $this->tripleStore->getOne(self::RECEIPT_UNIQ_ID_HPF_RESOURCE, self::RECEIPT_UNIQ_ID_HPF_PROPERTY, '', '');
+        if (empty($value)) {
+            return $this->tripleStore->create(self::RECEIPT_UNIQ_ID_HPF_RESOURCE, self::RECEIPT_UNIQ_ID_HPF_PROPERTY, $nextExpected, '', '') === 0;
         } else {
-            return $this->tripleStore->update(self::RECEIPT_UNIQ_ID_HPF_RESOURCE,self::RECEIPT_UNIQ_ID_HPF_PROPERTY,$value,$nextExpected,'','') === 0;
+            return $this->tripleStore->update(self::RECEIPT_UNIQ_ID_HPF_RESOURCE, self::RECEIPT_UNIQ_ID_HPF_PROPERTY, $value, $nextExpected, '', '') === 0;
         }
         
     }
@@ -414,7 +413,7 @@ class ReceiptManager
      * @param string $html
      * @param string $filePath
      */
-    protected function generatePdfFromHtml(string $html,string $filePath)
+    protected function generatePdfFromHtml(string $html, string $filePath)
     {
         $this->prepareDirectory();
         $mpdf = new Mpdf([

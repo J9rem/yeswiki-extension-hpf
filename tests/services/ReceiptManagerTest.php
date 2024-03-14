@@ -64,14 +64,14 @@ class ReceiptManagerTest extends YesWikiTestCase
         array $services
     ) {
         $thrown = false;
-        try{
+        try {
             $testingValue = $services['receiptManager']->convertUniqIdFromInt($value);
-        } catch (Throwable $th){
+        } catch (Throwable $th) {
             $thrown = true;
         }
-        $this->assertFalse($thrown,'An exception has been thrown !');
-        $this->assertIsString($testingValue,'testingValue should be a string');
-        $this->assertEquals($waited,$testingValue,'The conversion is not right !');
+        $this->assertFalse($thrown, 'An exception has been thrown !');
+        $this->assertIsString($testingValue, 'testingValue should be a string');
+        $this->assertEquals($waited, $testingValue, 'The conversion is not right !');
         return $services;
     }
 
@@ -120,10 +120,10 @@ class ReceiptManagerTest extends YesWikiTestCase
      * @param array $services
      * @param null|string $oldValue
      */
-    protected static function resetTripleValue(array $services,?string $oldValue)
+    protected static function resetTripleValue(array $services, ?string $oldValue)
     {
         $defaultValue = $services['receiptManager']->convertUniqIdFromInt(0);
-        self::setTripleValue($services,empty($oldValue) ? $defaultValue : $oldValue);
+        self::setTripleValue($services, empty($oldValue) ? $defaultValue : $oldValue);
     }
 
     /**
@@ -131,14 +131,14 @@ class ReceiptManagerTest extends YesWikiTestCase
      * @param array $services
      * @param string $value
      */
-    protected static function setTripleValue(array $services,string $value)
+    protected static function setTripleValue(array $services, string $value)
     {
         $tripleStore = $services['wiki']->services->get(TripleStore::class);
         $currentValue = self::getCurrentUniqId($services);
-        if (empty($currentValue)){
-            $tripleStore->create(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE,ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY,$value,'','');
+        if (empty($currentValue)) {
+            $tripleStore->create(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE, ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY, $value, '', '');
         } else {
-            $tripleStore->update(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE,ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY,$currentValue,$value,'','');
+            $tripleStore->update(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE, ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY, $currentValue, $value, '', '');
         }
     }
 
@@ -154,21 +154,21 @@ class ReceiptManagerTest extends YesWikiTestCase
         $thrown = false;
         $testingValue = $services['receiptManager']->convertUniqIdFromInt(30004);
         $uniqId = '';
-        try{
+        try {
             $uniqId = $services['receiptManager']->getNextUniqId();
             $value = self::getCurrentUniqId($services);
-            self::setTripleValue($services,$testingValue);
+            self::setTripleValue($services, $testingValue);
             $uniqId2 = $services['receiptManager']->getNextUniqId();
-            self::resetTripleValue($services,$value);
-        } catch (Throwable $th){
+            self::resetTripleValue($services, $value);
+        } catch (Throwable $th) {
             $thrown = true;
         }
-        $this->assertFalse($thrown,'An exception has been thrown !');
-        $this->assertIsString($uniqId,'uniqId should be a string');
-        $this->assertMatchesRegularExpression('/^[0-9]{'.ReceiptManager::NB_CHARS.'}$/',$uniqId,'uniqId should be a string of '.ReceiptManager::NB_CHARS.' digits');
-        $this->assertIsString($uniqId2,'uniqId2 should be a string');
-        $this->assertMatchesRegularExpression('/^[0-9]{'.ReceiptManager::NB_CHARS.'}$/',$uniqId2,'uniqId2 should be a string of '.ReceiptManager::NB_CHARS.' digits');
-        $this->assertEquals(intval($testingValue)+1,intval($uniqId2),'bad calculation of uniqId');
+        $this->assertFalse($thrown, 'An exception has been thrown !');
+        $this->assertIsString($uniqId, 'uniqId should be a string');
+        $this->assertMatchesRegularExpression('/^[0-9]{'.ReceiptManager::NB_CHARS.'}$/', $uniqId, 'uniqId should be a string of '.ReceiptManager::NB_CHARS.' digits');
+        $this->assertIsString($uniqId2, 'uniqId2 should be a string');
+        $this->assertMatchesRegularExpression('/^[0-9]{'.ReceiptManager::NB_CHARS.'}$/', $uniqId2, 'uniqId2 should be a string of '.ReceiptManager::NB_CHARS.' digits');
+        $this->assertEquals(intval($testingValue)+1, intval($uniqId2), 'bad calculation of uniqId');
         return $services;
     }
 
@@ -184,21 +184,21 @@ class ReceiptManagerTest extends YesWikiTestCase
     ) {
         $thrown = false;
         $uniqId = '';
-        try{
+        try {
             $value = self::getCurrentUniqId($services);
             $uniqId = $services['receiptManager']->getNextUniqId();
             $wrongResult = $services['receiptManager']->saveLastestUniqId($services['receiptManager']->convertUniqIdFromInt(intval($uniqId) + 30));
             $uniqId2 = $services['receiptManager']->getNextUniqId();
             $goodResult = $services['receiptManager']->saveLastestUniqId($uniqId);
             $uniqId3 = $services['receiptManager']->getNextUniqId();
-            self::resetTripleValue($services,$value);
-        } catch (Throwable $th){
+            self::resetTripleValue($services, $value);
+        } catch (Throwable $th) {
             $thrown = true;
         }
-        $this->assertFalse($wrongResult,'Should not save not following value !');
-        $this->assertEquals($uniqId,$uniqId2,'Should have same values !');
-        $this->assertTrue($goodResult,'Should save the following value !');
-        $this->assertEquals($uniqId2+1,$uniqId3,'Should save the same values !');
+        $this->assertFalse($wrongResult, 'Should not save not following value !');
+        $this->assertEquals($uniqId, $uniqId2, 'Should have same values !');
+        $this->assertTrue($goodResult, 'Should save the following value !');
+        $this->assertEquals($uniqId2+1, $uniqId3, 'Should save the same values !');
         return $services;
     }
 
@@ -213,7 +213,7 @@ class ReceiptManagerTest extends YesWikiTestCase
     ) {
         $thrown = false;
         $thMsg = '';
-        try{
+        try {
             $results = [];
             $results[] = $services['receiptManager']->calculateShortMd5([]);
             $results[] = $services['receiptManager']->calculateShortMd5([
@@ -222,15 +222,15 @@ class ReceiptManagerTest extends YesWikiTestCase
                 'date' => '2024-01-01',
                 'don' => ['2024' => '50']
             ]);
-        } catch (Throwable $th){
+        } catch (Throwable $th) {
             $thrown = true;
             $thMsg = $th->getMessage();
         }
-        $this->assertFalse($thrown,"An exception has been thrown and it is not waited ($thMsg)!");
-        foreach($results as $result){
+        $this->assertFalse($thrown, "An exception has been thrown and it is not waited ($thMsg)!");
+        foreach($results as $result) {
             $this->assertIsString($result);
-            $this->assertEquals(10,strlen($result),'The returned string should be of 10 characters !');
-            $this->assertMatchesRegularExpression('/^[0-9A-Fa-f]{10}$/',$result,'The string should be hexa !');
+            $this->assertEquals(10, strlen($result), 'The returned string should be of 10 characters !');
+            $this->assertMatchesRegularExpression('/^[0-9A-Fa-f]{10}$/', $result, 'The string should be hexa !');
         }
         return $services;
     }
@@ -247,37 +247,37 @@ class ReceiptManagerTest extends YesWikiTestCase
         $thrown = false;
         self::cleanFiles();
         $thMsg = '';
-        try{
+        try {
             // create 2 payments
-            $entry = $this->getExistingEntry($services,'virement',true);
+            $entry = $this->getExistingEntry($services, 'virement', true);
             // get payments
             $payments = $services['receiptManager']->getPaymentsFromEntry($entry);
             $md51 = $services['receiptManager']->calculateShortMd5($payments[Helper::DEFAULT_PAYMENT_ID]);
             $md52 = $services['receiptManager']->calculateShortMd5($payments[Helper::OTHER_PAYMENT_ID]);
             // generate receipts
-            list($receipt1Path) = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entry['id_fiche'],Helper::DEFAULT_PAYMENT_ID);
-            list($receipt2Path) = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entry['id_fiche'],Helper::OTHER_PAYMENT_ID);
+            list($receipt1Path) = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entry['id_fiche'], Helper::DEFAULT_PAYMENT_ID);
+            list($receipt2Path) = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entry['id_fiche'], Helper::OTHER_PAYMENT_ID);
             // get results
-            $results = $services['receiptManager']->getExistingReceiptsForEntryId($entry['id_fiche'],$payments);
-        } catch (Throwable $th){
+            $results = $services['receiptManager']->getExistingReceiptsForEntryId($entry['id_fiche'], $payments);
+        } catch (Throwable $th) {
             $thrown = true;
             $thMsg = $th->getMessage();
         }
         self::cleanFiles();
-        $this->assertFalse($thrown,"An exception has been thrown and it is not waited ($thMsg)!");
+        $this->assertFalse($thrown, "An exception has been thrown and it is not waited ($thMsg)!");
         $this->assertIsArray($results);
         foreach ([
             Helper::DEFAULT_PAYMENT_ID => ['filePath'=>$receipt1Path,'md5'=>$md51],
             Helper::OTHER_PAYMENT_ID => ['filePath'=>$receipt2Path,'md5'=>$md52]
             ] as $key => $expectedValues) {
-            $this->assertArrayHasKey($key,$results);
-            foreach($expectedValues as $key2 => $expectedValue){
-                $this->assertArrayHasKey($key2,$results[$key]);
+            $this->assertArrayHasKey($key, $results);
+            foreach($expectedValues as $key2 => $expectedValue) {
+                $this->assertArrayHasKey($key2, $results[$key]);
                 $this->assertIsString($results[$key][$key2]);
-                $this->assertEquals($expectedValue,$results[$key][$key2]);
+                $this->assertEquals($expectedValue, $results[$key][$key2]);
             }
         }
-        $this->assertCount(2,$results);
+        $this->assertCount(2, $results);
         return $services;
     }
 
@@ -292,22 +292,22 @@ class ReceiptManagerTest extends YesWikiTestCase
     ) {
         $thrown = false;
         self::cleanFiles();
-        try{
+        try {
             // create 1 payment
-            $entry = $this->getExistingEntry($services,'virement',false);
+            $entry = $this->getExistingEntry($services, 'virement', false);
             // get payments
             $payments = $services['receiptManager']->getPaymentsFromEntry($entry);
             // generate receipts
-            list($receiptPath) = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entry['id_fiche'],Helper::DEFAULT_PAYMENT_ID);
+            list($receiptPath) = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entry['id_fiche'], Helper::DEFAULT_PAYMENT_ID);
             // get result
-            list($result,$md5) = $services['receiptManager']->getExistingReceiptForEntryIdAndNumber($entry['id_fiche'],Helper::DEFAULT_PAYMENT_ID,$payments);
-        } catch (Throwable $th){
+            list($result, $md5) = $services['receiptManager']->getExistingReceiptForEntryIdAndNumber($entry['id_fiche'], Helper::DEFAULT_PAYMENT_ID, $payments);
+        } catch (Throwable $th) {
             $thrown = true;
         }
         self::cleanFiles();
-        $this->assertFalse($thrown,'An exception has been thrown and it is not waited !');
+        $this->assertFalse($thrown, 'An exception has been thrown and it is not waited !');
         $this->assertIsString($result);
-        $this->assertEquals($receiptPath,$result);
+        $this->assertEquals($receiptPath, $result);
         $this->assertIsString($md5);
         return $services;
     }
@@ -334,32 +334,32 @@ class ReceiptManagerTest extends YesWikiTestCase
     ) {
         $thrown = false;
         $thString = '';
-        $uniqId = ''; 
-        if ($entryId === Helper::ENTRY_ID){
-            $entry = $this->getExistingEntry($services,$originOfPayment);
+        $uniqId = '';
+        if ($entryId === Helper::ENTRY_ID) {
+            $entry = $this->getExistingEntry($services, $originOfPayment);
             $entryId = $entry['id_fiche'] ?? '';
         }
-        try{
-            $results = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entryId,$paymentId);
-        } catch (Throwable $th){
+        try {
+            $results = $services['receiptManager']->generateReceiptForEntryIdAndNumber($entryId, $paymentId);
+        } catch (Throwable $th) {
             $thrown = true;
             $thString = $services['hpfController']->formatThrowableStringForExport($th);
         }
-        if ($waitedThrown){
-            $this->assertTrue($thrown,'An exception has not been thrown and it is not waited !');
+        if ($waitedThrown) {
+            $this->assertTrue($thrown, 'An exception has not been thrown and it is not waited !');
         } else {
-            $this->assertFalse($thrown,"An exception has been thrown and it is not waited ! : $thString");
+            $this->assertFalse($thrown, "An exception has been thrown and it is not waited ! : $thString");
             // format of response
             $this->assertIsArray($results);
-            $this->assertCount(2,$results);
-            if (!empty($errorMsgRegExp)){
-                $this->assertNotEmpty($results[1],'Error message should not be empty');
-                $this->assertIsString($results[1],'Error message should be a string');
-                $this->assertMatchesRegularExpression($errorMsgRegExp,$results[1],'Wrong error message !');
+            $this->assertCount(2, $results);
+            if (!empty($errorMsgRegExp)) {
+                $this->assertNotEmpty($results[1], 'Error message should not be empty');
+                $this->assertIsString($results[1], 'Error message should be a string');
+                $this->assertMatchesRegularExpression($errorMsgRegExp, $results[1], 'Wrong error message !');
             } else {
-                $this->assertEmpty($results[1],'Error message should be empty');
-                $this->assertNotEmpty($results[0],'Receipt Path should not be empty');
-                $this->assertIsString($results[0],'Receipt Path should be a string');
+                $this->assertEmpty($results[1], 'Error message should be empty');
+                $this->assertNotEmpty($results[0], 'Receipt Path should not be empty');
+                $this->assertIsString($results[0], 'Receipt Path should be a string');
                 $this->assertFileExists($results[0]);
             }
         }
@@ -452,22 +452,22 @@ class ReceiptManagerTest extends YesWikiTestCase
      * @param bool $twoPayments
      * @return array $entry
      */
-    public function getExistingEntry(array $services,string $originOfPayment, bool $twoPayments = false): array
+    public function getExistingEntry(array $services, string $originOfPayment, bool $twoPayments = false): array
     {
         // get services
         $entryManager = $services['wiki']->services->get(EntryManager::class);
         // set GLOBALS for bazar.fonct.php:44
         $GLOBALS['wiki'] = $services['wiki'];
 
-        // get entry 
+        // get entry
         $rawentry = $entryManager->getOne(Helper::ENTRY_ID, false, null, false, true); // no cache
         if (!empty($rawentry[HpfService::PAYMENTS_FIELDNAME])
-            && strpos($rawentry[HpfService::PAYMENTS_FIELDNAME],"\"origin\":\"$originOfPayment\"") === false){
+            && strpos($rawentry[HpfService::PAYMENTS_FIELDNAME], "\"origin\":\"$originOfPayment\"") === false) {
             // delete previous
-            Helper::updateEntry(false,[],$services['wiki'],self::$cache['currentFormId'] ?? '');
+            Helper::updateEntry(false, [], $services['wiki'], self::$cache['currentFormId'] ?? '');
             $rawentry = [];
         }
-        if (empty($rawentry)){
+        if (empty($rawentry)) {
             // create entry
             $data = [
                 'bf_prenom' => 'John',
@@ -508,7 +508,7 @@ class ReceiptManagerTest extends YesWikiTestCase
                 $data['bf_dons_payes_2023'] = '50';
                 $data['checkboxListeHpfTestUniqIdListebf_annees_dons_payes'] = '2023,2024';
             }
-            Helper::updateEntry(true,$data,$services['wiki'],self::$cache['currentFormId'] ?? '');
+            Helper::updateEntry(true, $data, $services['wiki'], self::$cache['currentFormId'] ?? '');
             $rawentry = $entryManager->getOne(Helper::ENTRY_ID, false, null, false, true); // no cache
         }
         return empty($rawentry) ? [] : $rawentry;
@@ -522,7 +522,7 @@ class ReceiptManagerTest extends YesWikiTestCase
     protected static function getCurrentUniqId(array $services): string
     {
         $tripleStore = $services['wiki']->services->get(TripleStore::class);
-        $value = $tripleStore->getOne(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE,ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY,'','');
+        $value = $tripleStore->getOne(ReceiptManager::RECEIPT_UNIQ_ID_HPF_RESOURCE, ReceiptManager::RECEIPT_UNIQ_ID_HPF_PROPERTY, '', '');
         return empty($value) ? '' : $value;
     }
 
@@ -531,17 +531,17 @@ class ReceiptManagerTest extends YesWikiTestCase
      */
     protected function setUp(): void
     {
-        if (empty(self::$myWiki)){
+        if (empty(self::$myWiki)) {
             return;
         }
         // save previous value
-        if (empty(self::$previousValue) && self::$previousValue !== ''){
+        if (empty(self::$previousValue) && self::$previousValue !== '') {
             self::$previousValue = self::getCurrentUniqId(['wiki'=>self::$myWiki]);
         }
         // create List
-        Helper::updateList(true,self::$myWiki);
+        Helper::updateList(true, self::$myWiki);
         // create Form
-        self::$cache['currentFormId'] = Helper::updateForm(true,self::$myWiki,self::$cache['currentFormId'] ?? '');
+        self::$cache['currentFormId'] = Helper::updateForm(true, self::$myWiki, self::$cache['currentFormId'] ?? '');
     }
 
     /**
@@ -549,20 +549,20 @@ class ReceiptManagerTest extends YesWikiTestCase
      */
     public static function tearDownAfterClass(): void
     {
-        if (empty(self::$myWiki)){
+        if (empty(self::$myWiki)) {
             return;
         }
         // remove List
-        Helper::updateList(false,self::$myWiki);
+        Helper::updateList(false, self::$myWiki);
         // remove Form
-        self::$cache['currentFormId'] = Helper::updateForm(false,self::$myWiki,self::$cache['currentFormId'] ?? '');
+        self::$cache['currentFormId'] = Helper::updateForm(false, self::$myWiki, self::$cache['currentFormId'] ?? '');
         self::cleanFiles();
         // reset previous value
         $services = [
             'wiki'=>self::$myWiki,
             'receiptManager' => self::$myWiki->services->get(ReceiptManager::class)
         ];
-        self::resetTripleValue($services,is_string(self::$previousValue) ? self::$previousValue : '');
+        self::resetTripleValue($services, is_string(self::$previousValue) ? self::$previousValue : '');
     }
 
 
@@ -571,12 +571,12 @@ class ReceiptManagerTest extends YesWikiTestCase
      */
     protected static function cleanFiles()
     {
-        if (is_dir(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID)){
-            array_map('unlink',glob(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/*.pdf'));
-            array_map('unlink',glob(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/*.html'));
+        if (is_dir(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID)) {
+            array_map('unlink', glob(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/*.pdf'));
+            array_map('unlink', glob(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/*.html'));
             try {
-                if (is_dir(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/archives')){
-                    array_map('unlink',glob(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/archives/*.pdf'));
+                if (is_dir(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/archives')) {
+                    array_map('unlink', glob(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/archives/*.pdf'));
                     rmdir(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID.'/archives');
                 }
                 rmdir(ReceiptManager::LOCALIZATION.Helper::ENTRY_ID);

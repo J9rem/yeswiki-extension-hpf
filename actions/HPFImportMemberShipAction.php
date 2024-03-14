@@ -30,8 +30,8 @@ class HPFImportMemberShipAction extends YesWikiAction
     public function formatArguments($arg)
     {
         return([
-            'college1' => $this->formatString($arg,'college1'),
-            'college2' => $this->formatString($arg,'college2')
+            'college1' => $this->formatString($arg, 'college1'),
+            'college2' => $this->formatString($arg, 'college2')
         ]);
     }
 
@@ -45,8 +45,8 @@ class HPFImportMemberShipAction extends YesWikiAction
     public function run()
     {
         // only admins
-        if (!$this->wiki->UserIsAdmin()){
-            return $this->render('@templates/alert-message.twig',[
+        if (!$this->wiki->UserIsAdmin()) {
+            return $this->render('@templates/alert-message.twig', [
                 'message' => _t('BAZ_NEED_ADMIN_RIGHTS'),
                 'type' => 'danger'
             ]);
@@ -57,8 +57,8 @@ class HPFImportMemberShipAction extends YesWikiAction
         ];
         // not empty params
         foreach (['college1','college2'] as $name) {
-            if (empty($this->arguments[$name])){
-                return $this->render('@templates/alert-message.twig',[
+            if (empty($this->arguments[$name])) {
+                return $this->render('@templates/alert-message.twig', [
                     'message' => "Le paramètre '$name' ne doit pas être vide !",
                     'type' => 'danger'
                 ]);
@@ -73,11 +73,11 @@ class HPFImportMemberShipAction extends YesWikiAction
         $data = [];
         $error = '';
         $fileName = '';
-        if ($this->isFile()){
+        if ($this->isFile()) {
             try {
                 $fileName = $_FILES['file']['name'];
                 $type = $this->getType($fileName);
-                $data = $this->extractValues($fileName,$type);
+                $data = $this->extractValues($fileName, $type);
                 $data = $this->cleanEmptyLines($data);
                 $data = $this->extractData($data);
                 $data = $this->appendCalculatedProps($data);
@@ -85,7 +85,7 @@ class HPFImportMemberShipAction extends YesWikiAction
                 $error = $th->getMessage();
             }
         }
-        return $this->render('@hpf/hpf-import-memberships-action.twig',compact(['data','error','fileName','params']));  
+        return $this->render('@hpf/hpf-import-memberships-action.twig', compact(['data','error','fileName','params']));
     }
 
     /**
@@ -107,7 +107,7 @@ class HPFImportMemberShipAction extends YesWikiAction
     protected function getType(string $name): string
     {
         $match = [];
-        if (!preg_match('/\.((?:csv|ods|xls(?:x|m)?))$/',$name,$match)){
+        if (!preg_match('/\.((?:csv|ods|xls(?:x|m)?))$/', $name, $match)) {
             throw new Exception(_t('HPF_IMPORT_BAD_ERROR_FORMAT'));
         }
         return $match[1];
@@ -127,10 +127,10 @@ class HPFImportMemberShipAction extends YesWikiAction
             case 'xls':
             case 'xlsx':
             case 'xlsm':
-                return $this->extractXls_X($filename,$_FILES['file']['tmp_name']);
+                return $this->extractXls_X($filename, $_FILES['file']['tmp_name']);
                 
             default:
-                if (!empty($type)){
+                if (!empty($type)) {
                     throw new Exception("type : \"$type\" is not supported !");
                 }
                 throw new Exception('"type" should not be empty !');
@@ -144,23 +144,23 @@ class HPFImportMemberShipAction extends YesWikiAction
      * @return array
      * @throws Exception
      */
-    protected function extractXls_X(string $fileName,string $tmpFilename): array
+    protected function extractXls_X(string $fileName, string $tmpFilename): array
     {
         $data = [];
         $tmpPath = sys_get_temp_dir();
-        if (!in_array(substr($tmpPath,-1),['/','\\'])){
+        if (!in_array(substr($tmpPath, -1), ['/','\\'])) {
             $tmpPath .= DIRECTORY_SEPARATOR;
         }
         $filePath = $tmpPath.$fileName;
-        if (is_file($filePath)){
+        if (is_file($filePath)) {
             unlink($filePath);
-            if (is_file($filePath)){
-                throw new Exception("Not possible to delete previous tmp file !");   
+            if (is_file($filePath)) {
+                throw new Exception("Not possible to delete previous tmp file !");
             }
         }
         move_uploaded_file($tmpFilename, $filePath);
-        if (!is_file($filePath)){
-            throw new Exception("Not possible to create tmp file !");  
+        if (!is_file($filePath)) {
+            throw new Exception("Not possible to create tmp file !");
         }
         chmod($filePath, 0755);
         try {
@@ -173,7 +173,7 @@ class HPFImportMemberShipAction extends YesWikiAction
             $highestColumn = $worksheet->getHighestColumn(); // e.g 'F'
             $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn); // e.g. 5
             for ($row = 0; $row < $highestRow; ++$row) {
-                if (!isset($data[$row])){
+                if (!isset($data[$row])) {
                     $data[$row] = [];
                 }
                 for ($col = 0; $col < $highestColumnIndex; ++$col) {
@@ -183,7 +183,7 @@ class HPFImportMemberShipAction extends YesWikiAction
         } catch (Throwable $th) {
         } finally {
             try {
-                if (is_file($filePath)){
+                if (is_file($filePath)) {
                     unlink($filePath);
                 }
             } catch (Throwable $th2) {
@@ -201,14 +201,14 @@ class HPFImportMemberShipAction extends YesWikiAction
     {
         $results = [];
         foreach ($rows as $row) {
-            if (count($row) > 3){
+            if (count($row) > 3) {
                 $nbEmptyCells = 0;
-                for ($i=0; $i < 5; $i++) { 
-                    if ($i < count($row) && empty($row[$i])){
+                for ($i=0; $i < 5; $i++) {
+                    if ($i < count($row) && empty($row[$i])) {
                         $nbEmptyCells += 1;
                     }
                 }
-                if ($nbEmptyCells < 3){
+                if ($nbEmptyCells < 3) {
                     $results[] = $row;
                 }
             }
@@ -230,18 +230,18 @@ class HPFImportMemberShipAction extends YesWikiAction
         $colDefs = new ColumnsDef();
         foreach (ColumnsDef::COLUMNS_SEARCH as $key => $colDef) {
             foreach ($availableIdx as $idx) {
-                if (!isset($colDefs[$key]) && preg_match($colDef['search'],$firstLine[$idx])){
+                if (!isset($colDefs[$key]) && preg_match($colDef['search'], $firstLine[$idx])) {
                     $colDefs[$key] = intval($idx);
                     $availableIdx = array_filter(
                         $availableIdx,
-                        function ($i) use ($idx){
+                        function ($i) use ($idx) {
                             return $i != $idx;
                         }
                     );
                 }
             }
         }
-        if (empty($colDefs)){
+        if (empty($colDefs)) {
             throw new Exception('Not possible to detec columns !');
         }
         return $colDefs;
@@ -259,7 +259,7 @@ class HPFImportMemberShipAction extends YesWikiAction
         $colDef = $this->detectColumns($rows);
         foreach ($rows as $rowKey => $row) {
             // not first line
-            if ($rowKey > 0){
+            if ($rowKey > 0) {
                 $extractedLine = [];
                 foreach ($colDef as $key => $idx) {
                     $colDefFilter = ColumnsDef::COLUMNS_SEARCH[$key]['filter'] ?? '';
@@ -268,13 +268,13 @@ class HPFImportMemberShipAction extends YesWikiAction
                         isset($row[$idx])
                         && (
                             empty($colDefFilter)
-                            || preg_match($colDefFilter,strval($row[$idx]),$match)
+                            || preg_match($colDefFilter, strval($row[$idx]), $match)
                         )
                     )
                     ? ($match[1] ?? $row[$idx])
                     : '';
                     $colDefPostAction = ColumnsDef::COLUMNS_SEARCH[$key]['post'] ?? '';
-                    if (!empty($colDefPostAction)){
+                    if (!empty($colDefPostAction)) {
                         $listOfAction = is_array($colDefPostAction)
                             ? $colDefPostAction
                             : (
@@ -282,9 +282,9 @@ class HPFImportMemberShipAction extends YesWikiAction
                                 ? [$colDefPostAction]
                                 : []
                             );
-                        foreach($listOfAction as $functionName){
-                            if (is_callable($functionName)){
-                                $extractedLine[$key] = call_user_func($functionName,$extractedLine[$key]);
+                        foreach($listOfAction as $functionName) {
+                            if (is_callable($functionName)) {
+                                $extractedLine[$key] = call_user_func($functionName, $extractedLine[$key]);
                             }
                         }
                     }
@@ -298,33 +298,33 @@ class HPFImportMemberShipAction extends YesWikiAction
     /**
      * append calculated props
      * @param array $data
-     * @return array 
+     * @return array
      */
     protected function appendCalculatedProps(array $data): array
     {
-        foreach ($data as $key => $newValue){
-            $data[$key]['isGroup'] = 
+        foreach ($data as $key => $newValue) {
+            $data[$key]['isGroup'] =
             (
                 empty($data[$key]['isGroup'])
                 && ((
                     !empty($newValue['comment'])
-                    && preg_match('/^\\s*groupe?s?.*\\s*$/i',$newValue['comment'])
+                    && preg_match('/^\\s*groupe?s?.*\\s*$/i', $newValue['comment'])
                 ) || (
-                    in_array($newValue['value'],[100,200])
+                    in_array($newValue['value'], [100,200])
                 ))
             ) ? 'x' : ($data[$key]['isGroup'] ?? '');
             $data[$key]['associatedEntryId'] = $this->searchEntryId($newValue, ['email'], $data[$key]['isGroup']);
-            if (empty($data[$key]['associatedEntryId'])){
+            if (empty($data[$key]['associatedEntryId'])) {
                 $data[$key]['associatedEntryId'] = $this->searchEntryId($newValue, ['name','firstname'], $data[$key]['isGroup']);
             }
             $areaManager = $this->getService(AreaManager::class);
-            if (empty($data[$key]['dept']) && !empty($data[$key]['postalcode'])){
+            if (empty($data[$key]['dept']) && !empty($data[$key]['postalcode'])) {
                 $deptcode = $areaManager->extractAreaFromPostalCode([
                     $areaManager->getPostalCodeFieldName() => $data[$key]['postalcode']
                 ]);
                 $data[$key]['dept'] = empty($deptcode) ? '' : $deptcode;
             }
-            if (empty($data[$key]['wantedStructure']) && !empty($data[$key]['dept'])){
+            if (empty($data[$key]['wantedStructure']) && !empty($data[$key]['dept'])) {
                 $data[$key]['wantedStructure'] = $this->structureFinder->findStructureFromDept(
                     $data[$key]['dept'],
                     $data[$key]['isGroup'] === 'x'
@@ -346,12 +346,12 @@ class HPFImportMemberShipAction extends YesWikiAction
     protected function searchEntryId(array $newValue, array $searchOn, bool $isGroup): string
     {
         $formId = $isGroup ? $this->arguments['college2'] : $this->arguments['college1'];
-        if (empty($formId) || empty($newValue) || empty($searchOn)){
+        if (empty($formId) || empty($newValue) || empty($searchOn)) {
             return '';
         }
         $queries = [];
         foreach ($searchOn as $type) {
-            if (!isset($newValue[$type]) || !isset(ColumnsDef::COLUMNS_SEARCH[$type]['prop'])){
+            if (!isset($newValue[$type]) || !isset(ColumnsDef::COLUMNS_SEARCH[$type]['prop'])) {
                 return '';
             }
             $queries[ColumnsDef::COLUMNS_SEARCH[$type]['prop']] = $newValue[$type];

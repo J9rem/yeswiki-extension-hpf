@@ -50,7 +50,7 @@ class ConditionViewField extends LabelField
     {
         return (!empty($this->conditionFieldName) &&
             is_array($entry) &&
-            array_key_exists($this->conditionFieldName,$entry) &&
+            array_key_exists($this->conditionFieldName, $entry) &&
             strval($entry[$this->conditionFieldName]) == $this->conditionFieldWaitedValue)
             ? parent::renderStatic($entry)
             : '';

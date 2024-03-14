@@ -61,7 +61,7 @@ trait ActionsBuilderServiceCommon
                     $newTab['bazarliste'] = $this->data['action_groups']['bazarliste']['actions']['bazarliste'];
                     $newTab['bazarlistnoempty'] = [];
                     foreach ($this->data['action_groups']['bazarliste']['actions'] as $key => $value) {
-                        if ($key != 'bazarliste'){
+                        if ($key != 'bazarliste') {
                             $newTab[$key] = $value;
                         }
                     }
@@ -124,19 +124,19 @@ trait ActionsBuilderServiceCommon
                         ],
                     ];
                 }
-                if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['searchfields']['showOnlyFor'])){
+                if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['searchfields']['showOnlyFor'])) {
                     $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['searchfields']['showOnlyFor'][] = 'bazarlistnoempty';
                 }
-                if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['colorfield']['showOnlyFor'])){
+                if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['colorfield']['showOnlyFor'])) {
                     $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['colorfield']['showOnlyFor'][] = 'bazarlistnoempty';
                 }
-                if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['colormapping']['showOnlyFor'])){
+                if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['colormapping']['showOnlyFor'])) {
                     $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['colormapping']['showOnlyFor'][] = 'bazarlistnoempty';
                 }
-                if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['iconfield']['showOnlyFor'])){
+                if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['iconfield']['showOnlyFor'])) {
                     $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['iconfield']['showOnlyFor'][] = 'bazarlistnoempty';
                 }
-                if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['iconmapping']['showOnlyFor'])){
+                if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['iconmapping']['showOnlyFor'])) {
                     $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['iconmapping']['showOnlyFor'][] = 'bazarlistnoempty';
                 }
                 /* === end of Feature UUID : hpf-bazar-template-list-no-empty === */

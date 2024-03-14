@@ -33,8 +33,8 @@ class ReceiptsField extends LabelField
     {
         $receiptManager = $this->getService(ReceiptManager::class);
         if (empty($entry['id_fiche'])
-            || !$receiptManager->canSeeReceipts($entry['id_fiche'])){
-        return '';
+            || !$receiptManager->canSeeReceipts($entry['id_fiche'])) {
+            return '';
         }
         $payments = $receiptManager->getPaymentsFromEntry($entry);
         return empty($payments)
@@ -43,9 +43,9 @@ class ReceiptsField extends LabelField
                 '@bazar/fields/receipts.twig',
                 [
                     'entry' => $entry,
-                    'existingReceipts' => array_keys($receiptManager->getExistingReceiptsForEntryId($entry['id_fiche'],$payments)),
+                    'existingReceipts' => array_keys($receiptManager->getExistingReceiptsForEntryId($entry['id_fiche'], $payments)),
                     'payments' => array_map(
-                        function ($payment){
+                        function ($payment) {
                             return array_intersect_key(
                                 $payment,
                                 ['date'=>1,'total'=>1]
@@ -53,7 +53,7 @@ class ReceiptsField extends LabelField
                         },
                         array_filter(
                             $payments,
-                            function($p){
+                            function ($p) {
                                 return $p['origin'] !== 'structure';
                             }
                         )

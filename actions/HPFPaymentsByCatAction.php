@@ -20,12 +20,12 @@ class HpfpaymentsByCatAction extends YesWikiAction
     public function formatArguments($arg)
     {
         return([
-            'college1' => $this->formatString($arg,'college1'),
-            'college2' => $this->formatString($arg,'college2'),
-            'college3' => $this->formatString($arg,'college3'),
-            'college4' => $this->formatString($arg,'college4'),
-            'partner' => $this->formatString($arg,'partner'),
-            'college3to4fieldname' => $this->formatString($arg,'college3to4fieldname')
+            'college1' => $this->formatString($arg, 'college1'),
+            'college2' => $this->formatString($arg, 'college2'),
+            'college3' => $this->formatString($arg, 'college3'),
+            'college4' => $this->formatString($arg, 'college4'),
+            'partner' => $this->formatString($arg, 'partner'),
+            'college3to4fieldname' => $this->formatString($arg, 'college3to4fieldname')
         ]);
     }
 
@@ -39,8 +39,8 @@ class HpfpaymentsByCatAction extends YesWikiAction
     public function run()
     {
         // only admins
-        if (!$this->wiki->UserIsAdmin()){
-            return $this->render('@templates/alert-message.twig',[
+        if (!$this->wiki->UserIsAdmin()) {
+            return $this->render('@templates/alert-message.twig', [
                 'message' => _t('BAZ_NEED_ADMIN_RIGHTS'),
                 'type' => 'danger'
             ]);
@@ -58,6 +58,6 @@ class HpfpaymentsByCatAction extends YesWikiAction
             'anti-csrf-token' => $this->getService(CsrfTokenManager::class)->refreshToken('refresh-payments-by-cat-cache-token')->getValue()
         ];
 
-        return $this->render('@hpf/hpf-payments-by-cat-action.twig',compact(['params']));        
+        return $this->render('@hpf/hpf-payments-by-cat-action.twig', compact(['params']));
     }
 }

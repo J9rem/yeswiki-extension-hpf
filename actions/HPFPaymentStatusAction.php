@@ -60,8 +60,8 @@ class HPFPaymentStatusAction extends YesWikiAction
         $contribFormId = (in_array($this->arguments['formid'], $contribFormIds))
             ? $this->arguments['formid']
             : $contribFormIds[0]
-            ;
-        $contribEntries = $this->hpfService->getCurrentContribEntries($contribFormId, $user['email'],$this->arguments['entry_id'],$user['name']);
+        ;
+        $contribEntries = $this->hpfService->getCurrentContribEntries($contribFormId, $user['email'], $this->arguments['entry_id'], $user['name']);
         if (empty($contribEntries)) {
             $output = "";
             if (!empty($this->arguments['entry_id'])) {
@@ -72,16 +72,16 @@ class HPFPaymentStatusAction extends YesWikiAction
                 'message' => $this->arguments['empty_message']
             ]);
             return $output;
-        } 
+        }
         $contribEntry = $contribEntries[array_key_first($contribEntries)];
-        if (!empty($this->arguments['entry_id']) && !in_array($this->arguments['entry_id'],array_map(function($e){
+        if (!empty($this->arguments['entry_id']) && !in_array($this->arguments['entry_id'], array_map(function ($e) {
             return $e['id_fiche'] ?? '';
-        },$contribEntries))) {
+        }, $contribEntries))) {
             return $this->updateOtherEntry($contribEntry['id_typeannonce']);
         }
         $output = '';
         foreach ($contribEntries as $contribEntryInt) {
-            $output .= $this->renderOneEntry($contribEntryInt,$contribFormId,$user);
+            $output .= $this->renderOneEntry($contribEntryInt, $contribFormId, $user);
         }
         return $output;
         
@@ -94,7 +94,7 @@ class HPFPaymentStatusAction extends YesWikiAction
      * @return string
      */
     protected function renderOneEntry(array $contribEntry, string $contribFormId, $user):string
-    {        
+    {
         $previousCalcValue = $contribEntry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
         $calcValue = $this->updatePaymentsForEntry($contribEntry, $user['email']);
 
@@ -238,7 +238,7 @@ class HPFPaymentStatusAction extends YesWikiAction
                 break;
         }
         $hereLinkStart = <<<HTML
-        <a href="{$this->wiki->Href('',"api/hpf/refresh-payment/{$entry['id_fiche']}")}" class="hpf-here-link">
+        <a href="{$this->wiki->Href('', "api/hpf/refresh-payment/{$entry['id_fiche']}")}" class="hpf-here-link">
         HTML;
         $hereLinkEnd = '</a>';
         $form = $this->formManager->getOne($entry['id_typeannonce']);

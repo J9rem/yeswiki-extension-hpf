@@ -28,23 +28,25 @@ class __BazarListeAction extends YesWikiAction
         }
         /* === end of Feature UUID : hpf-bazar-template-list-no-empty === */
         /* === Feature UUID : hpf-area-management === */
-        if (!empty($arg['template']) && $arg['template'] == "tableau-with-email.tpl.html" && $this->formatBoolean($arg,false,'dynamic')) {
-            if ($this->getService(TemplateEngine::class)->hasTemplate('@bazar/entries/index-dynamic-templates/table.twig')){
-                $vars = array_slice($arg,0);
+        if (!empty($arg['template']) && $arg['template'] == "tableau-with-email.tpl.html" && $this->formatBoolean($arg, false, 'dynamic')) {
+            if ($this->getService(TemplateEngine::class)->hasTemplate('@bazar/entries/index-dynamic-templates/table.twig')) {
+                $vars = array_slice($arg, 0);
                 $vars['template'] = 'table';
-                $varsCopy = array_slice($vars,0);
+                $varsCopy = array_slice($vars, 0);
                 $output = '';
                 $bazarListeAction = null;
                 if (file_exists('tools/bazar/actions/__BazarListeAction.php')) {
-                    $bazarListeAction = $this->getService(Performer::class)->createPerformable([
+                    $bazarListeAction = $this->getService(Performer::class)->createPerformable(
+                        [
                         'filePath' => 'tools/bazar/actions/__BazarListeAction.php',
                         'baseName' => '__BazarListeAction'
                     ],
-                    $vars,
-                    $output);
+                        $vars,
+                        $output
+                    );
                 }
-                if (!is_null($bazarListeAction)){
-                    $newArg = array_merge($newArg,$bazarListeAction->formatArguments($varsCopy));
+                if (!is_null($bazarListeAction)) {
+                    $newArg = array_merge($newArg, $bazarListeAction->formatArguments($varsCopy));
                 }
                 $newArg['template'] = 'table';
                 $newArg['istablewithemail'] = true;
@@ -53,7 +55,7 @@ class __BazarListeAction extends YesWikiAction
             }
             return $newArg;
         }
-        if ($this->wiki->services->has(GroupController::class)){
+        if ($this->wiki->services->has(GroupController::class)) {
             $selectmembers = (
                 !empty($arg['selectmembers']) &&
                     is_string($arg['selectmembers']) &&
@@ -71,7 +73,7 @@ class __BazarListeAction extends YesWikiAction
                 $arg['dynamic'] = true;
                 $arg['pagination'] = -1;
             }
-            if (($arg['template'] ?? '') === 'video'){
+            if (($arg['template'] ?? '') === 'video') {
                 $newArgs['dynamic'] = true;
                 $arg['dynamic'] = true;
             }

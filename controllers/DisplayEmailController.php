@@ -19,7 +19,7 @@ use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Hpf\Service\AreaManager;
 use YesWiki\Core\YesWikiController;
 
-class DisplayEmailController extends YesWikiController  implements EventSubscriberInterface
+class DisplayEmailController extends YesWikiController implements EventSubscriberInterface
 {
     protected $areaManager;
 
@@ -48,17 +48,17 @@ class DisplayEmailController extends YesWikiController  implements EventSubscrib
                     $data['errorMessage'] = '(only for admins)';
                 }
             }
-            if (empty($data['errorMessage'])){
+            if (empty($data['errorMessage'])) {
                 $params = $this->getParams();
-                if (!$data['isAdmin'] || !empty($params['selectmembers'])){
+                if (!$data['isAdmin'] || !empty($params['selectmembers'])) {
                     $data['canOverrideAdminRestriction'] = false;
-                    $data['callbackIfNotOverridden'] = function($contacts,$callback) use ($params){
+                    $data['callbackIfNotOverridden'] = function ($contacts, $callback) use ($params) {
                         $this->areaManager->filterEntriesFromParents(
                             $contacts,
                             false,
                             $params['selectmembers'],
                             $params['selectmembersparentform'],
-                            function ($entry, $form, $suffix, $user) use($callback){
+                            function ($entry, $form, $suffix, $user) use ($callback) {
                                 return $callback($entry, $form);
                             }
                         );
@@ -74,7 +74,7 @@ class DisplayEmailController extends YesWikiController  implements EventSubscrib
         $eventData = $event->getData();
         if (!empty($eventData) && is_array($eventData) && isset($eventData['dataContainer']) && ($eventData['dataContainer'] instanceof DataContainer)) {
             $data = $eventData['dataContainer']->getData();
-            if ($data['isAdmin']){
+            if ($data['isAdmin']) {
                 $data['filteredEntriesIds'] = $data['entriesIds'];
             } else {
                 $params = $data['params'];
@@ -128,7 +128,7 @@ class DisplayEmailController extends YesWikiController  implements EventSubscrib
             $selectmembers,
             $selectmembersparentform,
             function (array $entry, array $form, string $suffix, $user) use (&$entries, $entriesIds) {
-                return $this->appendEmailIfNeeded($entry,$form,$suffix,$user,$entries,$entriesIds);
+                return $this->appendEmailIfNeeded($entry, $form, $suffix, $user, $entries, $entriesIds);
             },
             $selectmembersdisplayfilters
         );
@@ -160,19 +160,20 @@ class DisplayEmailController extends YesWikiController  implements EventSubscrib
      * @param array $entriesIds
      * @return array $entry
      */
-    public function appendEmailIfNeeded(array $entry, array $form, string $suffix, $user, array &$entries, array $entriesIds){
+    public function appendEmailIfNeeded(array $entry, array $form, string $suffix, $user, array &$entries, array $entriesIds)
+    {
         $entryManager = $this->wiki->services->get(EntryManager::class);
         $entryKey = array_search($entry['id_fiche'] ?? '', $entriesIds);
         if ($entryKey !== false) {
             foreach ($form['prepared'] as $field) {
                 $propName = $field->getPropertyName();
                 if ($field instanceof EmailField && !empty($propName)) {
-                    $fullEntry = $entryManager->getOne($entry['id_fiche'],false,null,true,true);
+                    $fullEntry = $entryManager->getOne($entry['id_fiche'], false, null, true, true);
                     $email = $fullEntry[$propName] ?? "";
-                    if (!isset($entries[$entryKey]['email.ids'])){
+                    if (!isset($entries[$entryKey]['email.ids'])) {
                         $entries[$entryKey]['email.ids'] = [];
                     }
-                    if (!in_array($propName,$entries[$entryKey]['email.ids'])){
+                    if (!in_array($propName, $entries[$entryKey]['email.ids'])) {
                         $entries[$entryKey]['email.ids'][] = $propName;
                     }
                     if (!empty($email) && isset($entries[$entryKey][$propName])) {

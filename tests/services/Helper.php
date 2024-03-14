@@ -7,7 +7,7 @@
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
- * 
+ *
  * Helper for tests
  */
 
@@ -37,21 +37,21 @@ class Helper
      */
     public static function updateList(bool $install, Wiki $wiki)
     {
-        self::updateListInternal(self::LIST_ID,$install,function(){
+        self::updateListInternal(self::LIST_ID, $install, function () {
             $values = [];
             $currentYear = (new DateTime())->format('Y');
             $values[strval($currentYear-1)] = strval($currentYear-1);
             $values[strval($currentYear)] = strval($currentYear);
             return $values;
-        },$wiki);
+        }, $wiki);
         
-        self::updateListInternal(self::CHOICELIST_ID,$install,function(){
+        self::updateListInternal(self::CHOICELIST_ID, $install, function () {
             return [
                 'standard' => 'Standard',
                 'soutient' => 'Soutient',
                 'libre' => 'Montant libre',
             ];
-        },$wiki);
+        }, $wiki);
     }
 
     /**
@@ -61,21 +61,21 @@ class Helper
      * @param callable $getValues
      * @param Wiki $wiki
      */
-    protected static function updateListInternal(string $id,bool $install,$getValues, Wiki $wiki)
+    protected static function updateListInternal(string $id, bool $install, $getValues, Wiki $wiki)
     {
         // needed for bazar.funct.php
         $GLOBALS['wiki'] = $wiki;
 
         $listManager = $wiki->services->get(ListManager::class);
         $list = $listManager->getOne($id);
-        if ($install && empty($list)){
-            self::actAsAdmin(function() use($listManager,$id,$getValues){
-                $listManager->create(substr($id,5),$getValues());
-            },$wiki);
-        } elseif (!$install && !empty($list)){
-            self::actAsAdmin(function() use($listManager,$id){
+        if ($install && empty($list)) {
+            self::actAsAdmin(function () use ($listManager, $id, $getValues) {
+                $listManager->create(substr($id, 5), $getValues());
+            }, $wiki);
+        } elseif (!$install && !empty($list)) {
+            self::actAsAdmin(function () use ($listManager, $id) {
                 $listManager->delete($id);
-            },$wiki);
+            }, $wiki);
         }
     }
 
@@ -87,18 +87,18 @@ class Helper
      * @param string $currentFormId
      * @return string $currentFormId
      */
-    public static function updateForm(bool $install, Wiki $wiki,string $currentFormId): string
+    public static function updateForm(bool $install, Wiki $wiki, string $currentFormId): string
     {
         $GLOBALS['wiki'] = $wiki;
         $formManager = $wiki->services->get(FormManager::class);
 
         $id = $currentFormId ?? '';
         $form = null;
-        if (!empty($id)){
+        if (!empty($id)) {
             $form = $formManager->getOne($id);
         }
-        if ($install && empty($form)){
-            if (empty($currentFormId)){
+        if ($install && empty($form)) {
+            if (empty($currentFormId)) {
                 $newId = $formManager->findNewId();
                 $currentFormId = $newId;
             }
@@ -145,7 +145,7 @@ class Helper
                 'bn_sem_type' => '',
                 'bn_condition' => '',
             ]);
-        } elseif (!$install && !empty($form) && !empty($id)){
+        } elseif (!$install && !empty($form) && !empty($id)) {
             $formManager->delete($id);
             $currentFormId = '';
         }
@@ -157,18 +157,18 @@ class Helper
      * @param callable $callback
      * @param Wiki $wiki
      */
-    protected static function actAsAdmin($callback,Wiki $wiki)
+    protected static function actAsAdmin($callback, Wiki $wiki)
     {
         $authController = $wiki->services->get(AuthController::class);
         
         $previousUser = $authController->getLoggedUser();
-        if (!empty($previousUser['name'])){
+        if (!empty($previousUser['name'])) {
             $authController->logout();
         }
         $firstAdmin = $authController->connectFirstAdmin();
         $callback();
         $authController->logout();
-        if (!empty($previousUser['name'])){
+        if (!empty($previousUser['name'])) {
             $authController->logout();
             $authController->login($previousUser);
         }
@@ -181,7 +181,7 @@ class Helper
      * @param Wiki $wiki
      * @param string $currentFormId
      */
-    public static function updateEntry(bool $install, array $data, Wiki $wiki,string $currentFormId)
+    public static function updateEntry(bool $install, array $data, Wiki $wiki, string $currentFormId)
     {
         $GLOBALS['wiki'] = $wiki;
         $GLOBALS['_BAZAR_'] = []; // reset cache
@@ -190,8 +190,8 @@ class Helper
 
         $id = self::ENTRY_ID;
         $entry = $entryManager->getOne($id, false, null, false, true); // no cache
-        if ($install && empty($entry)){
-            if (!empty($currentFormId)){
+        if ($install && empty($entry)) {
+            if (!empty($currentFormId)) {
                 $entryManager->create(
                     $currentFormId,
                     array_merge(
@@ -206,10 +206,10 @@ class Helper
                 );
 
             }
-        } elseif (!$install && !empty($entry)){
-            self::actAsAdmin(function() use($entryManager,$id){
+        } elseif (!$install && !empty($entry)) {
+            self::actAsAdmin(function () use ($entryManager, $id) {
                 $entryManager->delete($id);
-            },$wiki);
+            }, $wiki);
         }
     }
 }

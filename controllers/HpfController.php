@@ -49,13 +49,13 @@ class HpfController extends YesWikiController
     /**
      * Feature UUID : hpf-register-payment-action
      */
-    public function findHelloAssoPayments(string $date,int $amount): array
+    public function findHelloAssoPayments(string $date, int $amount): array
     {
-        if (empty($date)){
+        if (empty($date)) {
             throw new Exception('date should not be empty');
         }
         $dateObject = new DateTime($date);
-        if (empty($dateObject)){
+        if (empty($dateObject)) {
             throw new Exception('date should not be a date');
         }
         $payments = $this->helloAssoService->getPayments([
@@ -65,7 +65,7 @@ class HpfController extends YesWikiController
         $payments = empty($payments) ? [] : $payments->getPayments();
         $paymentsf = array_filter(
             $payments,
-            function ($p) use ($amount){
+            function ($p) use ($amount) {
                 return intval($p->amount*100) === intval($amount);
             }
         );
@@ -78,26 +78,26 @@ class HpfController extends YesWikiController
     /**
      * Feature UUID : hpf-register-payment-action
      */
-    public function deletePaymentInEntry(string $entryId,string $paymentId): array
+    public function deletePaymentInEntry(string $entryId, string $paymentId): array
     {
         return $this->addRemoveCommon(
             $entryId,
-            function ($entry,$form,$formattedPayments,$updatedEntry) use ($paymentId) {
+            function ($entry, $form, $formattedPayments, $updatedEntry) use ($paymentId) {
                 $updated = false;
-                if (!empty($formattedPayments[$paymentId])){
+                if (!empty($formattedPayments[$paymentId])) {
                     foreach([
                         'adhesion' => 'membership',
                         'adhesion_groupe' => 'group_membership',
                         'don' => 'donation',
-                    ] as $keyPayment => $name){
-                        if (!empty($formattedPayments[$paymentId][$keyPayment])){
-                            foreach($formattedPayments[$paymentId][$keyPayment] as $year => $value){
+                    ] as $keyPayment => $name) {
+                        if (!empty($formattedPayments[$paymentId][$keyPayment])) {
+                            foreach($formattedPayments[$paymentId][$keyPayment] as $year => $value) {
                                 list('field' => $field) = $this->hpfService->getPayedField($entry['id_typeannonce'], $year, $name, true);
-                                if (!empty($field) && !empty($field->getPropertyName())){
+                                if (!empty($field) && !empty($field->getPropertyName())) {
                                     $propName = $field->getPropertyName();
-                                    $updatedEntry[$propName] = strval(max(0,floatval($updatedEntry[$propName] ?? 0) - floatval($value)));
-                                    if ($updatedEntry[$propName] === '0'){
-                                        $updatedEntry = $this->hpfService->updateYear($updatedEntry,HpfService::PAYED_FIELDNAMES["years"][$name],$year,false);
+                                    $updatedEntry[$propName] = strval(max(0, floatval($updatedEntry[$propName] ?? 0) - floatval($value)));
+                                    if ($updatedEntry[$propName] === '0') {
+                                        $updatedEntry = $this->hpfService->updateYear($updatedEntry, HpfService::PAYED_FIELDNAMES["years"][$name], $year, false);
                                         $updatedEntry[$propName] = '';
                                     }
                                 }
@@ -107,7 +107,7 @@ class HpfController extends YesWikiController
                     unset($formattedPayments[$paymentId]);
                     $updatedEntry[HpfService::PAYMENTS_FIELDNAME] = empty($formattedPayments) ? '' : json_encode($formattedPayments);
                     $updated = true;
-                } 
+                }
                 return compact(['updated','updatedEntry']);
             }
         );
@@ -123,9 +123,8 @@ class HpfController extends YesWikiController
         string $paymentOrigin,
         string $paymentId,
         string $paymentYear
-        ): array
-    {
-        $payment = 
+    ): array {
+        $payment =
         new Payment([
             'id' => $paymentId,
             'amount' => $paymentTotal,
@@ -135,10 +134,9 @@ class HpfController extends YesWikiController
         ]);
         return $this->addRemoveCommon(
             $entryId,
-            function ($entry,$form,$formattedPayments,$updatedEntry)
-                use ($payment,$paymentOrigin,$paymentYear) {
+            function ($entry, $form, $formattedPayments, $updatedEntry) use ($payment, $paymentOrigin, $paymentYear) {
                 $updated = false;
-                if (empty($formattedPayments[$payment->id])){
+                if (empty($formattedPayments[$payment->id])) {
                     $updatedEntry = $this->hpfService->updateEntryWithPayment(
                         $entry,
                         $payment,
@@ -146,7 +144,7 @@ class HpfController extends YesWikiController
                         (empty($paymentYear) || intval($paymentYear) < 2021) ? '' : strval($paymentYear)
                     );
                     $updated = true;
-                } 
+                }
                 return compact(['updated','updatedEntry']);
             }
         );
@@ -159,17 +157,17 @@ class HpfController extends YesWikiController
     {
         $entry = $this->entryManager->getOne($entryId);
         $updatedEntry = $entry;
-        if (empty($entry)){
+        if (empty($entry)) {
             throw new Exception("Not found entry: '$entryId'");
         }
         if (empty($entry['id_typeannonce'])
             || !is_scalar($entry['id_typeannonce'])
             || intval($entry['id_typeannonce']) < 0
-            || strval($entry['id_typeannonce']) !== strval(intval($entry['id_typeannonce']))){
+            || strval($entry['id_typeannonce']) !== strval(intval($entry['id_typeannonce']))) {
             throw new Exception("'$entryId' has not a right 'id_typeannonce'");
         }
         $form = $this->formManager->getOne($entry['id_typeannonce']);
-        if (empty($form)){
+        if (empty($form)) {
             throw new Exception("form '{$entry['id_typeannonce']}' not found");
         }
         
@@ -179,12 +177,12 @@ class HpfController extends YesWikiController
         }
         
         $formattedPayments = $this->hpfService->convertStringToPayments($entry[HpfService::PAYMENTS_FIELDNAME] ?? "");
-        if (is_callable($callback)){
+        if (is_callable($callback)) {
             list(
                 'updatedEntry' => $updatedEntry,
                 'updated'=>$updated,
-                ) = $callback($entry,$form,$formattedPayments,$updatedEntry);
-            if ($updated){
+            ) = $callback($entry, $form, $formattedPayments, $updatedEntry);
+            if ($updated) {
                 $updatedEntry = $this->hpfService->updateCalcFields($updatedEntry);
                 $this->hpfService->updateEntry($updatedEntry);
                 $updatedEntry = $this->entryManager->getOne($entryId, false, null, false, true);
