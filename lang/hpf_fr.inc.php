@@ -26,7 +26,8 @@ return [
     'AB_hpf_hpfpaymentstatus_view_label' => 'Type de vue',
     'AB_hpf_hpfpaymentstatus_view_buttonHelloAsso_label' => 'Bouton HelloASso',
     'AB_hpf_hpfpaymentstatus_view_button_label' => 'Bouton YesWiki',
-    'AB_hpf_hpfpaymentstatus_view_iframe_label' => 'Iframe Hello ASso',
+    'AB_hpf_hpfpaymentstatus_view_handler_label' => 'Paiement direct Hello Asso',
+    'AB_hpf_hpfpaymentstatus_view_iframe_label' => 'Iframe Hello Asso',
     'AB_hpf_hpfpaymentstatus_pay_button_title_label' => 'Texte pour le bouton YesWiki',
     'AB_hpf_hpfpaymentstatus_formid_label' => 'Formulaire associé',
     // Feature UUID : hpf-bazar-template-list-no-empty
@@ -142,6 +143,24 @@ return [
     // fields/ReceiptsField.php
     // Feature UUID : hpf-receipts-creation
     'HPF_RECEIPTSFIELD_LABEL' => 'Liste des reçus',
+
+    // handlers/DirectPaymentHandler.php
+    // Feature UUID : hpf-direct-payment-helloasso
+    'HPF_CURRENT_USER_SHOULD_HAVE_SAME_EMAIL_AS_ENTRY' => 'L\'utilisateurice courante doit avoir le même e-mail que celui de la fiche.',
+    'HPF_DIRECT_PAYMENT_CANCEL' => "Vous avez annulé le paiement en cours.\n%{specificMessage}\n\n%{entryLink}",
+    'HPF_DIRECT_PAYMENT_CANCEL_NOTHING_TO_PAY' => "Il semblerait que votre fiche ait été mise à jour pendant ce temps.\nLe montant actuel à payer est nul. Vous pouvez vérifier ceci sur votre fiche en cliquant ci-dessous.",
+    'HPF_DIRECT_PAYMENT_CANCEL_REDO' => "Il semblerait que vous ayez toujours à payer la somme %{ofAmount}.\nVous pouvez payer cette somme en suivant les indications dans le formulaire ci-dessous ou juste consulter sur votre fiche avec ce lien.",
+    'HPF_DIRECT_PAYMENT_ERROR' => "Une erreur est survenue lors de votre paiement %{ofAmount}.\nL'opération a été annulée.\n%{specificMessage}\n\n%{entryLink}",
+    'HPF_DIRECT_PAYMENT_LINK_TO_ENTRY' => "Voir votre fiche %{title}",
+    'HPF_DIRECT_PAYMENT_OF' => 'de',
+    'HPF_DIRECT_PAYMENT_SUCCESS' => "Votre paiement %{ofAmount}a bien été enregistré.\nMerci pour votre contribution.\n\n%{warningMessage}%{entryLink}",
+    'HPF_DIRECT_PAYMENT_SUCCESS_WARNING' => "Toutefois, l'information est encore en cours d'enregistrement sur le site, ...\nVeuillez cliquer sur le lien ci-dessous pour vérifier les données de votre fiche.\n\n",
+    'HPF_DIRECT_PAYMENT_TITLE' => 'Paiement d\'adhésion et don à Habitat Participatif France pour la fiche \'%{entryId}\'',
+    'HPF_NOTHING_TO_PAY' => 'Vous n\'avez rien à payer pour cette fiche.',
+    'HPF_SHOULD_BE_AN_ENTRY' => 'Cet handler n\'est utilisable que pour les fiches.',
+    'HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT' => 'Cette fiche n\'est pas associée à un formulaire de paiement.',
+    'HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER' => 'Cette fiche n\'appartient pas à un formulaire pour lequel un ' 
+        .'utilisateur ne peut avoir qu\'une seule fiche.',
     
     // templates/hpf-import-memberships-action.twig
     // Feature UUID : hpf-import-payments

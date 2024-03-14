@@ -26,7 +26,8 @@ return [
     // 'AB_hpf_hpfpaymentstatus_view_label' => 'Type de vue',
     // 'AB_hpf_hpfpaymentstatus_view_buttonHelloAsso_label' => 'Bouton HelloASso',
     // 'AB_hpf_hpfpaymentstatus_view_button_label' => 'Bouton YesWiki',
-    // 'AB_hpf_hpfpaymentstatus_view_iframe_label' => 'Iframe Hello ASso',
+    // 'AB_hpf_hpfpaymentstatus_view_handler_label' => 'Paiement direct Hello Asso',
+    // 'AB_hpf_hpfpaymentstatus_view_iframe_label' => 'Iframe Hello Asso',
     // 'AB_hpf_hpfpaymentstatus_pay_button_title_label' => 'Texte pour le bouton YesWiki',
     // 'AB_hpf_hpfpaymentstatus_formid_label' => 'Formulaire associé',
     // Feature UUID : hpf-bazar-template-list-no-empty
@@ -142,6 +143,24 @@ return [
     // fields/ReceiptsField.php
     // Feature UUID : hpf-receipts-creation
     'HPF_RECEIPTSFIELD_LABEL' => 'Receipts\' list',
+
+    // handlers/DirectPaymentHandler.php
+    // Feature UUID : hpf-direct-payment-helloasso
+    'HPF_CURRENT_USER_SHOULD_HAVE_SAME_EMAIL_AS_ENTRY' => 'The current user should use the same email as in this entry.',
+    'HPF_DIRECT_PAYMENT_CANCEL' => "You have just cancelled the payment.\n%{specificMessage}\n\n%{entryLink}",
+    'HPF_DIRECT_PAYMENT_CANCEL_NOTHING_TO_PAY' => "It seems that your entry was updating during this time.\nThe current amount to pay is null. You can check this by displaying your entry, clicking on the link below.",
+    'HPF_DIRECT_PAYMENT_CANCEL_REDO' => "It seems that you should pay an amount %{ofAmount}.\nYou can pay this following instructions in the form below or see your entry with this link.",
+    'HPF_DIRECT_PAYMENT_ERROR' => "An error occured during your payment %{ofAmount}.\nThis operation was cancelled.\n%{specificMessage}\n\n%{entryLink}",
+    'HPF_DIRECT_PAYMENT_LINK_TO_ENTRY' => "See your entry %{title}",
+    'HPF_DIRECT_PAYMENT_OF' => 'of',
+    'HPF_DIRECT_PAYMENT_SUCCESS' => "Your payment %{ofAmount}is registered.\nThank you very much.\n\n%{warningMessage}%{entryLink}",
+    'HPF_DIRECT_PAYMENT_SUCCESS_WARNING' => "But, this registration is currently spreading to this website...\nCould you click on the link below to check data in your entry.\n\n",
+    'HPF_DIRECT_PAYMENT_TITLE' => 'Membership and donation payment to Habitat Participatif France for entry \'%{entryId}\'',
+    'HPF_NOTHING_TO_PAY' => 'Nothing to pay for this entry.',
+    'HPF_SHOULD_BE_AN_ENTRY' => 'This handler only works for entries.',
+    'HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT' => 'This entry is not associated to a payment form.',
+    'HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER' => 'This entry is not associated to a form for which a user ' 
+        .'can not have more than one entry.',
 
     // templates/hpf-import-memberships-action.twig
     // Feature UUID : hpf-import-payments
