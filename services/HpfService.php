@@ -472,7 +472,7 @@ class HpfService
                     foreach ($secondSearch as $payment) {
                         $paymentsAsArray[] = $payment;
                     }
-                    $payments = new HelloAssoPayments($paymentsAsArray);
+                    $payments = new HelloAssoPayments($paymentsAsArray, []);
                 }
             }
         } catch (Throwable $th) {
