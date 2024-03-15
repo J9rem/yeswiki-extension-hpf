@@ -452,13 +452,14 @@ class HpfService
                     'email' => $email,
                     'formType' => $form['formType'],
                     'formSlug' => $form['formSlug']
-                ]);
+                ], false);
+                // $firstSearch = [];
                 // specific for direct checkout
                 $secondSearch = $this->helloAssoService->getPayments([
                     'email' => $email,
                     'formType' => 'Checkout',
                     'formSlug' => 'default'
-                ]);
+                ], true);
                 if (empty($firstSearch)) {
                     $payments = $secondSearch;
                 } elseif (empty($secondSearch)) {

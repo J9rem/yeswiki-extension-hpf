@@ -64,7 +64,7 @@ class ApiController extends YesWikiController
                 throw new ApiException(_t('HPF_FORBIDEN_FOR_THIS_ENTRY'));
             }
             $previousValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
-            $newEntry = $hpfService->refreshEntryFromHelloAsso($entry, $user['email']);
+            $newEntry = $hpfService->refreshEntryFromHelloAsso($entry, $entry['bf_mail']);
 
             return new ApiResponse([
                 'action' => 'refreshing',
