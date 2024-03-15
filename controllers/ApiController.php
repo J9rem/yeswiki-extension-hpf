@@ -288,7 +288,7 @@ class ApiController extends YesWikiController
     }
 
     /**
-     * @Route("/api/hpf/receipts/token", methods={"POST"},options={"acl":{"public","@admins"}})
+     * @Route("/api/hpf/receipts/token", methods={"POST"},options={"acl":{"public","+"}})
      * Feature UUID : hpf-receipts-creation
      */
     public function getHpfReceiptToken()
