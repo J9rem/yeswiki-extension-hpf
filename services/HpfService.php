@@ -456,7 +456,8 @@ class HpfService
                 // specific for direct checkout
                 $secondSearch = $this->helloAssoService->getPayments([
                     'email' => $email,
-                    'formType' => 'Checkout'
+                    'formType' => 'Checkout',
+                    'formSlug' => 'default'
                 ]);
                 if (empty($firstSearch)) {
                     $payments = $secondSearch;
