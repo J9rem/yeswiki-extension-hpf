@@ -447,13 +447,32 @@ class HpfService
     {
         $form = $this->getPaymentForm($formId);
         try {
-            $payments = !empty($payments)
-                ? $payments
-                :$this->helloAssoService->getPayments([
+            if (empty($payments)) {
+                $firstSearch = $this->helloAssoService->getPayments([
                     'email' => $email,
                     'formType' => $form['formType'],
                     'formSlug' => $form['formSlug']
                 ]);
+                // specific for direct checkout
+                $secondSearch = $this->helloAssoService->getPayments([
+                    'email' => $email,
+                    'formType' => 'Checkout'
+                ]);
+                if (empty($firstSearch)) {
+                    $payments = $secondSearch;
+                } elseif (empty($secondSearch)) {
+                    $payments = $firstSearch;
+                } else {
+                    $paymentsAsArray = [];
+                    foreach ($firstSearch as $payment) {
+                        $paymentsAsArray[] = $payment;
+                    }
+                    foreach ($secondSearch as $payment) {
+                        $paymentsAsArray[] = $payment;
+                    }
+                    $payments = new HelloAssoPayments($paymentsAsArray);
+                }
+            }
         } catch (Throwable $th) {
             // do nothing (remove warnings)
             if ($this->isDebug() && $this->wiki->UserIsAdmin()) {
