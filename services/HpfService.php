@@ -653,7 +653,9 @@ class HpfService
             'origin' => !empty($forceOrigin)
                 ? $forceOrigin
                 : (
-                    $payment->formType === 'Donation' ? 'helloassoDon' : "helloasso:$contribFormId"
+                    $this->isDonationFormType($payment->formType)
+                    ? 'helloassoDon'
+                    : "helloasso:$contribFormId"
                 )
         ];
         if (intval($paymentYear) > intval($currentYear)) {
@@ -677,6 +679,16 @@ class HpfService
         $entry = $this->updateCalcFields($entry);
 
         return $entry;
+    }
+
+    /**
+     * check if formType is Donation
+     * @param string $formType
+     * @return bool
+     */
+    protected function isDonationFormType(string $formType): bool
+    {
+        return in_array($formType, ['Donation','Checkout'], true);
     }
 
     /**
@@ -927,7 +939,10 @@ class HpfService
                 $form = $this->getPaymentForm($formId);
                 $formType = $postNotSanitized['post']['data']['order']['formType'];
                 $formSlug = $postNotSanitized['post']['data']['order']['formSlug'];
-                if ($formType === 'Donation' || ($form['formType'] == $formType && $form['formSlug'] == $formSlug)) {
+                if (
+                    $this->isDonationFormType($formType)
+                    || ($form['formType'] == $formType && $form['formSlug'] == $formSlug)
+                ) {
                     $payments = new HelloAssoPayments(
                         $this->helloAssoService->convertToPayments(['data'=>[$postNotSanitized['post']['data']]]),
                         []
@@ -1170,7 +1185,7 @@ class HpfService
                     );
                     if (!empty($sameSlugForms)) {
                         $data['form'] = $sameSlugForms[0];
-                    } elseif (($data['formType'] ?? '') == 'Donation') {
+                    } elseif ($this->isDonationFormType($data['formType'] ?? '')) {
                         $data['form'] = 'donation';
                     }
                 }
