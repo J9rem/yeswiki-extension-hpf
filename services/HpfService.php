@@ -505,6 +505,9 @@ class HpfService
                     $cacheEntries[$paymentEmail] = [];
                 }
                 if (!isset($cacheEntries[$paymentEmail]['entry'])) {
+                    if (empty($preferedEntryId)){
+                        $preferedEntryId = $this->extractAssociatedEntryName($payment);
+                    }
                     $entries = $this->getCurrentContribEntries($formId, $paymentEmail, $preferedEntryId);
                     if (!empty($entries)) {
                         $cacheEntries[$paymentEmail]['entry'] = $entries[array_key_first($entries)];
@@ -1228,7 +1231,42 @@ class HpfService
         $results = $this->helloAssoService->getPayments([
             'email' => $email,
         ]);
-        return empty($results) ? [] : $results->getPayments();
+        return empty($results) ? [] : array_map(
+            [$this,'extractAssociatedEntries'],
+            $results->getPayments()
+        );
+    }
+
+    /**
+     * Feature UUID : hpf-payments-field
+     * @param Payment $payment
+     * @return array
+     */
+    protected function extractAssociatedEntries(Payment $payment): array
+    {
+        $extractedPayment = $payment->jsonSerialize();
+        $extractedPayment['associatedEntry'] = $this->extractAssociatedEntryName($payment);
+        return $extractedPayment;
+    }
+
+    /**
+     * Feature UUID : hpf-payments-field
+     * @param Payment $payment
+     * @return string
+     */
+    protected function extractAssociatedEntryName(Payment $payment): string
+    {
+        $match = [];
+        return (
+                !empty($payment->description)
+                && preg_match(
+                    '/^' . _t('HPF_DIRECT_PAYMENT_TITLE', ['entryId' => '(.+)']) . '$/',
+                    $payment->description,
+                    $match
+                )
+            )
+            ? $match[1]
+            : '';
     }
 
     /**
