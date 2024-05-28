@@ -408,7 +408,8 @@ class HpfServiceTest extends YesWikiTestCase
             'payer' => $user,
             'amount' => $data['paymentAmount'],
             'date' => $data['paymentDate'],
-            'status' => 'Authorized'
+            'status' => 'Authorized',
+            'description' => ''
         ]);
         $payments = new HelloAssoPayments(
             [$payment], //payments

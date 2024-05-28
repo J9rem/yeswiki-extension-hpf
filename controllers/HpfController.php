@@ -130,7 +130,8 @@ class HpfController extends YesWikiController
             'amount' => $paymentTotal,
             'date' => (new DateTime($paymentDate))->format('Y-m-d'),
             'payer' => new User(),
-            'status' => 'Authorized'
+            'status' => 'Authorized',
+            'description' => ''
         ]);
         return $this->addRemoveCommon(
             $entryId,
