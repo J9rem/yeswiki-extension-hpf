@@ -90,6 +90,14 @@ class ApiController extends YesWikiController
     {
         return new ApiResponse($this->getService(HpfService::class)->getPaymentInfos($id), 200);
     }
+    /**
+     * @Route("/api/hpf/helloasso/payment/entrieswith/{id}", methods={"GET"},options={"acl":{"public","@admins"}})
+     * Feature UUID : hpf-payments-field
+     */
+    public function getEntriesWithThisPayment($id)
+    {
+        return new ApiResponse($this->getService(HpfService::class)->findEntriesWithSamePayment($id), 200);
+    }
 
     /**
      * @Route("/api/hpf/helloasso/payment/email/{email}", methods={"GET"},options={"acl":{"public","@admins"}})

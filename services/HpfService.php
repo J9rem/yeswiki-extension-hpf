@@ -447,34 +447,9 @@ class HpfService
     {
         $form = $this->getPaymentForm($formId);
         try {
-            if (empty($payments)) {
-                $firstSearch = $this->helloAssoService->getPayments([
-                    'email' => $email,
-                    'formType' => $form['formType'],
-                    'formSlug' => $form['formSlug']
-                ], false);
-                // $firstSearch = [];
-                // specific for direct checkout
-                $secondSearch = $this->helloAssoService->getPayments([
-                    'email' => $email,
-                    'formType' => 'Checkout',
-                    'formSlug' => 'default'
-                ], true);
-                if (empty($firstSearch)) {
-                    $payments = $secondSearch;
-                } elseif (empty($secondSearch)) {
-                    $payments = $firstSearch;
-                } else {
-                    $paymentsAsArray = [];
-                    foreach ($firstSearch as $payment) {
-                        $paymentsAsArray[] = $payment;
-                    }
-                    foreach ($secondSearch as $payment) {
-                        $paymentsAsArray[] = $payment;
-                    }
-                    $payments = new HelloAssoPayments($paymentsAsArray, []);
-                }
-            }
+            $localPayments = empty($payments)
+                ? $this->getPaymentsFromHelloAsso($email, $form)
+                : $payments;
         } catch (Throwable $th) {
             // do nothing (remove warnings)
             if ($this->isDebug() && $this->wiki->UserIsAdmin()) {
@@ -491,34 +466,37 @@ class HpfService
                 }
             }
 
-            $payments = null;
+            $localPayments = null;
         }
-        if (!empty($payments)) {
+        if (!empty($localPayments)) {
             $this->checkContribFormsHavePaymentsField();
 
             $cacheEntries = [];
+            $cacheEntriesWithSamePaymentId = [];
 
-            foreach ($payments as $payment) {
-                // open entry based on email from payment
-                $paymentEmail = $payment->payer->email;
-                if (!isset($cacheEntries[$paymentEmail])) {
-                    $cacheEntries[$paymentEmail] = [];
-                }
-                if (!isset($cacheEntries[$paymentEmail]['entry'])) {
-                    if (empty($preferedEntryId)){
-                        $preferedEntryId = $this->extractAssociatedEntryName($payment);
+            foreach ($localPayments as $payment) {
+                if (empty($this->lazyGetEntriesWithSamePaymentId($cacheEntriesWithSamePaymentId, $payment))){
+                    // open entry based on email from payment
+                    $paymentEmail = $payment->payer->email;
+                    if (!isset($cacheEntries[$paymentEmail])) {
+                        $cacheEntries[$paymentEmail] = [];
                     }
-                    $entries = $this->getCurrentContribEntries($formId, $paymentEmail, $preferedEntryId);
-                    if (!empty($entries)) {
-                        $cacheEntries[$paymentEmail]['entry'] = $entries[array_key_first($entries)];
-                        $cacheEntries[$paymentEmail]['previousTotal'] = $cacheEntries[$paymentEmail]['entry'][self::CALC_FIELDNAMES['total']] ?? "";
-                        $cacheEntries[$paymentEmail]['previousPayments'] = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
+                    if (!isset($cacheEntries[$paymentEmail]['entry'])) {
+                        if (empty($preferedEntryId)){
+                            $preferedEntryId = $this->extractAssociatedEntryName($payment);
+                        }
+                        $entries = $this->getCurrentContribEntries($formId, $paymentEmail, $preferedEntryId);
+                        if (!empty($entries)) {
+                            $cacheEntries[$paymentEmail]['entry'] = $entries[array_key_first($entries)];
+                            $cacheEntries[$paymentEmail]['previousTotal'] = $cacheEntries[$paymentEmail]['entry'][self::CALC_FIELDNAMES['total']] ?? "";
+                            $cacheEntries[$paymentEmail]['previousPayments'] = $cacheEntries[$paymentEmail]['entry'][self::PAYMENTS_FIELDNAME] ?? "";
+                        }
                     }
-                }
-                if (!empty($cacheEntries[$paymentEmail]['entry'])) {
-                    // check if payments are saved
-                    if (!$this->isAlreadyRegisteredPayment($cacheEntries[$paymentEmail]['entry'], $payment)) {
-                        $cacheEntries[$paymentEmail]['entry'] = $this->updateEntryWithPayment($cacheEntries[$paymentEmail]['entry'], $payment);
+                    if (!empty($cacheEntries[$paymentEmail]['entry'])) {
+                        // check if payments are saved
+                        if (!$this->isAlreadyRegisteredPayment($cacheEntries[$paymentEmail]['entry'], $payment)) {
+                            $cacheEntries[$paymentEmail]['entry'] = $this->updateEntryWithPayment($cacheEntries[$paymentEmail]['entry'], $payment);
+                        }
                     }
                 }
             }
@@ -530,6 +508,62 @@ class HpfService
                 }
             }
         }
+    }
+
+    /**
+     * get payments from HelloAsso
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     * @param string $email
+     * @param array $form
+     * @return null|HelloAssoPayments
+     * @throws Exception
+     */
+    protected function getPaymentsFromHelloAsso(string $email, array $form): ?HelloAssoPayments
+    {
+        $firstSearch = $this->helloAssoService->getPayments([
+            'email' => $email,
+            'formType' => $form['formType'],
+            'formSlug' => $form['formSlug']
+        ], false);
+        // $firstSearch = [];
+        // specific for direct checkout
+        $secondSearch = $this->helloAssoService->getPayments([
+            'email' => $email,
+            'formType' => 'Checkout',
+            'formSlug' => 'default'
+        ], true);
+        if (empty($firstSearch)) {
+            $payments = $secondSearch;
+        } elseif (empty($secondSearch)) {
+            $payments = $firstSearch;
+        } else {
+            $paymentsAsArray = [];
+            foreach ($firstSearch as $payment) {
+                $paymentsAsArray[] = $payment;
+            }
+            foreach ($secondSearch as $payment) {
+                $paymentsAsArray[] = $payment;
+            }
+            $payments = new HelloAssoPayments($paymentsAsArray, []);
+        }
+        return $payments;
+    }
+
+    /**
+     * lazy get entries with this payment id
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     * @param array $cache
+     * @param Payment $payment
+     * @return array
+     */
+    protected function lazyGetEntriesWithSamePaymentId(array &$cache, Payment $payment): array
+    {
+        if (!array_key_exists($payment->id, $cache)) {
+            $cache[$payment->id] = $this->findEntriesWithSamePayment($payment->id);
+        }
+        return $cache[$payment->id];
     }
 
     /**
@@ -946,6 +980,7 @@ class HpfService
             empty($postNotSanitized['post']['eventType']) ||
             ($postNotSanitized['post']['eventType'] != "Payment") ||
             !is_array($postNotSanitized['post']['data']) ||
+            empty($postNotSanitized['post']['data']['id']) ||
             empty($postNotSanitized['post']['data']['state']) ||
             empty($postNotSanitized['post']['data']['payer']) ||
             empty($postNotSanitized['post']['data']['payer']['email']) ||
@@ -954,35 +989,39 @@ class HpfService
             // only save not payments data
             $this->appendToHelloAssoLog($postNotSanitized);
         } else {
-            // update payments info
-            $email = $postNotSanitized['post']['data']['payer']['email'];
-            
-            $contribFormIds = $this->getCurrentPaymentsFormIds();
-            $done = false;
-            foreach ($contribFormIds as $formId) {
-                $form = $this->getPaymentForm($formId);
-                $formType = $postNotSanitized['post']['data']['order']['formType'];
-                $formSlug = $postNotSanitized['post']['data']['order']['formSlug'];
-                if (
-                    $this->isDonationFormType($formType)
-                    || ($form['formType'] == $formType && $form['formSlug'] == $formSlug)
-                ) {
-                    $payments = new HelloAssoPayments(
-                        $this->helloAssoService->convertToPayments(['data'=>[$postNotSanitized['post']['data']]]),
-                        []
-                    );
-                    $this->refreshPaymentsInfo(
-                        $formId,
-                        $email,
-                        '',
-                        $payments
-                    );
-                    $done = true;
-                    break;
+            // check if already registered
+            $paymentId = $postNotSanitized['post']['data']['id'];
+            if (empty($this->findEntriesWithSamePayment($paymentId))){
+                // update payments info
+                $email = $postNotSanitized['post']['data']['payer']['email'];
+                
+                $contribFormIds = $this->getCurrentPaymentsFormIds();
+                $done = false;
+                foreach ($contribFormIds as $formId) {
+                    $form = $this->getPaymentForm($formId);
+                    $formType = $postNotSanitized['post']['data']['order']['formType'];
+                    $formSlug = $postNotSanitized['post']['data']['order']['formSlug'];
+                    if (
+                        $this->isDonationFormType($formType)
+                        || ($form['formType'] == $formType && $form['formSlug'] == $formSlug)
+                    ) {
+                        $payments = new HelloAssoPayments(
+                            $this->helloAssoService->convertToPayments(['data'=>[$postNotSanitized['post']['data']]]),
+                            []
+                        );
+                        $this->refreshPaymentsInfo(
+                            $formId,
+                            $email,
+                            '',
+                            $payments
+                        );
+                        $done = true;
+                        break;
+                    }
                 }
-            }
-            if (!$done) {
-                $this->appendToHelloAssoLog($postNotSanitized);
+                if (!$done) {
+                    $this->appendToHelloAssoLog($postNotSanitized);
+                }
             }
         }
     }
@@ -1919,5 +1958,61 @@ class HpfService
             } catch(Throwable $th) {
             }
         }
+    }
+
+    /**
+     * find other entries with payment already registered
+     * Feature UUID : hpf-payments-field
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     * @param string $paymentId
+     * @return array
+     */
+    public function findEntriesWithSamePayment(string $paymentId): array
+    {
+        if (empty($paymentId)){
+            return [];
+        }
+        $entries = $this->entryManager->search([
+            'queries' => [
+                self::PAYMENTS_FIELDNAME => ".*$paymentId.*"
+            ]
+        ]);
+        $fieldsCache = [];
+        return array_filter(
+            $entries,
+            function ($entry) use (&$fieldsCache, $paymentId){
+                return $this->isPaymentInEntry($paymentId, $entry, $fieldsCache);
+            }
+        );
+    }
+
+    /**
+     * find other entries with payment already registered
+     * Feature UUID : hpf-payments-field
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     * @param string $paymentId
+     * @param array $entry
+     * @param array $fieldsCache
+     * @return bool
+     */
+    protected function isPaymentInEntry(
+        string $paymentId,
+        array $entry,
+        array &$fieldsCache
+    ): bool
+    {
+        if (!empty($entry['id_typeannonce']) && !empty($entry[self::PAYMENTS_FIELDNAME])) {
+            if (!array_key_exists($entry['id_typeannonce'],$fieldsCache)){
+                $fieldsCache[$entry['id_typeannonce']] = $this->formManager->findFieldFromNameOrPropertyName(self::PAYMENTS_FIELDNAME, $entry['id_typeannonce']);
+            }
+            $field = $fieldsCache[$entry['id_typeannonce']];
+            if (!empty($field) && $field instanceof PaymentsField) {
+                $payments = $this->convertStringToPayments($entry[self::PAYMENTS_FIELDNAME]);
+                if (array_key_exists($paymentId, $payments)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
