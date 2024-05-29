@@ -1031,9 +1031,17 @@ class HpfService
      */
     private function appendToHelloAssoLog($postNotSanitized)
     {
-        if (empty($postNotSanitized['post']['eventType']) ||
-            !is_string($postNotSanitized['post']['eventType']) ||
-            !in_array($postNotSanitized['post']['eventType'], ['Order','Form'])) {
+        if (empty($postNotSanitized['post']['eventType'])
+            || !is_string($postNotSanitized['post']['eventType'])
+            || !in_array($postNotSanitized['post']['eventType'], ['Order','Form'])
+            || empty($postNotSanitized['post']['data']['order']['formSlug'])
+            || !is_string($postNotSanitized['post']['data']['order']['formSlug'])
+            || !in_array($postNotSanitized['post']['data']['order']['formSlug'], [
+                'billeterie-rnhp-grand-public',
+                'rnhp-2024',
+                'guide-vieillir-en-habitat-participatif'
+            ])
+            ) {
             $pageTag = 'HelloAssoLog';
             try {
                 $data = json_decode(json_encode($postNotSanitized), true);
