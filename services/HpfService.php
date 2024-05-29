@@ -205,19 +205,31 @@ class HpfService
                     },
                     ARRAY_FILTER_USE_KEY
                 );
-                $entries = $this->entryManager->search([
-                    'formsIds' => [$form['bn_id_nature']],
-                    'queries' => [
-                        'bf_mail' => $email
-                    ]
-                ]);
+                $query = <<<SQL
+                SELECT `tag`,`owner` FROM {$this->dbService->prefixTable('pages')}
+                  WHERE `latest` = 'Y'
+                    AND `comment_on` = ''
+                    AND `body` LIKE '%"id_typeannonce":"{$this->dbService->escape($form['bn_id_nature'])}"%'
+                    AND `tag` IN (
+                        SELECT DISTINCT `resource` FROM {$this->dbService->prefixTable('triples')}
+                            WHERE `value` = 'fiche_bazar'
+                            AND `property` = 'http://outils-reseaux.org/_vocabulary/type'
+                        ORDER BY resource ASC 
+                    )
+                    AND (
+                        `body` LIKE '%"bf_mail":"{$this->dbService->escape($email)}"%'
+                        OR `owner` = '{$this->dbService->escape($preferedUserName)}'
+                    )
+                SQL;
+                $entries = $this->dbService->loadAll($query);
+                $entries = empty($entries) ? [] :$entries;
                 if (empty($entries)) {
                     return [];
                 } else {
                     $sameIds = empty($preferedEntryId)
                         ? []
                         : array_filter($entries, function ($entry) use ($preferedEntryId) {
-                            return !empty($entry['id_fiche']) && $entry['id_fiche'] == $preferedEntryId;
+                            return !empty($entry['tag']) && $entry['tag'] == $preferedEntryId;
                         });
                     $sameOwner = (empty($sameIds) && !empty($preferedUserName))
                         ? array_filter($entries, function ($entry) use ($preferedUserName) {
@@ -235,7 +247,7 @@ class HpfService
                         $ids = [$ids[array_key_first($ids)]];
                     }
                     return array_map(function ($id) {
-                        return $this->entryManager->getOne($id['id_fiche'], false, null, false, true);
+                        return $this->entryManager->getOne($id['tag'], false, null, false, true);
                     }, $ids);
                 }
             }
