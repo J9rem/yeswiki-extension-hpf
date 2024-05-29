@@ -54,7 +54,7 @@ class DirectPaymentHandler extends YesWikiHandler
             $headersData = $this->extractHeadersFromGet($_GET ?? [], $entry, $data);
 
             if ($headersData['checkData']) {
-                $this->checkData($data, true);
+                $this->checkData($data, $entry, true);
             }
 
             $output = $headersData['headerContent']
@@ -103,7 +103,7 @@ class DirectPaymentHandler extends YesWikiHandler
             && in_array($get[self::KEY_IN_GET_FOR_STATUS], ['success', 'error', 'cancel'], true)) {
 
             $headersData['checkData'] = false;
-            $this->checkData($data, false);
+            $this->checkData($data, $entry, false);
 
             $amountInCents = (
                 empty($get[self::KEY_IN_GET_FOR_AMOUNT])
@@ -235,8 +235,11 @@ class DirectPaymentHandler extends YesWikiHandler
         }
 
         $form = $this->formManager->getOne($output['formId']);
-        if (empty($form['bn_only_one_entry']) || $form['bn_only_one_entry'] !== 'Y') {
-            throw new ExceptionWithMessage(_t('HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER'));
+        // if (empty($form['bn_only_one_entry']) || $form['bn_only_one_entry'] !== 'Y') {
+        //     throw new ExceptionWithMessage(_t('HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER'));
+        // }
+        if (empty($form['prepared'])) {
+            throw new ExceptionWithMessage('FORM SHOULD NOT BE EMPTY !');
         }
 
         return $output;
@@ -245,22 +248,27 @@ class DirectPaymentHandler extends YesWikiHandler
     /**
      * check if all is right in data
      * @param array $data
+     * @param array $entry
      * @param bool $checkIfEmpty
      * @throws ExceptionWithMessage
      */
-    protected function checkData(array $data, bool $checkIfEmpty)
+    protected function checkData(array $data, array $entry, bool $checkIfEmpty)
     {
         if ($checkIfEmpty && $data['totalInCents'] <= 0) {
             throw new ExceptionWithMessage(_t('HPF_NOTHING_TO_PAY'), 'info');
         }
 
         $user = $this->authController->getLoggedUser();
-        if (
-            empty($user['email'])
-            || empty($data['email'])
-            || $user['email'] != $data['email']
-        ) {
-            throw new ExceptionWithMessage(_t('HPF_CURRENT_USER_SHOULD_HAVE_SAME_EMAIL_AS_ENTRY'));
+        $sameEmail = !empty($user['email'])
+            && !empty($data['email'])
+            && $user['email'] == $data['email'];
+        $sameUser = !empty($entry['owner'])
+            && !empty($user['name'])
+            && $user['name'] == $entry['owner'];
+        if (!$sameEmail && !$sameUser) {
+            if (!$sameEmail) {
+                throw new ExceptionWithMessage(_t('HPF_CURRENT_USER_SHOULD_HAVE_SAME_EMAIL_AS_ENTRY'));
+            }
         }
 
         // all is Right

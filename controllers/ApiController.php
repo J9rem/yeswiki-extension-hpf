@@ -60,7 +60,18 @@ class ApiController extends YesWikiController
                 throw new ApiException('not existing entry');
             }
             $user = $userManager->getLoggedUser();
-            if (empty($entry['bf_mail']) || (!$this->wiki->UserIsAdmin() && $user['email'] !== $entry['bf_mail'])) {
+            if (empty($entry['bf_mail'])
+                || (
+                    !$this->wiki->UserIsAdmin()
+                    && (
+                        $user['email'] !== $entry['bf_mail']
+                        && (
+                            empty($entry['owner'])
+                            || empty($user['name'])
+                            || $user['name'] !== $entry['owner']
+                        )
+                    )
+                )) {
                 throw new ApiException(_t('HPF_FORBIDEN_FOR_THIS_ENTRY'));
             }
             $previousValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
