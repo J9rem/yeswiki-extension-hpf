@@ -17,6 +17,7 @@ use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use Symfony\Component\Security\Csrf\Exception\TokenNotFoundException;
 use Throwable;
 use YesWiki\Alternativeupdatej9rem\Field\CustomSendMailField;
+use YesWiki\Bazar\Exception\UserFieldException;
 use YesWiki\Bazar\Field\BazarField;
 use YesWiki\Bazar\Field\CheckboxField;
 use YesWiki\Bazar\Field\EmailField;
@@ -147,41 +148,44 @@ class HpfImportController extends YesWikiController
         }
 
         $data = $_POST['data'];
-        if (!$appendMode) {
-            try {
-                $newEntry = $this->addEntryIfPossible($data, $form, $isGroup);
+        try {
+            if (!$appendMode) {
+                try {
+                    $newEntry = $this->addEntryIfPossible($data, $form, $isGroup);
+                } catch (UserFieldException $th) {
+                    throw new Exception('userCreation:'.$th->getMessage());
+                }
                 if (empty($newEntry) || !is_array($newEntry)) {
                     throw new Exception("entry not created");
                 }
                 $this->updateAclsIfNeeded($data, $newEntry);
                 $data['associatedEntryId'] = $newEntry['id_fiche'];
-            } catch (Throwable $th) {
-                return new ApiResponse(
-                    ['error' => $th->getMessage()],
-                    400
-                );
             }
-        }
-        
-        try {
-            $updatedEntry = $this->appendPaymentIfPossible($data, $form);
-        } catch (PaymentAlreadyExistingException $th) {
+
+            try {
+                $updatedEntry = $this->appendPaymentIfPossible($data, $form);
+            } catch (PaymentAlreadyExistingException $th) {
+                throw new Exception('existing payment');
+            }
+            
+            if (empty($updatedEntry) || !is_array($updatedEntry)) {
+                if ($appendMode) {
+                    throw new Exception("entry not updated");
+                } else {
+                    $updatedEntry = $newEntry ?? [];
+                }
+            }
             return new ApiResponse(
-                ['error'=>'existing payment'],
+                $updatedEntry,
+                200
+            );
+
+        } catch (Throwable $th) {
+            return new ApiResponse(
+                ['error' => $th->getMessage()],
                 400
             );
         }
-        if (empty($updatedEntry) || !is_array($updatedEntry)) {
-            if ($appendMode) {
-                throw new Exception("entry not updated");
-            } else {
-                $updatedEntry = $newEntry ?? [];
-            }
-        }
-        return new ApiResponse(
-            $updatedEntry,
-            200
-        );
     }
 
     /**
@@ -447,7 +451,9 @@ class HpfImportController extends YesWikiController
             }
         ];
         // nom wiki
-        $entry['nom_wiki_force_label'] = 1;
+        $entry['nomwiki_force_label'] = 1;
+        // force creation of new username if existing
+        $entry['nomwiki_confirmNewName'] = 1;
         $randomPwd = $this->wiki->generateRandomString(30);
         $entry['mot_de_passe_wikini'] = $randomPwd;
         $entry['mot_de_passe_repete_wikini'] = $randomPwd;

@@ -526,7 +526,11 @@ export default {
                                     })
                                     .catch((error)=>{
                                         this.asyncHelper.manageError(error)
-                                        this.appendMessage(`❌ la fiche avec l'e-mail '${v.email}' n'a pas été ajoutée !`)
+                                        let endMessage = ''
+                                        if (error?.errorMsg?.length > 0 && error?.errorMsg.match(/^userCreation:/)) {
+                                            endMessage = ` Création d'utilisateur impossible (${error?.errorMsg?.slice('userCreation:'.length,'userCreation:'.length+100)}...)`
+                                        }
+                                        this.appendMessage(`❌ la fiche avec l'e-mail '${v.email}' n'a pas été ajoutée !${endMessage}`)
                                     })
                             } else if (v.canAppend){
                                 const entryId = this.getAssociatedId(key)
@@ -550,7 +554,15 @@ export default {
                                             this.appendMessage(`🚧 le paiment n'a pas été ajouté pour la fiche <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a> car il existe déjà !`)
                                         } else {
                                             this.asyncHelper.manageError(error)
-                                            this.appendMessage(`❌ le paiment n'a pas été ajouté pour la fiche <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a> !`)
+                                            let endMessage = ''
+                                            if (error?.errorMsg?.length > 0) {
+                                                if (error.errorMsg.match('"number" should be a not empty string or number !')){
+                                                    endMessage = ` (le numéro de paiement fourni est vide ou mal formatté !)`
+                                                } else {
+                                                    endMessage = ` (${error?.errorMsg?.slice(0,100)}...)`
+                                                }
+                                            }
+                                            this.appendMessage(`❌ le paiment n'a pas été ajouté pour la fiche <a href="${window.wiki.url(`?${entryId}`)}" class="newtab">${entryId}</a> !${endMessage}`)
                                         }
                                     })
                             }
