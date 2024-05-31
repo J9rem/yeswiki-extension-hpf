@@ -1002,37 +1002,54 @@ class HpfService
             $data = $post['data'];
             // check if already registered
             $paymentId = $data['id'];
-            if (empty($this->findEntriesWithSamePayment($paymentId))){
+            $entries = $this->findEntriesWithSamePayment($paymentId);
+            if (empty($entries)){
                 // update payments info
                 $email = $data['payer']['email'];
                 
                 $contribFormIds = $this->getCurrentPaymentsFormIds();
-                $done = false;
-                foreach ($contribFormIds as $formId) {
-                    $form = $this->getPaymentForm($formId);
-                    $formType = $data['order']['formType'];
-                    $formSlug = $data['order']['formSlug'];
-                    if (
-                        $this->isDonationFormType($formType)
-                        || ($form['formType'] == $formType && $form['formSlug'] == $formSlug)
-                    ) {
-                        $payments = new HelloAssoPayments(
-                            $this->helloAssoService->convertToPayments(compact(['data'])),
-                            []
-                        );
-                        $this->refreshPaymentsInfo(
-                            $formId,
-                            $email,
-                            '',
-                            $payments
-                        );
-                        $done = true;
-                        break;
+                if (empty($contribFormIds)) {
+                    $this->appendToHelloAssoLog($post,'No contribFormIds !');
+                } else {
+                    try {
+                        $done = false;
+                        foreach ($contribFormIds as $formId) {
+                            $form = $this->getPaymentForm($formId);
+                            $formType = $data['order']['formType'];
+                            $formSlug = $data['order']['formSlug'];
+                            if (
+                                $this->isDonationFormType($formType)
+                                || ($form['formType'] == $formType && $form['formSlug'] == $formSlug)
+                            ) {
+                                $payments = new HelloAssoPayments(
+                                    $this->helloAssoService->convertToPayments(compact(['data'])),
+                                    []
+                                );
+                                $this->refreshPaymentsInfo(
+                                    $formId,
+                                    $email,
+                                    '',
+                                    $payments
+                                );
+                                $done = true;
+                                break;
+                            }
+                        }
+                        if (!$done) {
+                            $this->appendToHelloAssoLog($post,'payment not registered !');
+                        }
+                    } catch (Throwable $th) {
+                        $this->appendToHelloAssoLog($post,"Error when registering payment : {$th->getMessage()} in ".
+                            basename($th->getFile()). ", line {$th->getLine()}");
                     }
                 }
-                if (!$done) {
-                    $this->appendToHelloAssoLog($post,'payment not registered !');
+            } else {
+                try {
+                    $ids = implode(',',array_column($entries, 'id_fiche'));
+                } catch (Throwable $th) {
+                    $ids = 'Not extracted ids !';
                 }
+                $this->appendToHelloAssoLog($post,"Payment already not registered in entries : $ids");
             }
         }
     }
