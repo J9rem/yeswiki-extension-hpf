@@ -178,7 +178,8 @@ class ApiController extends YesWikiController
     {
         $csrfTokenController = $this->getService(CsrfTokenController::class);
         $csrfTokenController->checkToken('payment-admin', 'POST', 'anti-csrf-token');
-        return new ApiResponse($this->getService(HpfController::class)->findHelloAssoPayments($date, $amount), 200);
+        $res = $this->getService(HpfController::class)->findHelloAssoPayments($date, $amount);
+        return new ApiResponse($res, $res['status'] === 'ok' ? 200 : 500);
     }
 
     /**

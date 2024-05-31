@@ -20,22 +20,17 @@ const computedDebounce = (name) => {
             return this.search?.[name] ?? ''
         },
         set(val){
-            if(this.refreshing){
-                return // do nothing
-            }
+            this.pendingsearch[name] = (val.length === 0) ? '' : val
             if(this.timeout?.[name]){
                 clearTimeout(this.timeout[name])
             }
-            if (val.length === 0){
-                this.search[name] = ''
-            } else {
-                this.timeout[name] = setTimeout(
-                    ()=>{
-                        this.search[name] = val
-                    },
-                    500 // bounce time
-                )
-            }
+            this.timeout[name] = setTimeout(
+                ()=>{
+                    this.search[name] = this.pendingsearch[name]
+                    this.timeout[name] = null
+                },
+                500 // bounce time
+            )
         }
     }
 }
@@ -56,6 +51,7 @@ let appParams = {
             currentResults: {},
             datePickerLang: vdp_translation_index,
             datePickerLanguage: null,
+            formsids: [],
             isLoading: false,
             newPayment:{
                 date:'',
@@ -68,6 +64,12 @@ let appParams = {
             notSearching: true,
             notSearchingHelloAsso: true,
             params: null,
+            pendingsearch: {
+                email: '',
+                firstName: '',
+                name: '',
+                amount:''
+            },
             refreshing:false,
             search: {
                 email: '',
@@ -87,7 +89,9 @@ let appParams = {
     computed:{
         availableIds(){
             const id = this.getCurrentIdForHA.id
-            return this.convertPaymentsToOptions(this.cacheSearch?.[id])
+            return (!(id in this.cacheSearch))
+                ? 'erreur'
+                : this.convertPaymentsToOptions(this.cacheSearch?.[id])
         },
         canAddPayment(){
             this.updateCanUseId()
@@ -270,6 +274,17 @@ let appParams = {
                     return response.json()
                 })
         },
+        async getPayments(formattedDate, amount, token){
+            let formData = new FormData()
+            formData.append('anti-csrf-token',token)
+            const url = wiki.url(`?api/hpf/helloasso/payment/find/${formattedDate}/${String(Math.round(Number(amount)*100))}`)
+            const options = {
+                method:'POST',
+                body: new URLSearchParams(formData),
+                headers: (new Headers()).append('Content-Type','application/x-www-form-urlencoded')
+            }
+            return await this.fetchSecured(url,options)
+        },
         getQueryForName(data){
             const query = {}
             if ('firstName' in data){
@@ -304,20 +319,30 @@ let appParams = {
             if (formattedQuery.length ===0){
                 return {}
             }
-            const id = ''+ this.selectedForm + formattedQuery;
+            const id = ''+ (this.selectedForm.length > 0 ? this.selectedForm : 'allforms') + formattedQuery;
             return await this.waitFor('notSearching')
                 .then(async ()=>{
                     this.notSearching = false
                     return await this.waitForCache(
                             id,
                             async () => {
-                                return await this.fetchSecured(wiki.url(`?api/forms/${this.selectedForm}/entries&query=${formattedQuery}`))
+                                const url = this.selectedForm.length > 0
+                                    ? wiki.url(`?api/forms/${this.selectedForm}/entries&query=${formattedQuery}`)
+                                    : wiki.url(`?api/entries&query=${formattedQuery}|id_typeannonce=${this.formsids.join(',')}`)
+                                return await this.fetchSecured(url)
+                                .catch((error)=>{
+                                    this.notSearching = true
+                                    return Promise.reject(error)
+                                })
                             }
                         )
                         .finally(()=>{
                             this.notSearching = true
                         })
                 })
+        },
+        async getToken(){
+            return await this.fetchSecured(wiki.url('?api/hpf/helloasso/payment/getToken'),{method:'POST'})
         },
         hasResults(results){
             return typeof results === 'object' && results !== null && Object.keys(results).length > 0
@@ -328,9 +353,28 @@ let appParams = {
             }
             return null
         },
-        async refreshHelloAssoIds(){
+        reloadPage(){
+            window.location.reload()
+        },
+        refreshAvailableIds(){
+            if (this.newPayment.origin === 'helloasso'
+                && this.newPayment.date?.length > 0
+                && Number(this.newPayment.total) > 0){
+                // refresh
+                this.refreshHelloAssoIds()
+                    .catch(this.manageError)
+            }
+        },
+        async refreshHelloAssoIds(previousId = '', previousformattedDate = ''){
             const amount = this.newPayment.total
-            const {id,formattedDate} = this.getCurrentIdForHA
+            let id = ''
+            let formattedDate = ''
+            if (previousId.length > 0 && previousformattedDate.length > 0){
+                id = previousId
+                formattedDate = previousformattedDate
+            } else {
+                ({id,formattedDate} = this.getCurrentIdForHA)
+            }
             if (!id){
                 return
             }
@@ -340,18 +384,25 @@ let appParams = {
                     return await this.waitForCache(
                         id,
                         async () => {
-                            return await this.fetchSecured(wiki.url('?api/hpf/helloasso/payment/getToken'),{method:'POST'})
+                            return await this.getToken()
                             .then(async (token)=>{
-                                let formData = new FormData()
-                                formData.append('anti-csrf-token',token)
-                                return await this.fetchSecured(
-                                    wiki.url(`?api/hpf/helloasso/payment/find/${formattedDate}/${String(Math.round(Number(amount)*100))}`),
-                                    {
-                                        method:'POST',
-                                        body: new URLSearchParams(formData),
-                                        headers: (new Headers()).append('Content-Type','application/x-www-form-urlencoded')
-                                    }
-                                )
+                                return await this.getPayments(formattedDate, amount, token)
+                                .catch(async (error)=>{
+                                    const promise = new Promise((resolve)=>{
+                                        setTimeout(() => {
+                                            resolve()
+                                        },3000)
+                                    })
+                                    return promise.then(async ()=>{
+                                        return await this.getToken()
+                                            .then(async (token)=>{
+                                                return await this.getPayments(formattedDate, amount, token)
+                                            })
+                                            .finally(()=>{
+                                                this.notSearchingHelloAsso = true
+                                            })
+                                    })
+                                })
                             })
                         }
                     )
@@ -369,17 +420,21 @@ let appParams = {
             })
             return promise
         },
-        resolve(name,results = null){
+        resolve(name,results = null, souldReject = false){
             if (Array.isArray(this.cacheResolveReject?.[name])){
                 const listOfResolveReject = this.cacheResolveReject[name]
                 this.cacheResolveReject[name] = []
-                listOfResolveReject.forEach(({resolve})=>resolve(results === null ? this?.[name] : results))
+                listOfResolveReject.forEach(({resolve,reject})=>{
+                    if (souldReject) {
+                        reject(results === null ? 'error' : results)
+                    } else {
+                        resolve(results === null ? this?.[name] : results)
+                    }
+                })
             }
         },
         async searchEntry(){
-            if (this.refreshing){
-                return // do nothing
-            }
+            this.selectedEntryId = ''
             const data = {}
             if (this.search.firstName.length>0){
                 data.firstName = this.search.firstName
@@ -484,6 +539,13 @@ let appParams = {
                     this.$set(this.cacheSearch,name,results)
                     this.resolve(id,results)
                     return results
+                }).catch((error)=>{
+                    try {
+                        this.resolve(id,error,true)
+                    } catch (e) {
+                        
+                    }
+                    return Promise.reject(error)
                 })
             }
             const promise = new Promise((resolve,reject)=>{
@@ -503,8 +565,11 @@ let appParams = {
         if (rawParams){
             try {
                 this.params = JSON.parse(rawParams)
-                if (this.params?.formsids && Object.keys(this.params?.formsids).length === 1){
-                    this.selectedForm = Object.keys(this.params.formsids)[0]
+                if (this.params?.formsids){
+                    this.formsids = Object.keys(this.params?.formsids)
+                    if (Object.keys(this.params?.formsids).length === 1){
+                        this.selectedForm = Object.keys(this.params.formsids)[0]
+                    }
                 }
                 this.newPayment.date = this.customFormatterDate()
             } catch (error) {
@@ -519,6 +584,9 @@ let appParams = {
         },
         notSearching(){
             this.resolve('notSearching')
+        },
+        notSearchingHelloAsso(){
+            this.resolve('notSearchingHelloAsso')
         },
         newPayment:{
             deep: true,
@@ -537,6 +605,9 @@ let appParams = {
             handler(){
                 this.searchEntry().catch(this.manageError)
             }
+        },
+        selectedForm(){
+            this.searchEntry().catch(this.manageError)
         }
     }
 }

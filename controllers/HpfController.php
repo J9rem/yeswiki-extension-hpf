@@ -20,6 +20,7 @@ use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\YesWikiController;
 use YesWiki\Hpf\Service\HpfService;
+use YesWiki\Shop\Entity\HelloAssoPayments;
 use YesWiki\Shop\Entity\Payment;
 use YesWiki\Shop\Entity\User;
 use YesWiki\Shop\Service\HelloAssoService;
@@ -62,9 +63,14 @@ class HpfController extends YesWikiController
             'from' => $dateObject->format('Y-m-d'),
             'to' => $dateObject->add(new DateInterval('P1D'))->format('Y-m-d')
         ]);
-        $payments = empty($payments) ? [] : $payments->getPayments();
+        if (!($payments instanceof HelloAssoPayments)){
+            return [
+                'status' => 'not ok : wait some duration',
+                'payments' => []
+            ];
+        }
         $paymentsf = array_filter(
-            $payments,
+            $payments->getPayments(),
             function ($p) use ($amount) {
                 return intval($p->amount*100) === intval($amount);
             }

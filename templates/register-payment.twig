@@ -25,14 +25,14 @@
                 name="{{ propName }}"
                 class="form-control"
                 v-model="selectedForm"
-                :disabled="refreshing"
+                :disabled="!notSearching"
             >
                 <option value='' :selected="!selectedForm">{{ _t('BAZ_CHOISIR') }}</option>
                 <option v-for="[formId,formName] in Object.entries(params?.formsids ?? {}).sort(([,name1],[,name2])=>name1.localeCompare(name2))" :value="formId">{{"{{ formName }} ({{ formId }})"}}</option>
             </select>
         {% endblock %}
     {% endembed %}
-    <div v-if="selectedForm?.length > 0">
+    <div>
         <b><i>Recherche de la fiche</i></b><br/>
         <div class="row-fluid row">
           {% for data in [
@@ -50,7 +50,7 @@
                             type="text"
                             class="form-control input-xxlarge"
                             v-model="{{data.varName}}"
-                            :disabled="refreshing"
+                            :disabled="!notSearching"
                         >
                     {% endblock %}
                 {% endembed %}
@@ -67,6 +67,7 @@
                 <thead>
                     <tr>
                         <th>Sélection</th>
+                        <th>Formulaire</th>
                         <th>Fiche</th>
                         <th>Titre</th>
                         <th>Prénom</th>
@@ -78,6 +79,7 @@
                 <tbody>
                     <tr v-for="(entry,entryId) in currentResults">
                         <td @click="selectEntry(entry?.id_fiche)"><input type="checkbox" :checked="selectedEntryId === entry?.id_fiche"><span></span></td>
+                        <td>{{"{{ params?.formsids?.[entry?.id_typeannonce] }}"}}</td>
                         <td><a :href="wiki.url(entry?.id_fiche)" class="newtab">{{"{{ entry?.id_fiche }}"}}</a></td>
                         <td>{{"{{ entry?.bf_titre }}"}}</td>
                         <td>{{"{{ entry?.bf_prenom }}"}}</td>
@@ -258,8 +260,19 @@
                             Recherche en cours des paiements correspondant sur HelloAsso
                         </div>
                         <div
-                            v-else-if="Object.keys(availableIds).length === 0"
+                            v-else-if="newPayment.total == 0"
                             class="alert alert-info">
+                            Pas de recherche pour les paiements nuls
+                        </div>
+                        <div
+                            v-else-if="availableIds === 'erreur'"
+                            class="alert alert-info">
+                            Une erreur est survenue . <button class="btn btn-xs btn-primary" @click.prevent.stop="reloadPage">Cliquer ici</button> pour recharger la page.
+                        </div>
+                        <div
+                            v-else-if="Object.keys(availableIds).length === 0"
+                            class="alert alert-info"
+                            :disabled="refreshing || !notSearching || !notSearchingHelloAsso">
                             Aucun paiment HelloAsso ne correspond.
                         </div>
                         <template v-else>
