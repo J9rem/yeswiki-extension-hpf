@@ -1013,26 +1013,43 @@ class HpfService
                 } else {
                     try {
                         $done = false;
-                        foreach ($contribFormIds as $formId) {
-                            $form = $this->getPaymentForm($formId);
-                            $formType = $data['order']['formType'];
-                            $formSlug = $data['order']['formSlug'];
-                            if (
-                                $this->isDonationFormType($formType)
-                                || ($form['formType'] == $formType && $form['formSlug'] == $formSlug)
-                            ) {
-                                $payments = new HelloAssoPayments(
-                                    $this->helloAssoService->convertToPayments(['data' => [$data]]),
-                                    []
-                                );
-                                $this->refreshPaymentsInfo(
-                                    $formId,
-                                    $email,
-                                    '',
-                                    $payments
-                                );
-                                $done = true;
-                                break;
+                        $payments = new HelloAssoPayments(
+                            $this->helloAssoService->convertToPayments(['data' => [$data]]),
+                            []
+                        );
+                        $payment = $payments->getPayments()[0];
+                        $preferedEntryId = $this->extractAssociatedEntryName($payment);
+                        if (!empty($preferedEntryId)){
+                            $preferedEntry = $this->entryManager->getOne($preferedEntryId);
+                            if (!empty($preferedEntry['id_typeannonce'])
+                                && in_array($preferedEntry['id_typeannonce'],$contribFormIds)){
+                                    $this->refreshPaymentsInfo(
+                                        $preferedEntry['id_typeannonce'],
+                                        $email,
+                                        $preferedEntryId,
+                                        $payments
+                                    );
+                                    $done = true;
+                            }
+                        }
+                        if (!$done){
+                            foreach ($contribFormIds as $formId) {
+                                $form = $this->getPaymentForm($formId);
+                                $formType = $data['order']['formType'];
+                                $formSlug = $data['order']['formSlug'];
+                                if (
+                                    $this->isDonationFormType($formType)
+                                    || ($form['formType'] == $formType && $form['formSlug'] == $formSlug)
+                                ) {
+                                    $this->refreshPaymentsInfo(
+                                        $formId,
+                                        $email,
+                                        '',
+                                        $payments
+                                    );
+                                    $done = true;
+                                    break;
+                                }
                             }
                         }
                         if (!$done) {
@@ -1370,7 +1387,11 @@ class HpfService
         return (
                 !empty($payment->description)
                 && preg_match(
-                    '/^' . _t('HPF_DIRECT_PAYMENT_TITLE', ['entryId' => '(.+)']) . '$/',
+                    '/^' . str_replace(
+                        'AAAAAEntryId',
+                        '(.+)',
+                        preg_quote(_t('HPF_DIRECT_PAYMENT_TITLE', ['entryId' => 'AAAAAEntryId']), '/')
+                    ). '$/',
                     $payment->description,
                     $match
                 )
