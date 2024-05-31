@@ -1022,7 +1022,7 @@ class HpfService
                                 || ($form['formType'] == $formType && $form['formSlug'] == $formSlug)
                             ) {
                                 $payments = new HelloAssoPayments(
-                                    $this->helloAssoService->convertToPayments(compact(['data'])),
+                                    $this->helloAssoService->convertToPayments(['data' => [$data]]),
                                     []
                                 );
                                 $this->refreshPaymentsInfo(
@@ -1049,7 +1049,7 @@ class HpfService
                 } catch (Throwable $th) {
                     $ids = 'Not extracted ids !';
                 }
-                $this->appendToHelloAssoLog($post,"Payment already not registered in entries : $ids");
+                $this->appendToHelloAssoLog($post,"Payment already registered in entries : $ids");
             }
         }
     }
