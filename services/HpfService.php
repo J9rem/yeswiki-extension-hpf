@@ -984,41 +984,40 @@ class HpfService
     public function processTrigger(Event $event)
     {
         $postNotSanitized = $event->getData();
-        if (empty($postNotSanitized) ||
-            !is_array($postNotSanitized) ||
-            empty($postNotSanitized['post']) ||
-            !is_array($postNotSanitized['post']) ||
-            empty($postNotSanitized['post']['data']) ||
-            empty($postNotSanitized['post']['eventType']) ||
-            ($postNotSanitized['post']['eventType'] != "Payment") ||
-            !is_array($postNotSanitized['post']['data']) ||
-            empty($postNotSanitized['post']['data']['id']) ||
-            empty($postNotSanitized['post']['data']['state']) ||
-            empty($postNotSanitized['post']['data']['payer']) ||
-            empty($postNotSanitized['post']['data']['payer']['email']) ||
-            empty($postNotSanitized['post']['data']['order'])
-        ) {
-            // only save not payments data
-            $this->appendToHelloAssoLog($postNotSanitized);
+        if (empty($postNotSanitized)
+            || !is_array($postNotSanitized)
+            || empty($postNotSanitized['post'])
+            || !is_array($postNotSanitized['post'])) {
+            $this->appendToHelloAssoLog(
+                $postNotSanitized,
+                'post is not an array'
+            );
+        } elseif (!$this->checkIfDataIsPayment($postNotSanitized['post'])) {
+            $this->appendToHelloAssoLog(
+                $postNotSanitized['post'],
+                'post doest not represent a payment'
+            );
         } else {
+            $post = $postNotSanitized['post'];
+            $data = $post['data'];
             // check if already registered
-            $paymentId = $postNotSanitized['post']['data']['id'];
+            $paymentId = $data['id'];
             if (empty($this->findEntriesWithSamePayment($paymentId))){
                 // update payments info
-                $email = $postNotSanitized['post']['data']['payer']['email'];
+                $email = $data['payer']['email'];
                 
                 $contribFormIds = $this->getCurrentPaymentsFormIds();
                 $done = false;
                 foreach ($contribFormIds as $formId) {
                     $form = $this->getPaymentForm($formId);
-                    $formType = $postNotSanitized['post']['data']['order']['formType'];
-                    $formSlug = $postNotSanitized['post']['data']['order']['formSlug'];
+                    $formType = $data['order']['formType'];
+                    $formSlug = $data['order']['formSlug'];
                     if (
                         $this->isDonationFormType($formType)
                         || ($form['formType'] == $formType && $form['formSlug'] == $formSlug)
                     ) {
                         $payments = new HelloAssoPayments(
-                            $this->helloAssoService->convertToPayments(['data'=>[$postNotSanitized['post']['data']]]),
+                            $this->helloAssoService->convertToPayments(compact(['data'])),
                             []
                         );
                         $this->refreshPaymentsInfo(
@@ -1032,38 +1031,73 @@ class HpfService
                     }
                 }
                 if (!$done) {
-                    $this->appendToHelloAssoLog($postNotSanitized);
+                    $this->appendToHelloAssoLog($post,'payment not registered !');
                 }
             }
         }
     }
 
     /**
-     * Feature UUID : hpf-api-helloasso-token-triggered
+     * check if data corresponds to a payment
+     * @param array $post
+     * @return bool 
      */
-    private function appendToHelloAssoLog($postNotSanitized)
+    protected function checkIfDataIsPayment(array $post): bool
     {
-        if (empty($postNotSanitized['post']['eventType'])
-            || !is_string($postNotSanitized['post']['eventType'])
-            || !in_array($postNotSanitized['post']['eventType'], ['Order','Form'])
-            || empty($postNotSanitized['post']['data']['order']['formSlug'])
-            || !is_string($postNotSanitized['post']['data']['order']['formSlug'])
-            || !in_array($postNotSanitized['post']['data']['order']['formSlug'], [
-                'billeterie-rnhp-grand-public',
-                'rnhp-2024',
-                'guide-vieillir-en-habitat-participatif'
-            ])
-            ) {
-            $pageTag = 'HelloAssoLog';
-            try {
-                $data = json_decode(json_encode($postNotSanitized), true);
-            } catch (Throwable $th) {
-                $data = '';
+        return !empty($post['data']) && is_array($post['data'])
+            && !empty($post['eventType']) && $post['eventType'] === "Payment"
+            && !empty($post['data']['id'])
+            && !empty($post['data']['state'])
+            && !empty($post['data']['payer'])
+            && !empty($post['data']['payer']['email'])
+            && !empty($post['data']['order']);
+    }
+
+    /**
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     * @param array $post
+     * @param string $reason
+     * @return void
+     */
+    private function appendToHelloAssoLog($post, string $reason)
+    {
+        try {
+            if (empty($post['eventType'])
+                || !is_string($post['eventType'])) {
+                throw new Exception('Post has not eventType !');
             }
+            // only follow payment event
+            if ($post['eventType'] === "Payment") {
+
+                if (empty($post['data']['order']['formSlug'])
+                    || !is_string($post['data']['order']['formSlug'])) {
+                    throw new Exception('Post[\'data\'] has not formSlug !');
+                }
+
+                // no register known formSlug
+                if (!in_array($post['data']['order']['formSlug'],[
+                    'billeterie-rnhp-grand-public',
+                    'rnhp-2024',
+                    'guide-vieillir-en-habitat-participatif'
+                ])) {
+                    throw new Exception('Not understood error !');
+                }
+            }
+        } catch (Throwable $th) {
+            try {
+                $data = json_decode(json_encode($post), true);
+            } catch (Throwable $th) {
+                $data = 'Error formatting json representation !';
+            }
+
+            
+            $pageTag = 'HelloAssoLog';
             $this->tripleStore->create($pageTag, self::HELLOASSO_HPF_PROPERTY, json_encode([
                 'date' => (new DateTime())->format("Y-m-d H:i:s.v"),
                 'account' => (empty($_SESSION['user']['name']) || !is_string($_SESSION['user']['name'])) ? '' : $_SESSION['user']['name'],
-                'data' => $data
+                'data' => $data,
+                'reason' => $reason,
+                'error' => $th->getMessage()
             ]), '', '');
         }
     }
