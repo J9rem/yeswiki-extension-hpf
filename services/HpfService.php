@@ -98,7 +98,8 @@ class HpfService
 
     public const AREA_FIELDNAMES = [
         "membership" => ['bf_region_adhesion','bf_departement_adhesion'],
-        "group_membership" => ['bf_region_adhesion_groupe','bf_departement_adhesion_groupe']
+        "group_membership" => ['bf_region_adhesion_groupe','bf_departement_adhesion_groupe'],
+        "backupfor3" => ['bf_region','bf_departements_valides']
     ];
     
     protected const DEFAULT_BASE_PAYMENT = [
@@ -1570,7 +1571,7 @@ class HpfService
             $this->getAssociations($entry, $fieldCache, $college, $college3to4fieldname)
         );
 
-        $areaData = $this->prepareAreaData($entry, $fieldCache);
+        $areaData = $this->prepareAreaData($entry, $fieldCache, $college);
 
         $data = $this->getFirstData(
             $entry,
@@ -1651,17 +1652,18 @@ class HpfService
      * prepare area data
      * @param array $entry
      * @param array &$fieldCache
+     * @param string $college
      * @return array [$fieldname => [string $area,string $dept]]
      * Feature UUID : hpf-payments-by-cat-table
      */
-    protected function prepareAreaData(array $entry, array &$fieldCache): array
+    protected function prepareAreaData(array $entry, array &$fieldCache, string $college): array
     {
         $keys = ['membership','group_membership','donation'];
         return array_combine(
             ['membership','group_membership','donation'],
             array_map(
-                function ($fieldname) use ($entry, &$fieldCache) {
-                    return $this->extractArea($entry, $fieldCache, $fieldname);
+                function ($fieldname) use ($entry, &$fieldCache, $college) {
+                    return $this->extractArea($entry, $fieldCache, $fieldname, $college);
                 },
                 ['membership','group_membership','donation']
             )
@@ -1672,10 +1674,11 @@ class HpfService
      * @param array $entry
      * @param array &$fieldCache
      * @param string $fieldName
+     * @param string $college
      * @return array [string $area,string $dept]
      * Feature UUID : hpf-payments-by-cat-table
      */
-    protected function extractArea(array $entry, array &$fieldCache, string $fieldName): array
+    protected function extractArea(array $entry, array &$fieldCache, string $fieldName, string $college): array
     {
         $area = 'sans';
         $dept = 0;
@@ -1683,35 +1686,45 @@ class HpfService
 
             // special case 'donation'
             if ($fieldName === 'donation') {
-                $data = $this->extractArea($entry, $fieldCache, 'membership');
+                $data = $this->extractArea($entry, $fieldCache, 'membership', $college);
                 if (!empty($data['area']) && $data['area'] !== 'sans') {
                     return $data;
                 }
                 // backup on group
-                return $this->extractArea($entry, $fieldCache, 'group_membership');
+                return $this->extractArea($entry, $fieldCache, 'group_membership', $college);
             }
 
             $defaultPayments = $this->getDefaultPaymentsByCat();
             
-            $areaFieldName = self::AREA_FIELDNAMES[$fieldName][0];
-            $deptFieldName = self::AREA_FIELDNAMES[$fieldName][1];
+            if ($college != '3') {
+                $areaFieldName = self::AREA_FIELDNAMES[$fieldName][0];
+                $deptFieldName = self::AREA_FIELDNAMES[$fieldName][1];
+            } else {
+                $areaFieldName = self::AREA_FIELDNAMES['backupfor3'][0];
+                $deptFieldName = self::AREA_FIELDNAMES['backupfor3'][1];
+            }
             $deptPropertyName = '';
             try {
                 $deptPropertyName = $this->getPropertyNameFromFormOrCache($entry['id_typeannonce'], $fieldCache, $deptFieldName);
             } catch (Throwable $th) {
             }
             if (!empty($deptPropertyName)
-                && substr($deptPropertyName, 0, 10) === 'listeListe'
-                && isset($entry[$deptPropertyName])
-                && array_key_exists($entry[$deptPropertyName], $defaultPayments)) {
-                $dept = $entry[$deptPropertyName];
-                foreach (self::AREAS as $areaCode => $depts) {
-                    if ($area === 'sans' && in_array($dept, $depts)) {
-                        $area = $areaCode;
+                && !empty($entry[$deptPropertyName])
+                && (
+                    substr($deptPropertyName, 0, 10) === 'listeListe'
+                    || substr($deptPropertyName, 0, 13) === 'checkboxListe'
+                )) {
+                $deptTMP = explode(',',$entry[$deptPropertyName])[0];
+                if (array_key_exists($deptTMP, $defaultPayments)) {
+                    $dept = $deptTMP;
+                    foreach (self::AREAS as $areaCode => $depts) {
+                        if ($area === 'sans' && in_array($dept, $depts)) {
+                            $area = $areaCode;
+                        }
                     }
-                }
-                if ($area === 'sans') {
-                    $dept = 0;
+                    if ($area === 'sans') {
+                        $dept = 0;
+                    }
                 }
             } else {
                 $areaPropertyName = '';
