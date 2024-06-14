@@ -1113,7 +1113,9 @@ class HpfService
                 if (!in_array($post['data']['order']['formSlug'],[
                     'billeterie-rnhp-grand-public',
                     'rnhp-2024',
-                    'guide-vieillir-en-habitat-participatif'
+                    'guide-vieillir-en-habitat-participatif',
+                    'rnhp-2024-reservation-des-dejeuners',
+                    'visites-d-habitats-participatifs'
                 ])) {
                     throw new Exception('Not understood error !');
                 }
