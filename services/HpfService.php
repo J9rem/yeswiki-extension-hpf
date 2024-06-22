@@ -101,7 +101,7 @@ class HpfService
         "group_membership" => ['bf_region_adhesion_groupe','bf_departement_adhesion_groupe'],
         "backupfor3" => ['bf_region','bf_departements_valides']
     ];
-    
+
     protected const DEFAULT_BASE_PAYMENT = [
         'v' => [0,0],
         'h' => [0,0],
@@ -223,7 +223,7 @@ class HpfService
                     )
                 SQL;
                 $entries = $this->dbService->loadAll($query);
-                $entries = empty($entries) ? [] :$entries;
+                $entries = empty($entries) ? [] : $entries;
                 if (empty($entries)) {
                     return [];
                 } else {
@@ -310,7 +310,7 @@ class HpfService
                 throw new Exception("hpf['structureInfo']['$key'] param should be a string !");
             }
         }
-        
+
         if (empty(filter_var($this->hpfParams['structureInfo']['email'], FILTER_VALIDATE_EMAIL, FILTER_NULL_ON_FAILURE))) {
             throw new Exception("hpf['structureInfo']['email'] param should be an email !");
         }
@@ -397,7 +397,7 @@ class HpfService
     protected function isDebug(): bool
     {
         if (is_null($this->debug)) {
-            $this->debug = ($this->wiki->GetConfigValue('debug') =='yes');
+            $this->debug = ($this->wiki->GetConfigValue('debug') == 'yes');
         }
         return $this->debug;
     }
@@ -473,7 +473,7 @@ class HpfService
                     $this->tripleStore->create($pageTag, self::HELLOASSO_API_PROPERTY, json_encode([
                         'date' => (new DateTime())->format("Y-m-d H:i:s.v"),
                         'account' => (empty($_SESSION['user']['name']) || !is_string($_SESSION['user']['name'])) ? '' : $_SESSION['user']['name'],
-                        'throwableToString' => "Exception (code {$th->getCode()}): {$th->getMessage()} in ".basename($th->getFile()).":{$th->getLine()}"
+                        'throwableToString' => "Exception (code {$th->getCode()}): {$th->getMessage()} in " . basename($th->getFile()) . ":{$th->getLine()}"
                     ]), '', '');
                 } catch (Throwable $th) {
                 }
@@ -488,14 +488,14 @@ class HpfService
             $cacheEntriesWithSamePaymentId = [];
 
             foreach ($localPayments as $payment) {
-                if (empty($this->lazyGetEntriesWithSamePaymentId($cacheEntriesWithSamePaymentId, $payment))){
+                if (empty($this->lazyGetEntriesWithSamePaymentId($cacheEntriesWithSamePaymentId, $payment))) {
                     // open entry based on email from payment
                     $paymentEmail = $payment->payer->email;
                     if (!isset($cacheEntries[$paymentEmail])) {
                         $cacheEntries[$paymentEmail] = [];
                     }
                     if (!isset($cacheEntries[$paymentEmail]['entry'])) {
-                        if (empty($preferedEntryId)){
+                        if (empty($preferedEntryId)) {
                             $preferedEntryId = $this->extractAssociatedEntryName($payment);
                         }
                         $entries = $this->getCurrentContribEntries($formId, $paymentEmail, $preferedEntryId);
@@ -599,7 +599,7 @@ class HpfService
             } else {
                 $forms = $this->helloAssoService->getForms();
                 $form = array_filter($forms, function ($formData) use ($formUrl) {
-                    return ($formData['url']."/") == $formUrl;
+                    return ($formData['url'] . "/") == $formUrl;
                 });
                 if (empty($form)) {
                     throw new Exception("PaymentForm not found with its urls on api !");
@@ -644,7 +644,7 @@ class HpfService
             if (is_null($paymentField)) {
                 $form = $this->formManager->getOne($contribFormId);
                 if (!$this->wiki->UserIsAdmin()) {
-                    throw new Exception(self::PAYMENTS_FIELDNAME." is not defined in form {$form['bn_label_nature']} ({$form['bn_id_nature']})");
+                    throw new Exception(self::PAYMENTS_FIELDNAME . " is not defined in form {$form['bn_label_nature']} ({$form['bn_id_nature']})");
                 }
                 if (empty($form['bn_template'])) {
                     throw new Exception("\$form['bn_template'] is not defined in form {$form['bn_label_nature']} ({$form['bn_id_nature']})");
@@ -654,13 +654,13 @@ class HpfService
                 if (substr($formTemplate, -strlen("\n")) != "\n") {
                     $formTemplate .= "\n";
                 }
-                $formTemplate .= "payments***".self::PAYMENTS_FIELDNAME."***Liste des paiements*** *** *** *** *** *** *** *** ***@admins***@admins*** *** *** ***\n";
-    
+                $formTemplate .= "payments***" . self::PAYMENTS_FIELDNAME . "***Liste des paiements*** *** *** *** *** *** *** *** ***@admins***@admins*** *** *** ***\n";
+
                 $newForm = $form;
                 $newForm['bn_template'] = $formTemplate;
                 $this->formManager->update($newForm);
             } elseif (!($paymentField instanceof PaymentsField)) {
-                throw new Exception(self::PAYMENTS_FIELDNAME." is not a PaymentField in form ({$contribFormId})");
+                throw new Exception(self::PAYMENTS_FIELDNAME . " is not a PaymentField in form ({$contribFormId})");
             }
         }
     }
@@ -694,7 +694,7 @@ class HpfService
      * Feature UUID : hpf-payment-status-action
      * Feature UUID : hpf-api-helloasso-token-triggered
      */
-    public function updateEntryWithPayment(array $entry, Payment $payment, string $forceOrigin = '', string $forceYear = ''):array
+    public function updateEntryWithPayment(array $entry, Payment $payment, string $forceOrigin = '', string $forceYear = ''): array
     {
         $contribFormIds = $this->getCurrentPaymentsFormIds();
         if (!in_array($entry['id_typeannonce'], $contribFormIds)) {
@@ -746,7 +746,7 @@ class HpfService
             $entry[self::PAYMENTS_FIELDNAME] ?? "",
             $paymentParams
         );
-        
+
         $entry = $this->updateCalcFields($entry);
 
         return $entry;
@@ -781,10 +781,10 @@ class HpfService
                 $this->getPayedField($contribFormId, $wantedYear, $key, !empty($forceYear));
 
             $aimedYear = $isOpenedNextYear
-                ? strval(intval($wantedYear)+1)
+                ? strval(intval($wantedYear) + 1)
                 : $wantedYear;
-            
-            list('entry' => $entry, 'restToAffect' => $restToAffect, 'affected'=>$affected) =
+
+            list('entry' => $entry, 'restToAffect' => $restToAffect, 'affected' => $affected) =
                 $this->registerPaymentForYear($entry, $contribFormId, $field, $restToAffect, $aimedYear, $key);
             if (!empty($affected)) {
                 $paymentParams["annee_$partKey"] = strval($aimedYear);
@@ -793,12 +793,12 @@ class HpfService
         }
     }
 
-    public function getPayedField(string $contribFormId, string $searchedYear, string $name, bool $forced = false):array
+    public function getPayedField(string $contribFormId, string $searchedYear, string $name, bool $forced = false): array
     {
         if (!$forced && $name != "donation") {
             $nextYearName = str_replace(
                 "{year}",
-                strval(intval($searchedYear) +1),
+                strval(intval($searchedYear) + 1),
                 self::PAYED_FIELDNAMES[$name]
             );
             $nextYearField = $this->formManager->findFieldFromNameOrPropertyName($nextYearName, $contribFormId);
@@ -834,7 +834,7 @@ class HpfService
         float $restToAffect,
         string $paymentYear,
         string $name
-    ):array {
+    ): array {
         $affected = 0;
         if (!empty($field)) {
             $isDonation = ($name == "donation");
@@ -856,7 +856,7 @@ class HpfService
                     $affected = $restToAffect;
                     $restToAffect = 0;
                 } else {
-                    $entry[$field->getPropertyName()] = strval($valueToPay+$payedValue);
+                    $entry[$field->getPropertyName()] = strval($valueToPay + $payedValue);
                     $entry = $this->updateYear($entry, self::PAYED_FIELDNAMES["years"][$name], $paymentYear);
                     $restToAffect = $restToAffect - $valueToPay;
                     $affected = $valueToPay;
@@ -875,7 +875,7 @@ class HpfService
                 $entry[$propertyName] = 'libre';
             }
         }
-        $entry['bf_montant_don_ponctuel_libre'] = strval(max(0, $valueToPay-$restToAffect));
+        $entry['bf_montant_don_ponctuel_libre'] = strval(max(0, $valueToPay - $restToAffect));
     }
 
     public function updateYear(array $entry, string $name, string $year, bool $append = true): array
@@ -921,7 +921,7 @@ class HpfService
         }
 
         $this->entryManager->validate(array_merge($data, ['antispam' => 1]));
-        
+
         $data['date_maj_fiche'] = empty($data['date_maj_fiche'])
             ? date('Y-m-d H:i:s', time())
             : (new DateTime($data['date_maj_fiche']))->add(new DateInterval("PT1S"))->format('Y-m-d H:i:s');
@@ -957,13 +957,13 @@ class HpfService
         $this->dbService->query("UPDATE {$this->dbService->prefixTable('pages')} SET `latest` = 'N' WHERE `tag` = '{$this->dbService->escape($data['id_fiche'])}'");
 
         // add new revision
-        $this->dbService->query("INSERT INTO {$this->dbService->prefixTable('pages')} SET ".
-            "`tag` = '{$this->dbService->escape($data['id_fiche'])}', ".
-            "`time` = '{$this->dbService->escape($data['date_maj_fiche'])}', ".
-            "`owner` = '{$this->dbService->escape($owner)}', ".
-            "`user` = '{$this->dbService->escape($user)}', ".
-            "`latest` = 'Y', ".
-            "`body` = '" . $this->dbService->escape(json_encode($data)) . "', ".
+        $this->dbService->query("INSERT INTO {$this->dbService->prefixTable('pages')} SET " .
+            "`tag` = '{$this->dbService->escape($data['id_fiche'])}', " .
+            "`time` = '{$this->dbService->escape($data['date_maj_fiche'])}', " .
+            "`owner` = '{$this->dbService->escape($owner)}', " .
+            "`user` = '{$this->dbService->escape($user)}', " .
+            "`latest` = 'Y', " .
+            "`body` = '" . $this->dbService->escape(json_encode($data)) . "', " .
             "`body_r` = ''");
 
         $updatedEntry = $this->entryManager->getOne($data['id_fiche'], false, null, false, true);
@@ -1004,13 +1004,13 @@ class HpfService
             // check if already registered
             $paymentId = $data['id'];
             $entries = $this->findEntriesWithSamePayment($paymentId);
-            if (empty($entries)){
+            if (empty($entries)) {
                 // update payments info
                 $email = $data['payer']['email'];
-                
+
                 $contribFormIds = $this->getCurrentPaymentsFormIds();
                 if (empty($contribFormIds)) {
-                    $this->appendToHelloAssoLog($post,'No contribFormIds !');
+                    $this->appendToHelloAssoLog($post, 'No contribFormIds !');
                 } else {
                     try {
                         $done = false;
@@ -1020,20 +1020,20 @@ class HpfService
                         );
                         $payment = $payments->getPayments()[0];
                         $preferedEntryId = $this->extractAssociatedEntryName($payment);
-                        if (!empty($preferedEntryId)){
+                        if (!empty($preferedEntryId)) {
                             $preferedEntry = $this->entryManager->getOne($preferedEntryId);
                             if (!empty($preferedEntry['id_typeannonce'])
-                                && in_array($preferedEntry['id_typeannonce'],$contribFormIds)){
-                                    $this->refreshPaymentsInfo(
-                                        $preferedEntry['id_typeannonce'],
-                                        $email,
-                                        $preferedEntryId,
-                                        $payments
-                                    );
-                                    $done = true;
+                                && in_array($preferedEntry['id_typeannonce'], $contribFormIds)) {
+                                $this->refreshPaymentsInfo(
+                                    $preferedEntry['id_typeannonce'],
+                                    $email,
+                                    $preferedEntryId,
+                                    $payments
+                                );
+                                $done = true;
                             }
                         }
-                        if (!$done){
+                        if (!$done) {
                             foreach ($contribFormIds as $formId) {
                                 $form = $this->getPaymentForm($formId);
                                 $formType = $data['order']['formType'];
@@ -1054,20 +1054,20 @@ class HpfService
                             }
                         }
                         if (!$done) {
-                            $this->appendToHelloAssoLog($post,'payment not registered !');
+                            $this->appendToHelloAssoLog($post, 'payment not registered !');
                         }
                     } catch (Throwable $th) {
-                        $this->appendToHelloAssoLog($post,"Error when registering payment : {$th->getMessage()} in ".
-                            basename($th->getFile()). ", line {$th->getLine()}");
+                        $this->appendToHelloAssoLog($post, "Error when registering payment : {$th->getMessage()} in " .
+                            basename($th->getFile()) . ", line {$th->getLine()}");
                     }
                 }
             } else {
                 try {
-                    $ids = implode(',',array_column($entries, 'id_fiche'));
+                    $ids = implode(',', array_column($entries, 'id_fiche'));
                 } catch (Throwable $th) {
                     $ids = 'Not extracted ids !';
                 }
-                $this->appendToHelloAssoLog($post,"Payment already registered in entries : $ids");
+                $this->appendToHelloAssoLog($post, "Payment already registered in entries : $ids");
             }
         }
     }
@@ -1075,7 +1075,7 @@ class HpfService
     /**
      * check if data corresponds to a payment
      * @param array $post
-     * @return bool 
+     * @return bool
      */
     protected function checkIfDataIsPayment(array $post): bool
     {
@@ -1110,7 +1110,7 @@ class HpfService
                 }
 
                 // no register known formSlug
-                if (!in_array($post['data']['order']['formSlug'],[
+                if (!in_array($post['data']['order']['formSlug'], [
                     'billeterie-rnhp-grand-public',
                     'rnhp-2024',
                     'guide-vieillir-en-habitat-participatif',
@@ -1127,7 +1127,7 @@ class HpfService
                 $data = 'Error formatting json representation !';
             }
 
-            
+
             $pageTag = 'HelloAssoLog';
             $this->tripleStore->create($pageTag, self::HELLOASSO_HPF_PROPERTY, json_encode([
                 'date' => (new DateTime())->format("Y-m-d H:i:s.v"),
@@ -1184,7 +1184,7 @@ class HpfService
      * Feature UUID : hpf-register-payment-action
      * Feature UUID : hpf-payments-field
      */
-    public function convertStringToPayments(string $paymentContent):array
+    public function convertStringToPayments(string $paymentContent): array
     {
         $formattedPayments = [];
         if (!empty($paymentContent)) {
@@ -1388,17 +1388,17 @@ class HpfService
     {
         $match = [];
         return (
-                !empty($payment->description)
-                && preg_match(
-                    '/^' . str_replace(
-                        'AAAAAEntryId',
-                        '(.+)',
-                        preg_quote(_t('HPF_DIRECT_PAYMENT_TITLE', ['entryId' => 'AAAAAEntryId']), '/')
-                    ). '$/',
-                    $payment->description,
-                    $match
-                )
+            !empty($payment->description)
+            && preg_match(
+                '/^' . str_replace(
+                    'AAAAAEntryId',
+                    '(.+)',
+                    preg_quote(_t('HPF_DIRECT_PAYMENT_TITLE', ['entryId' => 'AAAAAEntryId']), '/')
+                ) . '$/',
+                $payment->description,
+                $match
             )
+        )
             ? $match[1]
             : '';
     }
@@ -1416,7 +1416,7 @@ class HpfService
         $output = [];
         $payments = [];
         $currentYear = intval((new DateTime())->format('Y'));
-        for ($y=2022; $y <= ($currentYear+1) ; $y++) {
+        for ($y = 2022; $y <= ($currentYear + 1) ; $y++) {
             $payments[strval($y)] = $byCat ? $this->getDefaultPaymentsByCat() : $this->getDefaultPayments();
         }
         $fieldCache = [];
@@ -1445,10 +1445,10 @@ class HpfService
     /**
      * Feature UUID : hpf-payments-by-cat-table
      */
-    protected function getDefaultPaymentsByCat():array
+    protected function getDefaultPaymentsByCat(): array
     {
         $defaultPayment = [];
-        for ($i=1; $i <= 4; $i++) {
+        for ($i = 1; $i <= 4; $i++) {
             $defaultPayment["$i"] = self::DEFAULT_BASE_PAYMENT;
         }
         $defaultPayment['d'] = self::DEFAULT_BASE_PAYMENT;
@@ -1467,10 +1467,10 @@ class HpfService
     /**
      * Feature UUID : hpf-helloasso-payments-table
      */
-    protected function getDefaultPayments():array
+    protected function getDefaultPayments(): array
     {
         $defaultPayment = [];
-        for ($i=1; $i <= 12; $i++) {
+        for ($i = 1; $i <= 12; $i++) {
             $defaultPayment["$i"] = [
                 'v' => 0,
                 'e' => []
@@ -1532,12 +1532,12 @@ class HpfService
                     $subPartData[$paymentYear][$month]['v'] = $subPartData[$paymentYear][$month]['v'] + $value;
                 }
                 if (array_key_exists($year, $subPartData)) {
-                    $subPartData[$year]['o']['v'] = max(0, $subPartData[$year]['o']['v']-$value);
+                    $subPartData[$year]['o']['v'] = max(0, $subPartData[$year]['o']['v'] - $value);
                 }
                 return $subPartData;
             }
         );
-        
+
         // append in dedicated date
         foreach($associations as $fieldName => $destinationKey) {
             foreach($data[$fieldName] as $year => $values) {
@@ -1564,7 +1564,7 @@ class HpfService
         } catch (Throwable $th) {
             return;
         }
-        
+
 
         $associations = array_map(
             function ($assoc) {
@@ -1591,7 +1591,7 @@ class HpfService
             },
             true
         );
- 
+
         $this->extractPayments(
             $entry,
             $fieldCache,
@@ -1649,7 +1649,7 @@ class HpfService
         }
     }
 
-    
+
     /**
      * prepare area data
      * @param array $entry
@@ -1697,7 +1697,7 @@ class HpfService
             }
 
             $defaultPayments = $this->getDefaultPaymentsByCat();
-            
+
             if ($college != '3') {
                 $areaFieldName = self::AREA_FIELDNAMES[$fieldName][0];
                 $deptFieldName = self::AREA_FIELDNAMES[$fieldName][1];
@@ -1716,7 +1716,7 @@ class HpfService
                     substr($deptPropertyName, 0, 10) === 'listeListe'
                     || substr($deptPropertyName, 0, 13) === 'checkboxListe'
                 )) {
-                $deptTMP = explode(',',$entry[$deptPropertyName])[0];
+                $deptTMP = explode(',', $entry[$deptPropertyName])[0];
                 if (array_key_exists($deptTMP, $defaultPayments)) {
                     $dept = $deptTMP;
                     foreach (self::AREAS as $areaCode => $depts) {
@@ -1811,7 +1811,7 @@ class HpfService
         return (!empty($paymentType) && $paymentType == self::CB_TYPE_PAYMENT_FIELDVALUE);
     }
 
-    
+
     /**
      * extract payment type from entry
      * @param array $entry
@@ -1876,7 +1876,7 @@ class HpfService
      * Feature UUID : hpf-helloasso-payments-table
      * Feature UUID : hpf-payments-by-cat-table
      */
-    protected function getAssociations(array $entry, array &$fieldCache, string $college, string $college3to4fieldname):array
+    protected function getAssociations(array $entry, array &$fieldCache, string $college, string $college3to4fieldname): array
     {
         // update college
         try {
@@ -1898,9 +1898,9 @@ class HpfService
             : $college;
 
         return [
-            'membership'=>$updatedCollege,
-            'group_membership'=>$college == '1' ? '2' : $updatedCollege,
-            'donation'=>'d'
+            'membership' => $updatedCollege,
+            'group_membership' => $college == '1' ? '2' : $updatedCollege,
+            'donation' => 'd'
         ];
     }
 
@@ -1998,7 +1998,7 @@ class HpfService
             throw new Exception("Not found field '$name' for form '$formId'");
         }
         $paymentTypePropertyName = $fieldCache[$formId][$name]->getPropertyName();
-        
+
         if (empty($paymentTypePropertyName)) {
             throw new Exception("Empty property name");
         }
@@ -2076,7 +2076,7 @@ class HpfService
      */
     public function findEntriesWithSamePayment(string $paymentId): array
     {
-        if (empty($paymentId)){
+        if (empty($paymentId)) {
             return [];
         }
         $entries = $this->entryManager->search([
@@ -2087,7 +2087,7 @@ class HpfService
         $fieldsCache = [];
         return array_filter(
             $entries,
-            function ($entry) use (&$fieldsCache, $paymentId){
+            function ($entry) use (&$fieldsCache, $paymentId) {
                 return $this->isPaymentInEntry($paymentId, $entry, $fieldsCache);
             }
         );
@@ -2106,10 +2106,9 @@ class HpfService
         string $paymentId,
         array $entry,
         array &$fieldsCache
-    ): bool
-    {
+    ): bool {
         if (!empty($entry['id_typeannonce']) && !empty($entry[self::PAYMENTS_FIELDNAME])) {
-            if (!array_key_exists($entry['id_typeannonce'],$fieldsCache)){
+            if (!array_key_exists($entry['id_typeannonce'], $fieldsCache)) {
                 $fieldsCache[$entry['id_typeannonce']] = $this->formManager->findFieldFromNameOrPropertyName(self::PAYMENTS_FIELDNAME, $entry['id_typeannonce']);
             }
             $field = $fieldsCache[$entry['id_typeannonce']];
