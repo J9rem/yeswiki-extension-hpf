@@ -18,6 +18,7 @@ use Exception;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use Throwable;
+use YesWiki\Alternativeupdatej9rem\Service\CacheService;
 use YesWiki\Bazar\Field\BazarField;
 use YesWiki\Bazar\Field\CalcField;
 use YesWiki\Bazar\Field\CheckboxField;
@@ -121,6 +122,7 @@ class HpfService
 
     protected $aclService;
     protected $assetsManager;
+    protected $cacheService;
     protected $csrfTokenManager;
     protected $dbService;
     protected $debug;
@@ -139,6 +141,7 @@ class HpfService
     public function __construct(
         AclService $aclService,
         AssetsManager $assetsManager,
+        CacheService $cacheService,
         CsrfTokenManager $csrfTokenManager,
         DbService $dbService,
         EntryManager $entryManager,
@@ -153,6 +156,7 @@ class HpfService
     ) {
         $this->aclService = $aclService;
         $this->assetsManager = $assetsManager;
+        $this->cacheService = $cacheService;
         $this->csrfTokenManager = $csrfTokenManager;
         $this->dbService = $dbService;
         $this->debug = null;
@@ -1079,6 +1083,10 @@ class HpfService
             'latest' => 'Y',
             'body' => json_encode($data),
         ]), $data['id_fiche']);
+        // reset cache
+        if (!empty($data['id_fiche']) && !empty(strval($data['id_fiche']))) {
+            $this->cacheService->updateFormIdTimestamp(strval($data['id_fiche']));
+        }
 
         return $updatedEntry;
     }
