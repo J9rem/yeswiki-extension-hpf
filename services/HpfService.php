@@ -1140,7 +1140,7 @@ class HpfService
                         if (!$done) {
                             $formType = $data['order']['formType'];
                             $formSlug = $data['order']['formSlug'];
-                            $data = searchPaymentFormsFormSlugAndType($formSlug, $formType);
+                            $data = $this->searchPaymentFormsFormSlugAndType($formSlug, $formType);
                             if (!empty($data)) {
                                 list($paymentForm, $formsIds) = $data;
                             } elseif ($this->isDonationFormType($formType)) {
