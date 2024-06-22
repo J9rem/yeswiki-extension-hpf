@@ -1084,8 +1084,8 @@ class HpfService
             'body' => json_encode($data),
         ]), $data['id_fiche']);
         // reset cache
-        if (!empty($data['id_fiche']) && !empty(strval($data['id_fiche']))) {
-            $this->cacheService->updateFormIdTimestamp(strval($data['id_fiche']));
+        if (!empty($data['id_typeannonce']) && !empty(strval($data['id_typeannonce']))) {
+            $this->cacheService->updateFormIdTimestamp(strval($data['id_typeannonce']));
         }
 
         return $updatedEntry;
