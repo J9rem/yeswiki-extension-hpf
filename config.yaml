@@ -6,40 +6,41 @@
 # file that was distributed with this source code.
 #
 parameters:
-  GroupsAdminsSuffixForEmails: ''        # Feature UUID : hpf-area-management
-  AreaFieldName: ''                      # Feature UUID : hpf-area-management
-  PostalCodeFieldName: 'bf_code_postal'  # Feature UUID : hpf-area-management
-  departmentListName: 'ListeDepartementsFrancais' # Feature UUID : hpf-area-management
-  formIdAreaToDepartment: ''             # Feature UUID : hpf-area-management
+  GroupsAdminsSuffixForEmails: "" # Feature UUID : hpf-area-management
+  AreaFieldName: "" # Feature UUID : hpf-area-management
+  PostalCodeFieldName: "bf_code_postal" # Feature UUID : hpf-area-management
+  departmentListName: "ListeDepartementsFrancais" # Feature UUID : hpf-area-management
+  formIdAreaToDepartment: "" # Feature UUID : hpf-area-management
   hpf:
     # define parameters to store all needed data to display on receipt
-    structureInfo:                       # Feature UUID : hpf-receipts-creation
-      name: ''
-      address: ''
-      addressComplement: ''
-      postalCode: ''
-      town: ''
-      email: ''
-      website: ''
-    canViewReceipts: 'admins'            # Feature UUID : hpf-receipts-creation
+    structureInfo: # Feature UUID : hpf-receipts-creation
+      name: ""
+      address: ""
+      addressComplement: ""
+      postalCode: ""
+      town: ""
+      email: ""
+      website: ""
+    canViewReceipts: "admins" # Feature UUID : hpf-receipts-creation
   hpf_editable_config_params:
     - hpf:
-      - contribFormIds
-      - paymentsFormUrls
-      - paymentMessageEntry
-      # make the structureInfo editable by admins
-      - structureInfo:              # Feature UUID : hpf-receipts-creation
-        - 'name'
-        - 'address'
-        - 'addressComplement'
-        - 'postalCode'
-        - 'town'
-        - 'email'
-        - 'website' 
-      - 'canViewReceipts'           # Feature UUID : hpf-receipts-creation
-    - 'AreaFieldName'               # Feature UUID : hpf-area-management
-    - 'PostalCodeFieldName'         # Feature UUID : hpf-area-management
-    - 'GroupsAdminsSuffixForEmails' # Feature UUID : hpf-area-management
+        - contribFormIds
+        - paymentsFormUrls
+        - globalFormUrls
+        - paymentMessageEntry
+        # make the structureInfo editable by admins
+        - structureInfo: # Feature UUID : hpf-receipts-creation
+            - "name"
+            - "address"
+            - "addressComplement"
+            - "postalCode"
+            - "town"
+            - "email"
+            - "website"
+        - "canViewReceipts" # Feature UUID : hpf-receipts-creation
+    - "AreaFieldName" # Feature UUID : hpf-area-management
+    - "PostalCodeFieldName" # Feature UUID : hpf-area-management
+    - "GroupsAdminsSuffixForEmails" # Feature UUID : hpf-area-management
 
 services:
   _defaults:
@@ -47,27 +48,27 @@ services:
     public: true
 
   YesWiki\Hpf\Service\:
-    resource: 'services/*'
+    resource: "services/*"
     exclude:
-     - 'GroupManagementServiceInterface.php' # Feature UUID : hpf-area-management
+      - "GroupManagementServiceInterface.php" # Feature UUID : hpf-area-management
 
   # Allows to use controllers as services
   YesWiki\Hpf\Controller\:
-    resource: 'controllers/*'
+    resource: "controllers/*"
 
   # replace usage of HelloAssoService by hpf one to prevent errors if shop not installed
   YesWiki\Hpf\Service\HelloAssoService:
     decorates: YesWiki\Shop\Service\HelloAssoService
     decoration_on_invalid: null
-    arguments: ['@.inner']
-    factory: ['@YesWiki\Hpf\Service\HelloAssoServiceFactory','create']
+    arguments: ["@.inner"]
+    factory: ['@YesWiki\Hpf\Service\HelloAssoServiceFactory', "create"]
 
   YesWiki\Hpf\Service\ActionsBuilderService:
     decorates: YesWiki\Aceditor\Service\ActionsBuilderService
     decoration_on_invalid: null
     arguments:
-      $parentActionsBuilderService: '@.inner'
-  
+      $parentActionsBuilderService: "@.inner"
+
   # Feature UUID : hpf-area-management
   YesWiki\Hpf\Service\GroupManagementService:
     decorates: YesWiki\Groupmanagement\Service\GroupManagementService
@@ -78,4 +79,3 @@ services:
   YesWiki\Hpf\Controller\DisplayEmailController:
     tags:
       - { name: yeswiki.event_subscriber }
-

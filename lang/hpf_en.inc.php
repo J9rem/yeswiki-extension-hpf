@@ -96,7 +96,7 @@ return [
     // 'AB_hpf_hpfregisterpayment_formsids_hint' => 'entiers séparés par des virgules. Ex.: 16,23,24',
     // 'HPF_REGISTER_A_PAYMENT' => 'Enregistrer un paiement',
     // 'HPF_REGISTER_PAYMENT_FORM' => 'Formulaire concerné',
-    
+
     // action/HPFRegisterPaymentAction.php
     // Feature UUID : hpf-import-payments
     // 'HPF_IMPORT_BAD_ERROR_FORMAT' => 'Le format du fichier fournit n\'est pas bon. Il devrait être ".ods", ".csv", ".xls" ou ".xlsx" !',
@@ -109,7 +109,8 @@ return [
     // config.yaml
     // Feature UUID : hpf-payment-status-action
     // 'EDIT_CONFIG_HINT_HPF[CONTRIBFORMIDS]' => 'Identifiant des formulaires liés au paiement (avec \'bf_mail\' et un champ \'CalcField\'), séparés par des virgules',
-    // 'EDIT_CONFIG_HINT_HPF[PAYMENTSFORMURLS]' => 'Lien vers le formulaire HelloAsso de paiement associé (séparé par des virgules)',
+    // 'EDIT_CONFIG_HINT_HPF[GLOBALFORMURLS]' => 'Lien vers le formulaire HelloAsso de paiement généraux (séparés par des virgules)',
+    // 'EDIT_CONFIG_HINT_HPF[PAYMENTSFORMURLS]' => 'Liens vers les formulaires HelloAsso de paiement associés (séparés par des virgules)',
     // 'EDIT_CONFIG_HINT_HPF[PAYMENTMESSAGEENTRY]' => 'Fiche avec les messages pour le paiement',
     // 'EDIT_CONFIG_GROUP_HPF' => 'Paramètres spécifiques HPF',
     // Feature UUID : hpf-area-management
@@ -160,7 +161,7 @@ return [
     'HPF_SHOULD_BE_AN_ENTRY' => 'This handler only works for entries.',
     'HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT' => 'This entry is not associated to a payment form.',
     'HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER' => 'This entry is not associated to a form for which a user '
-        .'can not have more than one entry.',
+        . 'can not have more than one entry.',
 
     // templates/hpf-import-memberships-action.twig
     // Feature UUID : hpf-import-payments

@@ -70,7 +70,7 @@ return [
         en indiquant vos nom, prénom, adresse e-mail et code postal.
         La fiche concernée est {entryLink}.
         TXT,
-    'HPF_UPDATED_ENTRY' => "Les données de la fiche '{titre}' affichée ici pourraient ne pas être à jour.\n".
+    'HPF_UPDATED_ENTRY' => "Les données de la fiche '{titre}' affichée ici pourraient ne pas être à jour.\n" .
         "Veuillez recharger la fiche.",
     'HPF_NOT_FOR_EMPTY_TAG' => 'rafraichissement impossible pour un tag vide',
     'HPF_FORBIDEN_FOR_THIS_ENTRY' => 'vous n\'avez ps le droit de modifier cette fiche',
@@ -96,7 +96,7 @@ return [
     'AB_hpf_hpfregisterpayment_formsids_hint' => 'entiers séparés par des virgules. Ex.: 16,23,24',
     'HPF_REGISTER_A_PAYMENT' => 'Enregistrer un paiement',
     'HPF_REGISTER_PAYMENT_FORM' => 'Formulaire concerné',
-    
+
     // action/HPFRegisterPaymentAction.php
     // Feature UUID : hpf-import-payments
     'HPF_IMPORT_BAD_ERROR_FORMAT' => 'Le format du fichier fournit n\'est pas bon. Il devrait être ".ods", ".csv", ".xls" ou ".xlsx" !',
@@ -109,7 +109,8 @@ return [
     // config.yaml
     // Feature UUID : hpf-payment-status-action
     'EDIT_CONFIG_HINT_HPF[CONTRIBFORMIDS]' => 'Identifiant des formulaires liés au paiement (avec \'bf_mail\' et un champ \'CalcField\'), séparés par des virgules',
-    'EDIT_CONFIG_HINT_HPF[PAYMENTSFORMURLS]' => 'Lien vers le formulaire HelloAsso de paiement associé (séparé par des virgules)',
+    'EDIT_CONFIG_HINT_HPF[GLOBALFORMURLS]' => 'Liens vers les formulaires HelloAsso de paiement généraux (séparés par des virgules)',
+    'EDIT_CONFIG_HINT_HPF[PAYMENTSFORMURLS]' => 'Liens vers les formulaires HelloAsso de paiement associés (séparés par des virgules)',
     'EDIT_CONFIG_HINT_HPF[PAYMENTMESSAGEENTRY]' => 'Fiche avec les messages pour le paiement',
     'EDIT_CONFIG_GROUP_HPF' => 'Paramètres spécifiques HPF',
     // Feature UUID : hpf-area-management
@@ -160,8 +161,8 @@ return [
     'HPF_SHOULD_BE_AN_ENTRY' => 'Cet handler n\'est utilisable que pour les fiches.',
     'HPF_SHOULD_BE_AN_ENTRY_FOR_PAYMENT' => 'Cette fiche n\'est pas associée à un formulaire de paiement.',
     'HPF_SHOULD_BE_AN_ENTRY_FOR_FORM_WITH_UNIQ_ENTRY_BY_USER' => 'Cette fiche n\'appartient pas à un formulaire pour lequel un '
-        .'utilisateur ne peut avoir qu\'une seule fiche.',
-    
+        . 'utilisateur ne peut avoir qu\'une seule fiche.',
+
     // templates/hpf-import-memberships-action.twig
     // Feature UUID : hpf-import-payments
     'HPF_ADJUSTED' => 'Ajustée',
@@ -183,13 +184,13 @@ return [
     'HPF_GROUP_MEMBERSHIP' => 'Adhésion de groupe',
     'HPF_GROUP_NAME' => 'Nom du groupe',
     'HPF_GROUP_NAME_EMPTY' => 'le nom du groupe est vide',
-    'HPF_IMPORT_HELP' => "Les données importées sont rattachées au département qui correspond au code postal.\n".
-        "Si un département est donné, il sera pris en priorité sur le code postal.\n".
-        "Si une structure est trouvée pour ce département, elle sera sélectionnée.\n".
-        "Si plusieurs structures sont disponibles pour le département, aucune structure ne sera sélectionnée.\n".
-        "Un fonctionnement identique est appliqué pour la région associé au département.\n".
-        "Aucune structure n'est vraiment associé au paiement. Il est supposé que le paiement de type structure a été encaissé par la structure liée.\n".
-        "S'il y a une structure régionale et une structure départementale, il n'est pas possible de savoir laquelle a reçu le paiment.\n".
+    'HPF_IMPORT_HELP' => "Les données importées sont rattachées au département qui correspond au code postal.\n" .
+        "Si un département est donné, il sera pris en priorité sur le code postal.\n" .
+        "Si une structure est trouvée pour ce département, elle sera sélectionnée.\n" .
+        "Si plusieurs structures sont disponibles pour le département, aucune structure ne sera sélectionnée.\n" .
+        "Un fonctionnement identique est appliqué pour la région associé au département.\n" .
+        "Aucune structure n'est vraiment associé au paiement. Il est supposé que le paiement de type structure a été encaissé par la structure liée.\n" .
+        "S'il y a une structure régionale et une structure départementale, il n'est pas possible de savoir laquelle a reçu le paiment.\n" .
         "Il est possible d'indiquer le nom de la structure à préférer dans la colonne dédiée. Celle-ci n'est prise en compte que si la structure fait partie des structures du département sélectionné.",
     'HPF_IS_GROUP' => 'Type d\'adhésion',
     'HPF_MEMBERSHIP_TYPE' => 'Type de montant',

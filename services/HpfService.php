@@ -130,7 +130,7 @@ class HpfService
     protected $hpfParams;
     protected $pageManager;
     protected $params;
-    protected $paymentForm;
+    protected $paymentForms;
     protected $securityController;
     protected $tripleStore;
     protected $userManager;
@@ -162,7 +162,7 @@ class HpfService
         $this->hpfParams = null;
         $this->pageManager = $pageManager;
         $this->params = $params;
-        $this->paymentForm = null;
+        $this->paymentForms = null;
         $this->securityController = $securityController;
         $this->tripleStore = $tripleStore;
         $this->userManager = $userManager;
@@ -405,17 +405,24 @@ class HpfService
     /**
      * Feature UUID : hpf-payment-status-action
      * Feature UUID : hpf-api-helloasso-token-triggered
+     * @param bool $returnGlobalForms
+     * @return array $urls
      */
-    public function getPaymentFormUrl(string $formId = ""): string
+    protected function getPaymentFormsUrl(bool $returnGlobalForms = false): array
     {
         $this->getHpfParams();
-        if (empty($this->hpfParams['paymentsFormUrls'])) {
-            throw new Exception("hpf['paymentsFormUrls'] param not defined");
+        $key = $returnGlobalForms ? 'globalFormUrls' : 'paymentsFormUrls';
+        if (empty($this->hpfParams[$key])) {
+            if ($returnGlobalForms) {
+                return [];
+            } else {
+                throw new Exception("hpf['paymentsFormUrls'] param not defined");
+            }
         }
         $urls = [];
-        foreach (explode(',', $this->hpfParams['paymentsFormUrls']) as $idx => $url) {
+        foreach (explode(',', $this->hpfParams[$key]) as $idx => $url) {
             if (substr($url, 0, strlen('https://www.helloasso.com')) != 'https://www.helloasso.com') {
-                throw new Exception("hpf['paymentsFormUrls'] should begin by 'https://www.helloasso.com'");
+                throw new Exception("hpf['$key'] should begin by 'https://www.helloasso.com'");
             }
             $url = preg_replace("/\/(widget|widget-button)$/", "", $url);
             if (substr($url, -1) != '/') {
@@ -423,14 +430,54 @@ class HpfService
             }
             $urls[] = $url;
         }
-        $formsIds = $this->getCurrentPaymentsFormIds();
+        return $urls;
+    }
+
+    /**
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     * @return array $urls
+     */
+    protected function getPaymentAllFormsUrl(): array
+    {
+        return array_merge(
+            array_values($this->getPaymentFormsUrl()),
+            array_values($this->getPaymentFormsUrl(true))
+        );
+    }
+
+    /**
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     */
+    protected function getPaymentFormUrls(string $formId): array
+    {
+        $foundUrls = [];
         if (!empty($formId)) {
+            $urls = $this->getPaymentFormsUrl();
+            $formsIds = $this->getCurrentPaymentsFormIds();
+            $foundUrls = [];
             foreach ($formsIds as $idx => $formIdToCompare) {
                 if ($formIdToCompare == $formId && isset($urls[$idx])) {
-                    return $urls[$idx];
+                    $foundUrls[] = $urls[$idx];
                 }
             }
         }
+        return array_merge(
+            $foundUrls,
+            array_values($this->getPaymentFormsUrl(true))
+        );
+    }
+
+    /**
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     */
+    public function getPaymentFormUrl(string $formId = ""): string
+    {
+        $urls = empty($formId)
+            ? $this->getPaymentAllFormsUrl()
+            : $this->getPaymentFormUrls($formId);
         return $urls[0];
     }
 
@@ -455,8 +502,9 @@ class HpfService
     /**
      * Feature UUID : hpf-payment-status-action
      * Feature UUID : hpf-api-helloasso-token-triggered
+     * @return bool $done
      */
-    public function refreshPaymentsInfo(string $formId, string $email = "", string $preferedEntryId = '', ?HelloAssoPayments $payments = null)
+    public function refreshPaymentsInfo(string $formId, string $email = "", string $preferedEntryId = '', ?HelloAssoPayments $payments = null): bool
     {
         $form = $this->getPaymentForm($formId);
         try {
@@ -481,6 +529,7 @@ class HpfService
 
             $localPayments = null;
         }
+        $done = false;
         if (!empty($localPayments)) {
             $this->checkContribFormsHavePaymentsField();
 
@@ -509,18 +558,25 @@ class HpfService
                         // check if payments are saved
                         if (!$this->isAlreadyRegisteredPayment($cacheEntries[$paymentEmail]['entry'], $payment)) {
                             $cacheEntries[$paymentEmail]['entry'] = $this->updateEntryWithPayment($cacheEntries[$paymentEmail]['entry'], $payment);
+                            $done = true;
                         }
                     }
                 }
             }
 
             foreach ($cacheEntries as $data) {
-                if (!empty($data) && ($data['previousTotal'] != $data['entry'][self::CALC_FIELDNAMES['total']] ||
-                    $data['previousPayments'] != $data['entry'][self::PAYMENTS_FIELDNAME])) {
+                if (!empty($data) &&
+                    (
+                        $data['previousTotal'] != $data['entry'][self::CALC_FIELDNAMES['total']]
+                        || $data['previousPayments'] != $data['entry'][self::PAYMENTS_FIELDNAME]
+                    )
+                ) {
                     $this->updateEntry($data['entry']);
+                    $done = true;
                 }
             }
         }
+        return $done;
     }
 
     /**
@@ -580,42 +636,90 @@ class HpfService
     }
 
     /**
+     * return all HelloAsso forms corresponding to this form
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     * @param string $formId
+     * @return array
+     */
+    public function getPaymentForms(string $formId): array
+    {
+        if (is_null($this->paymentForms)) {
+            $this->paymentForms = [];
+        }
+
+        if (!isset($this->paymentForms[$formId])) {
+            $this->getHpfParams();
+            $formUrls = $this->getPaymentFormUrls($formId);
+            $paymentForms = [];
+            $hAFormsCache = null;
+            foreach ($formUrls as $formUrl) {
+                if (!empty($this->hpfParams['paymentForm'])
+                    && isset($this->hpfParams['paymentForm'][$formUrl])
+                    && is_array($this->hpfParams['paymentForm'][$formUrl])) {
+                    $paymentForms[] = array_merge($this->hpfParams['paymentForm'][$formUrl], ['url' => substr($formUrl, 0, -1)]);
+                } else {
+                    $hAFormsCache = ($hAFormsCache === null)
+                        ? $this->helloAssoService->getForms()
+                        : $hAFormsCache;
+                    $filteredForms = array_filter($forms, function ($formData) use ($formUrl) {
+                        return ($formData['url'] . "/") == $formUrl;
+                    });
+                    if (empty($filteredForms)) {
+                        throw new Exception("PaymentForm not found with its urls on api !");
+                    }
+                    $form = $filteredForms[array_key_first($filteredForms)];
+                    $paymentForms[] = $form;
+                    $this->saveFormDaraInParams([
+                        $formUrl => [
+                            'title' => $form['title'],
+                            'formType' => $form['formType'],
+                            'formSlug' => $form['formSlug'],
+                        ]
+                    ]);
+                }
+            }
+            $this->paymentForms[$formId] = $paymentForms;
+        }
+
+        return $this->paymentForms[$formId];
+    }
+
+    /**
      * Feature UUID : hpf-payment-status-action
      * Feature UUID : hpf-api-helloasso-token-triggered
      */
     public function getPaymentForm(string $formId): array
     {
-        if (is_null($this->paymentForm)) {
-            $this->paymentForm = [];
-        }
+        $forms = $this->getPaymentForms($formId);
+        return empty($forms) ? [] : $forms[array_key_first($forms)];
+    }
 
-        if (!isset($this->paymentForm[$formId])) {
-            $this->getHpfParams();
-            $formUrl = $this->getPaymentFormUrl($formId);
-            if (!empty($this->hpfParams['paymentForm'])
-                && isset($this->hpfParams['paymentForm'][$formUrl])
-                && is_array($this->hpfParams['paymentForm'][$formUrl])) {
-                $this->paymentForm[$formId] = array_merge($this->hpfParams['paymentForm'][$formUrl], ['url' => substr($formUrl, 0, -1)]);
-            } else {
-                $forms = $this->helloAssoService->getForms();
-                $form = array_filter($forms, function ($formData) use ($formUrl) {
-                    return ($formData['url'] . "/") == $formUrl;
-                });
-                if (empty($form)) {
-                    throw new Exception("PaymentForm not found with its urls on api !");
+    /**
+     * Feature UUID : hpf-payment-status-action
+     * Feature UUID : hpf-api-helloasso-token-triggered
+     * @param string $formSlug
+     * @param string $formType
+     * @return array ['paymentForm'=>array,'formsIds'=>array]
+     */
+    protected function searchPaymentFormsFormSlugAndType(string $formSlug, string $formType): array
+    {
+        $contribFormIds = $this->getCurrentPaymentsFormIds();
+        $results = [];
+        foreach ($contribFormIds as $formId) {
+            $associatedForms = $this->getPaymentForms($formId);
+            foreach ($associatedForms as $paymentForm) {
+                if ($paymentForm['formSlug'] == $formSlug && $paymentForm['formType'] == $formType) {
+                    if (empty($results['paymentForm'])) {
+                        $results['paymentForm'] = $paymentForm;
+                        $results['formsIds'] = [$formId];
+                    } elseif (!in_array($formId, $results['formsIds'])) {
+                        $results['formsIds'][] = $formId;
+                    }
                 }
-                $this->paymentForm[$formId] = $form[array_key_first($form)];
-                $this->saveFormDaraInParams([
-                    $formUrl => [
-                        'title' => $this->paymentForm[$formId]['title'],
-                        'formType' => $this->paymentForm[$formId]['formType'],
-                        'formSlug' => $this->paymentForm[$formId]['formSlug'],
-                    ]
-                ]);
             }
         }
-
-        return $this->paymentForm[$formId];
+        return $results;
     }
 
     private function saveFormDaraInParams(array $data)
@@ -1034,20 +1138,22 @@ class HpfService
                             }
                         }
                         if (!$done) {
-                            foreach ($contribFormIds as $formId) {
-                                $form = $this->getPaymentForm($formId);
-                                $formType = $data['order']['formType'];
-                                $formSlug = $data['order']['formSlug'];
-                                if (
-                                    $this->isDonationFormType($formType)
-                                    || ($form['formType'] == $formType && $form['formSlug'] == $formSlug)
-                                ) {
-                                    $this->refreshPaymentsInfo(
-                                        $formId,
-                                        $email,
-                                        '',
-                                        $payments
-                                    );
+                            $formType = $data['order']['formType'];
+                            $formSlug = $data['order']['formSlug'];
+                            $data = searchPaymentFormsFormSlugAndType($formSlug, $formType);
+                            if (!empty($data)) {
+                                list($paymentForm, $formsIds) = $data;
+                            } elseif ($this->isDonationFormType($formType)) {
+                                $formsIds = array_values(array_unique($contribFormIds));
+                            }
+
+                            foreach ($formsIds as $formId) {
+                                if ($this->refreshPaymentsInfo(
+                                    $formId,
+                                    $email,
+                                    '',
+                                    $payments
+                                )) {
                                     $done = true;
                                     break;
                                 }
