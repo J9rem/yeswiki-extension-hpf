@@ -670,7 +670,7 @@ class HpfService
                     }
                     $form = $filteredForms[array_key_first($filteredForms)];
                     $paymentForms[] = $form;
-                    $this->saveFormDaraInParams([
+                    $this->saveFormDataInParams([
                         $formUrl => [
                             'title' => $form['title'],
                             'formType' => $form['formType'],
@@ -722,7 +722,7 @@ class HpfService
         return $results;
     }
 
-    private function saveFormDaraInParams(array $data)
+    private function saveFormDataInParams(array $data)
     {
         include_once 'tools/templates/libs/Configuration.php';
         $config = new Configuration('wakka.config.php');
@@ -1141,8 +1141,8 @@ class HpfService
                             $formType = $data['order']['formType'];
                             $formSlug = $data['order']['formSlug'];
                             $data = $this->searchPaymentFormsFormSlugAndType($formSlug, $formType);
-                            if (!empty($data)) {
-                                list($paymentForm, $formsIds) = $data;
+                            if (!empty($data['formsIds'])) {
+                                $formsIds = $data['formsIds'];
                             } elseif ($this->isDonationFormType($formType)) {
                                 $formsIds = array_values(array_unique($contribFormIds));
                             }
