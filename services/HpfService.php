@@ -662,7 +662,7 @@ class HpfService
                     $hAFormsCache = ($hAFormsCache === null)
                         ? $this->helloAssoService->getForms()
                         : $hAFormsCache;
-                    $filteredForms = array_filter($forms, function ($formData) use ($formUrl) {
+                    $filteredForms = array_filter($hAFormsCache, function ($formData) use ($formUrl) {
                         return ($formData['url'] . "/") == $formUrl;
                     });
                     if (empty($filteredForms)) {
