@@ -49,7 +49,7 @@ class HPFPaymentStatusAction extends YesWikiAction
 
     public function run()
     {
-        $this->debug = ($this->wiki->GetConfigValue('debug') =='yes');
+        $this->debug = ($this->wiki->GetConfigValue('debug') == 'yes');
         // get Services
         $this->assetsManager = $this->getService(AssetsManager::class);
         $this->entryManager = $this->getService(EntryManager::class);
@@ -90,7 +90,7 @@ class HPFPaymentStatusAction extends YesWikiAction
             $output .= $this->renderOneEntry($contribEntryInt, $contribFormId, $user);
         }
         return $output;
-        
+
     }
     /**
      * render one entry
@@ -99,10 +99,10 @@ class HPFPaymentStatusAction extends YesWikiAction
      * @param User|array $user
      * @return string
      */
-    protected function renderOneEntry(array $contribEntry, string $contribFormId, $user):string
+    protected function renderOneEntry(array $contribEntry, string $contribFormId, $user): string
     {
         $previousCalcValue = $contribEntry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
-        $calcValue = $this->updatePaymentsForEntry($contribEntry, $user['email']);
+        $calcValue = $this->updatePaymentsForEntry($contribEntry);
 
         $changedValueMsg = ($previousCalcValue == $calcValue) ? "" : $this->render(
             '@templates/alert-message.twig',
@@ -121,7 +121,7 @@ class HPFPaymentStatusAction extends YesWikiAction
                 $this->render("@templates/alert-message.twig", [
                     'type' => 'success',
                     'message' => $this->arguments['nothing_to_pay_message']
-                ])).$changedValueMsg;
+                ])) . $changedValueMsg;
         }
 
         try {
@@ -150,20 +150,20 @@ class HPFPaymentStatusAction extends YesWikiAction
                 switch ($this->arguments['view']) {
                     case 'buttonYW':
                     case 'handler': // Feature UUID : hpf-direct-payment-helloasso
-                        return $paymentMessage.$this->callAction('button', [
+                        return $paymentMessage . $this->callAction('button', [
                             'class' => 'btn-primary new-window',
                             'icon' => 'far fa-credit-card',
                             'link' => $url,
                             'text' => $this->arguments['pay_button_title'],
                             'title' => $this->arguments['pay_button_title'],
-                        ]).$changedValueMsg;
+                        ]) . $changedValueMsg;
                     case 'iframe':
                     case 'buttonHelloASso':
                     default:
-                        return $paymentMessage.$html.$changedValueMsg;
+                        return $paymentMessage . $html . $changedValueMsg;
                 }
             } else {
-                return $paymentMessage.$changedValueMsg;
+                return $paymentMessage . $changedValueMsg;
             }
         } catch (Throwable $th) {
             return empty($this->arguments['nothing_to_pay_message']) ? "" :
@@ -227,7 +227,7 @@ class HPFPaymentStatusAction extends YesWikiAction
     protected function getPaymentMessage(array $entry, string $calcValue, string $email, string $instruction): array
     {
         $messageEntry = $this->hpfService->getPaymentMessageEntry();
-        $field = $this->formManager->findFieldFromNameOrPropertyName('bf_moyen_paiement', $entry['id_typeannonce'] ??"");
+        $field = $this->formManager->findFieldFromNameOrPropertyName('bf_moyen_paiement', $entry['id_typeannonce'] ?? "");
         $propertyName = (empty($field) || empty($field->getPropertyName())) ? 'bf_moyen_paiement' : $field->getPropertyName();
         $paymentMode = !empty($entry[$propertyName]) ? strval($entry[$propertyName]) : '';
         switch ($paymentMode) {
@@ -253,7 +253,7 @@ class HPFPaymentStatusAction extends YesWikiAction
         HTML;
         $hereLinkEnd = '</a>';
         $form = $this->formManager->getOne($entry['id_typeannonce']);
-        $entryLink = $this->wiki->format("[[{$entry['id_fiche']} {$entry['id_fiche']}]]".(
+        $entryLink = $this->wiki->format("[[{$entry['id_fiche']} {$entry['id_fiche']}]]" . (
             !empty($form['bn_label_nature'])
             ? " ({$form['bn_label_nature']})"
             : ''
