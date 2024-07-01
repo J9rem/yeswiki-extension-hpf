@@ -210,6 +210,9 @@ class HpfService
                     },
                     ARRAY_FILTER_USE_KEY
                 );
+                $ownerQuery = !empty($preferedUserName)
+                    ? "OR `owner` = '{$this->dbService->escape($preferedUserName)}'"
+                    : '';
                 $query = <<<SQL
                 SELECT `tag`,`owner` FROM {$this->dbService->prefixTable('pages')}
                   WHERE `latest` = 'Y'
@@ -224,7 +227,7 @@ class HpfService
                     AND (
                         `body` LIKE '%"bf_mail":"{$this->dbService->escape($email)}"%'
                         OR `body` LIKE '%"bf_alternative_email":"{$this->dbService->escape($email)}"%'
-                        OR `owner` = '{$this->dbService->escape($preferedUserName)}'
+                        $ownerQuery
                     )
                 SQL;
                 $entries = $this->dbService->loadAll($query);
