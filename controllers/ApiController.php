@@ -118,7 +118,7 @@ class ApiController extends YesWikiController
     {
         return new ApiResponse($this->getService(HpfService::class)->getPaymentsViaEmail($email), 200);
     }
-    
+
     /**
      * @Route("/api/hpf/helloasso/payment/refreshcache", methods={"POST"},options={"acl":{"public","@admins"}})
      * Feature UUID : hpf-helloasso-payments-table
@@ -157,7 +157,7 @@ class ApiController extends YesWikiController
         )
             ? ''
             : $_POST['college3to4fieldname'];
-        list('code'=>$code, 'output'=>$output) = $this->getService(HpfService::class)->refreshPaymentCache($formsIds, $college3to4fieldname, $byCat);
+        list('code' => $code, 'output' => $output) = $this->getService(HpfService::class)->refreshPaymentCache($formsIds, $college3to4fieldname, $byCat);
         return new ApiResponse($output, $code);
     }
 
@@ -217,7 +217,7 @@ class ApiController extends YesWikiController
             }
             $data[$input] = $_POST[$input];
         }
-        
+
         if(
             !empty($_POST['year'])
             && !is_string($_POST['year'])
@@ -239,7 +239,7 @@ class ApiController extends YesWikiController
         );
     }
 
-    
+
     /**
      * @Route("/api/hpf/importmembership/{mode}/{type}/{formId}", methods={"POST"},options={"acl":{"public","@admins"}})
      * Feature UUID : hpf-import-payments
@@ -285,7 +285,7 @@ class ApiController extends YesWikiController
         // get Services
         $entryManager = $this->getService(EntryManager::class);
         $receiptManager = $this->getService(ReceiptManager::class);
-        
+
 
         if (empty($entryManager->getOne($entryId, false, null, false, true))) {
             throw new Exception('Not existing entry !');
@@ -351,13 +351,13 @@ class ApiController extends YesWikiController
         if (empty($entry)) {
             throw new Exception('Not existing entry !');
         }
-        
+
         if (!$receiptManager->canSeeReceipts($entryId)) {
             return new ApiResponse([
                 'error' => _t('HPF_RECEIPT_API_CAN_NOT_SEE_RECEIPT')
             ], 400);
         }
-        
+
         // check paymentId existing
         $existingPayments = $receiptManager->getPaymentsFromEntry($entry);
         if (!array_key_exists($id, $existingPayments)) {
@@ -377,8 +377,8 @@ class ApiController extends YesWikiController
         }
 
         $payment = $existingPayments[$id];
-        $filename = basename(dirname($path)).'-'.preg_replace('/^([0-9]{8})-[0-9]+-([0-9A-Za-z]+)-([^-]+)-[0-9A-Fa-f]+(\.pdf)$/', '$1-$2-$3-$4', basename($path));
-        
+        $filename = basename(dirname($path)) . '-' . preg_replace('/^([0-9]{8})-[0-9]+-([0-9A-Za-z]+)-([^-]+)-[0-9A-Fa-f]+(\.pdf)$/', '$1-$2-$3-$4', basename($path));
+
         ob_end_clean();
         $headers = [
             'Access-Control-Allow-Origin' => '*',
