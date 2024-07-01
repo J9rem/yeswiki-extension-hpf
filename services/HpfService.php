@@ -223,6 +223,7 @@ class HpfService
                     )
                     AND (
                         `body` LIKE '%"bf_mail":"{$this->dbService->escape($email)}"%'
+                        OR `body` LIKE '%"bf_alternative_email":"{$this->dbService->escape($email)}"%'
                         OR `owner` = '{$this->dbService->escape($preferedUserName)}'
                     )
                 SQL;

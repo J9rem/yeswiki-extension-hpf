@@ -180,10 +180,9 @@ class HPFPaymentStatusAction extends YesWikiAction
 
     /**
      * @param array $entry
-     * @param string $email
      * @return string|floatval $calcValue
      */
-    private function updatePaymentsForEntry(array $entry, string $email)
+    private function updatePaymentsForEntry(array $entry)
     {
         // update CalcField before check
         $newEntry = $this->hpfService->updateCalcFields($entry);
@@ -205,7 +204,7 @@ class HPFPaymentStatusAction extends YesWikiAction
             $entry = $this->entryManager->getOne($this->arguments['entry_id']);
             if (!empty($entry) && !empty($entry['id_typeannonce']) && !empty($entry['bf_mail']) && $entry['id_typeannonce'] == $contribFormId) {
                 $previousCalcValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
-                $newCalcValue = $this->updatePaymentsForEntry($entry, $entry['bf_mail']);
+                $newCalcValue = $this->updatePaymentsForEntry($entry);
                 if ($previousCalcValue != $newCalcValue) {
                     $output .= $this->render(
                         '@templates/alert-message.twig',

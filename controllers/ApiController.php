@@ -76,6 +76,11 @@ class ApiController extends YesWikiController
             }
             $previousValue = $entry[HpfService::CALC_FIELDNAMES["total"]] ?? 0;
             $newEntry = $hpfService->refreshEntryFromHelloAsso($entry, $entry['bf_mail']);
+            if (!empty($newEntry['bf_alternative_email'])
+                && md5(json_encode($entry)) === md5(json_encode($newEntry))
+            ) {
+                $newEntry = $hpfService->refreshEntryFromHelloAsso($entry, $entry['bf_alternative_email']);
+            }
 
             return new ApiResponse([
                 'action' => 'refreshing',
